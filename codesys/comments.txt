@@ -1,0 +1,350 @@
+Комментарии, вынесенные из .st файлов гейзового модуля (RRG-20 / Modbus RTU / RS485-2)
+========================================================================================
+Каждый блок ниже — это комментарий, который был в соответствующем .st файле, привязан
+к месту (перед какой строкой/секцией он стоял). Сами .st файлы теперь без комментариев.
+
+2026-07-16: архитектура сменилась с ручного Modbus RTU поверх CAA SerialCom (файлы
+FB_MfcModbusMaster.st, F_ModbusCrc16.st, F_MbWriteFrame.st, F_MbReadFrame.st,
+F_MbValidateResponse.st, F_MbRetryOrFault.st, F_MbReadStep.st, ST_MfcChannelConfig.st,
+ST_MfcChannelState.st) на встроенный Modbus-мастер CODESYS (устройство Modbus_COM +
+6 Modbus Slave, COM Port). Причина: живое тестирование дало плавающие "unexpected
+length" на всех 6 каналах, документация CAA SerialCom подтвердила, что COM.Read может
+не дожидаться кадра целиком -- встроенный мастер берёт CRC/кадрирование/повторы на
+себя вместо ручной реализации. Старые файлы перемещены в retired_hand_rolled_driver/
+(не удалены, оставлены для истории/справки), их комментарии ниже сохранены как есть.
+
+
+=== ТЕКУЩАЯ АРХИТЕКТУРА (встроенный Modbus_COM master) ===
+
+=== GVL_GasIO.st ===
+
+[шапка]
+Глобальные переменные, привязанные к каналам Modbus в дереве устройств (вкладка
+"Соотнесение входов/выходов" каждого Modbus Slave, COM Port). Одна WORD-переменная
+на каждый Cyclic-канал (Measured/Setpoint) и пара (значение + BOOL-триггер) на каждый
+Rising Edge-канал (Mode/RampTime/RampStep/RampEn) -- фактическая запись происходит
+при переходе триггера FALSE->TRUE, значение берётся из соответствующей WORD-переменной
+на тот момент.
+
+
+=== E_GasChannelInit.st ===
+
+[шапка]
+Состояния разовой инициализации одного канала РРГ-20 плюс закрытие по неисправности/
+отключению. INIT_* -- поочерёдная запись параметров разгона (19/20/21) и режима
+регулирования (2:=19) через Rising Edge-триггеры, с паузой C_INIT_DELAY_SCANS сканов
+между каждым импульсом (мастер обрабатывает Rising Edge асинхронно, отдельного
+сигнала "запись подтверждена" на этом уровне нет -- полагаемся на надёжность
+встроенного мастера вместо повторной валидации ответа вручную, как было в старой
+реализации). CLOSE_HOLD/CLOSED -- симметричная последовательность для закрытия
+клапана (2:=10) при неисправности или отключении подсистемы.
+
+
+=== ST_GasChannelState.st ===
+
+[шапка]
+Состояние одного канала между сканами: текущий шаг инициализации (eInit),
+счётчик задержки между импульсами (iInitDelay) и публикуемые наружу флаги
+(xRegulating/xFaultActive/xCloseConfirmed) -- те же по смыслу, что были в
+ST_MfcChannelState.st, без wFaultCode: встроенный мастер не даёт по каждому
+каналу тот же уровень детализации ошибки (CRC/адрес/функция/содержимое),
+который раньше давала ручная валидация в F_MbValidateResponse.st.
+
+
+=== PRG_GasFlow.st ===
+
+[шапка]
+Не открывает и не последовательно опрашивает канал сам -- это делает встроенный
+Modbus-мастер по конфигурации каналов в дереве устройств (Cyclic для
+Setpoint/Measured, Rising Edge для Mode/RampTime/RampStep/RampEn). Здесь только:
+(1) разовая последовательность инициализации/закрытия на канал (см.
+E_GasChannelInit.st), (2) постоянная запись текущей уставки в awSetpointRaw --
+CYCLIC-канал сам continuously её отправляет, (3) публикация измеренного значения
+и статуса в awHolding[64..99] -- формат регистров не менялся, HMI (PLC210GasFlowClient.cs
+/ GasSectionForm.cs) правок не требует.
+
+[перед axSlaveError[0..5] := MFC_*.xError;]
+Диагностика связи по каждому Slave-устройству берётся напрямую со свойства
+устройства в дереве (имя должно точно совпадать: MFC_H2/MFC_CH4/MFC_O2/MFC_N2/
+MFC_Ar/MFC_H22) -- единственное место во всей переделке, которое не подтверждено
+документацией на 100% (несколько источников упоминают ".xError" на Modbus Slave
+устройстве, но не для этой конкретной версии библиотеки); если имя свойства другое,
+CODESYS сразу укажет ошибку компиляции с точным именем -- быстрая, безопасная
+проверка, не тихий сбой в рантайме.
+
+[перед awHolding[65] := awHolding[65] + WORD#1;]
+Было: счётчик полных проходов по 6 каналам (udiSweepCounter из старого FB).
+Стало: обычный счётчик сканов задачи -- тот же смысл живого "пульса", проще,
+не зависит от какого-либо конкретного канала.
+
+
+=== АРХИВ: старая ручная реализация (retired_hand_rolled_driver/) ===
+
+=== F_ModbusCrc16.st ===
+
+[перед FUNCTION, шапка]
+Standard Modbus RTU CRC16: init 0xFFFF, polynomial 0xA001, LSB-first bit
+processing. Confirmed byte-for-byte against ArdisCVDMaster's
+ModbusCRC16Calc (modules_hw/MFCPanel_Eltochpribor.cs), which this project
+uses as the protocol reference for the RRG-20 gas regulators.
+The two output bytes are transmitted low byte first, high byte second --
+callers must split/compare in that order, this function only returns the
+16-bit value.
+
+
+=== F_MbWriteFrame.st ===
+
+[перед FUNCTION, шапка]
+Builds a Modbus RTU "Write Single Register" (function 0x06) request frame:
+[addr, 0x06, regHi, regLo, valHi, valLo, crcLo, crcHi]. Returns the frame
+length in bytes (always 8). A successful device response is an echo of
+this same 8-byte frame -- validate it with F_MbValidateResponse.
+
+
+=== F_MbReadFrame.st ===
+
+[перед FUNCTION, шапка]
+Builds a Modbus RTU "Read Holding Registers" (function 0x03) request
+frame requesting exactly 1 register: [addr, 0x03, regHi, regLo, 0x00,
+0x01, crcLo, crcHi]. Returns the frame length in bytes (always 8). Every
+RRG-20 read in this driver is a single register (register 5, measured
+flow), so the count is not parameterized.
+
+
+=== F_MbValidateResponse.st ===
+
+[перед FUNCTION, шапка]
+Validates a received Modbus RTU response frame against the specific
+request it's supposed to answer. Checks, in order: plausible byte count,
+CRC16 (before trusting any other byte -- a corrupted frame could
+otherwise look like a valid exception response), slave address, function
+code (including a clean exception response, high bit set), and -- for
+writes -- that the echoed register/value match what was actually sent.
+For reads, extracts the returned register value into wReadValue.
+
+Returns a fault code: 0=ok, 3=CRC fail, 4=exception response reported by
+the device, 5=unexpected length, 6=unexpected slave address, 7=unexpected
+function code, 8=echoed write content mismatch. Fault codes 1 (write
+timeout) and 2 (read timeout) are assigned by the caller directly from
+fbWrite.xError/fbRead.xError and never reach this function, since there
+is no frame to validate in that case. Split into distinct codes (rather
+than one catch-all "5=mismatch") specifically so a live commissioning
+fault immediately shows which layer disagrees -- e.g. code 6 alone points
+straight at "physical units not yet provisioned to addresses 1-6" without
+needing a bus analyzer.
+
+[перед проверкой длины кадра, "IF (iSize <> iExpectLen)..."]
+An exception response is always 5 bytes regardless of the original
+function code.
+
+
+=== F_MbReadStep.st ===
+
+[перед FUNCTION, шапка]
+Accumulates one Modbus response across possibly MULTIPLE COM.Read calls
+instead of trusting a single call to deliver the whole frame in one shot.
+Added after live testing showed intermittent "unexpected length" faults
+on every channel that sometimes cleared on their own -- CODESYS's own
+CAA SerialCom docs note szSize "can be more than 1" per call, implying
+Read may hand back whatever bytes have arrived so far rather than
+blocking until the full frame is in, so a single xDone can carry a
+partial frame depending on scan-boundary timing.
+
+Returns: 0 = still waiting (caller stays in the same state), 1 = frame
+considered complete (either C_MAX_FRAME=8 bytes accumulated, the device
+transmission's absolute ceiling, or C_IDLE_SCAN_LIMIT=2 consecutive
+scans passed with no new bytes after at least one byte arrived -- treated
+as end-of-frame, since 2 scans at 50ms is far longer than Modbus RTU's
+own 3.5-character silence rule at 19200 baud), 2 = hard timeout (nothing
+ever arrived within C_NODATA_LIMIT=3 scans, or the FB's own xError fired).
+
+Re-arms COM.Read for a further partial read via xRetriggerArmed: CAA's
+Execute/Done model needs a FALSE-then-TRUE edge on xExecute to start a
+new operation, so a still-incomplete frame drops xReadExecute for one
+scan, then this function raises it back to TRUE on the following call --
+never both in the same scan.
+
+
+=== F_MbRetryOrFault.st ===
+
+[перед FUNCTION, шапка]
+Shared retry bookkeeping for a failed Modbus transaction: if under the
+retry limit, count the attempt and return the state to retry from
+(restart the whole write/read from scratch -- re-reading alone won't fix
+a failed write, and a fresh write is cheap); once exhausted, reset the
+counter and return the fault state instead.
+
+
+=== ST_MfcChannelConfig.st ===
+
+[после "TYPE ST_MfcChannelConfig :", перед STRUCT]
+Per-channel constant configuration for one RRG-20 gas regulator: its
+Modbus RTU slave address and factory full-scale flow range. Populated
+once (see FB_MfcModbusMaster's xConfigInit) and never written again --
+kept in its own type, separate from ST_MfcChannelState, so the
+safety-relevant numbers (addresses, full-scale) are never mutated
+anywhere outside that one place.
+
+
+=== ST_MfcChannelState.st ===
+
+[после "TYPE ST_MfcChannelState :", перед STRUCT]
+Per-channel runtime state, persists across scans/sweeps in
+FB_MfcModbusMaster.aCh[].
+
+[после поля iSubState]
+see FB_MfcModbusMaster state table in comments
+
+[после поля wFaultCode]
+0=none,1=write timeout,2=read timeout,3=CRC fail,4=exception,5=unexpected
+length,6=unexpected slave address,7=unexpected function code,8=echoed
+write content mismatch
+
+
+=== FB_MfcModbusMaster.st ===
+
+[перед FUNCTION_BLOCK, шапка — общее описание всего драйвера]
+Modbus RTU master for 6 daisy-chained RRG-20 (Elточприбор) gas flow
+regulators sharing one RS485 bus (RS485-2 / CODESYS Port ID 4, 19200
+8N1). Single instance -- unlike FB_ThyracontAscii (one point-to-point
+device owning its own port), RS485 here is a shared bus, so this FB owns
+the one COM.Open handle and sequences transactions across all 6 slave
+addresses in turn; there is never more than one Modbus transaction in
+flight at a time.
+
+Structural model follows FB_ThyracontAscii: a CASE-driven state machine
+built directly on COM.Open/Write/Read, one state advance per scan, with
+a distinct fault code per failure mode. Response validation (CRC16,
+address, function code, echoed content) is real here -- unlike the
+legacy PC driver this protocol was reverse-engineered from
+(ArdisCVDMaster/modules_hw/MFCPanel_Eltochpribor.cs), which checked none
+of that.
+
+Bus-level states (iBusState):
+  0  BUS_OPEN            -- COM.Open on udiPort/udiBaudrate, 8N1
+  5  BUS_OPEN_RETRY_WAIT -- open failed; wait C_OPEN_RETRY_TICKS scans, retry
+  10 BUS_RUN             -- advance one step of aCh[iChannel] per scan
+
+Per-channel states (aCh[i].iSubState), each "write" operation is 3 steps
+(issue write / wait for write done then issue read of the echo / wait for
+read done then validate), since a raw serial port needs a separate
+receive step to see the device's response -- it does not come back as
+part of the write call itself:
+  100/101/102  INIT_RAMPTIME  write reg 19 := 200 (20.0s 0->100% ramp)
+  110/111/112  INIT_RAMPSTEP  write reg 20 := 10  (finest step, 0.1%)
+  120/121/122  INIT_RAMPEN    write reg 21 := 1   (ramp enabled)
+  130/131/132  INIT_MODE      write reg 2  := 19  (regulate)
+  200/201/202  RUN_SETPOINT   write reg 4  := target (device ramps itself)
+  210/211      RUN_MEASURED   read reg 5 (no write phase -- pure read)
+  900/901/902  FAULT_CLOSE    write reg 2  := 10  (close)
+
+On any validated success in 100-132, the channel proceeds to the next
+init step, then to 200/210 steady-state cycling (write setpoint, read
+measured, repeat -- advancing to the next channel after each measured
+read). On any exhausted-retry failure in 100-202, or a fbRead failure in
+210/211, the channel goes to 900 and stays there until it can confirm a
+close-write, retrying once per visit (not in a tight loop -- a device
+that's gone completely silent cannot be forced closed until it's
+reachable again, so there's no point spending 3 immediate retries on a
+likely-dead slave when the other channels are waiting their turn).
+Disabling xEnable forces every channel into 900 immediately, from
+whatever state it was in, via the same close-write path -- there is only
+one "make it closed" code path to trust.
+
+[перед aCfg, в VAR]
+Per-channel constant config, populated once (see xConfigInit below).
+
+[перед aCh, в VAR]
+Per-channel runtime state, persists across scans/sweeps.
+
+[перед fbOpen/fbWrite/fbRead, в VAR]
+Single shared set of CAA SerialCom FB instances -- only one Modbus
+transaction is ever in flight, sequenced across the 6 slave
+addresses, same sharing model as one physical bus demands.
+
+[перед bPendingAddr/wPendingReg/wPendingValue, в VAR]
+What the single currently-outstanding request actually was, so the
+matching wait-state can validate the response against exactly what
+was sent.
+
+[перед блоком "IF NOT xConfigInit THEN" -- заполнение aCfg]
+---- One-time channel configuration ----
+Plain assignments rather than an array-of-struct literal initializer,
+since struct-array literal init syntax support varies by CODESYS
+version -- this form is guaranteed to compile everywhere.
+
+[перед блоком "IF NOT xEnable THEN" -- глобальное отключение]
+Global disable: force every channel that isn't already in the
+fault-close branch into it, from whatever state it was in.
+
+[перед заполнением aParams]
+Same COM.PARAMETER pattern as FB_ThyracontAscii: parity=2(NONE),
+stopbits=0(ONESTOPBIT), bytesize=8, binary=1.
+
+[рядом с "0:" -- начало CASE iBusState]
+BUS_OPEN
+
+[внутри состояния 0, перед FOR-циклом инициализации каналов при успешном открытии порта]
+If the subsystem is already disabled at the moment the bus
+finishes opening (e.g. cold boot with no PC connected yet),
+go straight to fault-close rather than briefly starting init
+and getting corrected back by the disable-block on the very
+next scan -- harmless either way (one extra 50ms scan), but
+this avoids the transient entirely.
+
+[рядом с "5:"]
+BUS_OPEN_RETRY_WAIT -- unlike FB_ThyracontAscii's open-failure path
+(which loops back into issuing writes on a possibly-invalid
+handle), this always goes back to BUS_OPEN, never into a
+per-channel transaction.
+
+[рядом с "10:"]
+BUS_RUN -- advance exactly one step of the current channel
+
+[перед состоянием "100:"]
+==== INIT_RAMPTIME: write reg 19 := 200 ====
+
+[перед состоянием "110:"]
+==== INIT_RAMPSTEP: write reg 20 := 10 ====
+
+[перед состоянием "120:"]
+==== INIT_RAMPEN: write reg 21 := 1 ====
+
+[перед состоянием "130:"]
+==== INIT_MODE: write reg 2 := 19 (regulate) -- self-healing,
+reasserted every time a channel (re)connects, not just once
+ever. ====
+
+[перед состоянием "200:"]
+==== RUN_SETPOINT: write reg 4 := target sccm, converted to
+raw 0-10000 and clamped defensively so an out-of-range or
+stale PC value can never be transmitted verbatim. The
+RRG-20 ramps itself from its current value to this target
+using the parameters written during INIT_RAMP*. ====
+
+[перед состоянием "210:"]
+==== RUN_MEASURED: read reg 5. Pure read, no write phase.
+On success, this channel's turn is done for this sweep --
+loop its own state back to 200 (ready for next time) and
+advance to the next channel. ====
+
+[перед состоянием "900:"]
+==== FAULT_CLOSE: write reg 2 := 10 (close). One attempt per
+visit -- no bounded retry here, unlike 100-202: if it fails,
+this channel simply gets another attempt on its next turn
+rather than spending 3 immediate retries on a possibly-dead
+device while the other 5 channels wait. A slave that has
+gone completely silent cannot actually be forced closed --
+sending it this command requires it to be reachable in the
+first place -- so this keeps trying indefinitely, taking
+effect the instant the device is reachable again, and only
+ever sets xCloseConfirmed on an actual validated echo. ====
+
+[внутри состояния 900, перед "aCh[iChannel].xFaultActive := xEnable;"]
+The only way to reach 900 while xEnable is still TRUE is
+via a genuine retry-exhaustion fault (the global-disable
+block above only forces channels here when NOT xEnable),
+so xFaultActive := xEnable correctly distinguishes "closed
+because of a real fault" from "closed solely because the
+subsystem is disabled" without needing to thread a
+separate flag through every one of the retry call sites.

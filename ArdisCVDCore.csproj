@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{4B6F2B0E-9C36-4B2E-9E7E-6B4C7B1B8E2A}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>ArdisCVDCore</RootNamespace>
+    <AssemblyName>ArdisCVDCore</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <ApplicationIcon>res\ardis.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Vendored under lib\ rather than pointed at a solution-level packages\
+         folder: there is no .sln here, so nothing ever restored that path and
+         the build only succeeded because a stale copy happened to sit in bin\. -->
+    <Reference Include="NModbus">
+      <HintPath>lib\NModbus.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ChamberPid.cs" />
+    <Compile Include="CustomNumericUpDown.cs" />
+    <Compile Include="Res.cs" />
+    <Compile Include="SystemStatus.cs" />
+    <Compile Include="data\IniWriter.cs" />
+    <Compile Include="modules_hw\PLC210PidClient.cs" />
+    <Compile Include="modules_hw\PLC210ThyracontClient.cs" />
+    <Compile Include="modules_hw\PLC210GasFlowClient.cs" />
+    <Compile Include="modules_hw\PLC210PyrometerClient.cs" />
+    <Compile Include="modules_hw\PLC210MicrowaveClient.cs" />
+    <Compile Include="modules_hw\PLC210GasValveClient.cs" />
+    <Compile Include="modules_hw\PLC210VacuumClient.cs" />
+    <Compile Include="modules_hw\PLC210CoolingClient.cs" />
+    <Compile Include="GraphScaler.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GraphScaler.Designer.cs">
+      <DependentUpon>GraphScaler.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AboutForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PidViewerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ProcessParametersForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ProcessParametersForm.Designer.cs">
+      <DependentUpon>ProcessParametersForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="StatusForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="trends\TrendForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="trends\GasTrendForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="trends\PressureTrendForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="trends\MWPowerTrendForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="trends\TemperatureTrendForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="GraphScaler.resx">
+      <DependentUpon>GraphScaler.cs</DependentUpon>
+    </EmbeddedResource>
+    <!-- Read back by Res.cs as ArdisCVDCore.res.<file>; the mimic diagram's
+         valves swap between the two Valve_*.png at runtime. -->
+    <EmbeddedResource Include="res\Valve_red.png" />
+    <EmbeddedResource Include="res\Valve_green.png" />
+    <EmbeddedResource Include="res\logo.png" />
+    <EmbeddedResource Include="res\QR.png" />
+    <EmbeddedResource Include="res\ardis.ico" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="configs\config.ini">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

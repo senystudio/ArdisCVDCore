@@ -1,0 +1,12 @@
+C:\Users\PAVLOV\Desktop\ArdisCVDCore\bin\Debug\configs\config.ini
+C:\Users\PAVLOV\Desktop\ArdisCVDCore\bin\Debug\ArdisCVDCore.exe.config
+C:\Users\PAVLOV\Desktop\ArdisCVDCore\bin\Debug\ArdisCVDCore.exe
+C:\Users\PAVLOV\Desktop\ArdisCVDCore\bin\Debug\ArdisCVDCore.pdb
+C:\Users\PAVLOV\Desktop\ArdisCVDCore\bin\Debug\NModbus.dll
+C:\Users\PAVLOV\Desktop\ArdisCVDCore\obj\Debug\ArdisCVDCore.csproj.AssemblyReference.cache
+C:\Users\PAVLOV\Desktop\ArdisCVDCore\obj\Debug\ArdisCVDCore.GraphScaler.resources
+C:\Users\PAVLOV\Desktop\ArdisCVDCore\obj\Debug\ArdisCVDCore.csproj.GenerateResource.cache
+C:\Users\PAVLOV\Desktop\ArdisCVDCore\obj\Debug\ArdisCVDCore.csproj.CoreCompileInputs.cache
+c:\Users\PAVLOV\Desktop\ArdisCVDCore\obj\Debug\ArdisCVD.F66CEF30.Up2Date
+C:\Users\PAVLOV\Desktop\ArdisCVDCore\obj\Debug\ArdisCVDCore.exe
+C:\Users\PAVLOV\Desktop\ArdisCVDCore\obj\Debug\ArdisCVDCore.pdb

@@ -1,0 +1,3 @@
+VAR_GLOBAL
+    axGpvOutput : ARRAY[1..8] OF BOOL;
+END_VAR
