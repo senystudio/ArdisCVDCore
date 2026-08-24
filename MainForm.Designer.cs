@@ -774,8 +774,13 @@
             // 
             // pictureBox27
             // 
+            // y=134, not 133: this line butts straight onto pictureBox28, the
+            // patch of pipe that reaches the group edge, and that one sits at
+            // 134. The 1 px step used to hide under VPV2, which stood on the
+            // join before the valve moved out to x=216.
+            // 
             this.pictureBox27.BackColor = System.Drawing.Color.Black;
-            this.pictureBox27.Location = new System.Drawing.Point(17, 133);
+            this.pictureBox27.Location = new System.Drawing.Point(17, 134);
             this.pictureBox27.Name = "pictureBox27";
             this.pictureBox27.Size = new System.Drawing.Size(256, 2);
             this.pictureBox27.TabIndex = 401;
