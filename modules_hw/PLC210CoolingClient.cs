@@ -6,11 +6,11 @@ using System.Threading;
 namespace ArdisCVDCore.modules_hw
 {
     /// <summary>
-    /// Modbus TCP reader for the cooling loop: six water temperatures, six water
-    /// flows and the water / CDA pressures.
+    /// Modbus TCP reader for the cooling loop: seven water temperatures, seven
+    /// water flows and the water / CDA pressures.
     /// </summary>
     /// <remarks>
-    /// Eighth parallel connection to the same PLC210, registers 206..235 --
+    /// Eighth parallel connection to the same PLC210, registers 206..239 --
     /// outside every block the other clients read, same reasoning as the
     /// Thyracont and gas-flow clients: one client per register block keeps the
     /// slowest sensor from setting the update rate for all of them.
@@ -23,24 +23,30 @@ namespace ArdisCVDCore.modules_hw
     /// readings, not as a lost connection.
     ///
     /// Which physical channel feeds which circuit is entirely PRG_Cooling's
-    /// business: the six circuits use combined flow+temperature sensors and
-    /// therefore sit two-channels-per-circuit across the two modules, but the
-    /// register block is still six temperatures then six flows, so nothing in
-    /// this file changed when the real wiring turned up.
+    /// business: the circuits use combined flow+temperature sensors and
+    /// therefore sit two-channels-per-circuit across the two modules, and the
+    /// HMI order is not the wiring order. All this file needs is that the block
+    /// is seven temperatures, then seven flows, then the two pressures.
+    ///
+    /// Grew from six circuits to seven when the second module turned out to
+    /// carry three combined sensors rather than two: its AI5/AI6 took the Tuner
+    /// circuit and the two pressure transmitters moved down to AI7/AI8. That
+    /// pushed every offset below and moved the pressures' validity bits off
+    /// bits 6/7, which the seventh circuit now occupies, up to bits 8/9.
     /// </remarks>
     public static class PLC210CoolingClient
     {
         /// <summary>Cooling circuits, in register order.</summary>
-        public const int CircuitCount = 6;
+        public const int CircuitCount = 7;
 
         public static readonly string[] CircuitNames =
         {
-            "Stage", "Chamber", "MW Head", "MW Power", "Internal", "External"
+            "Stage", "Chamber", "MW Head", "MW Power", "Tuner", "Internal", "External"
         };
 
         // Index of the circuit every other circuit's heat load is measured
         // against -- the water comes in at Internal and leaves warmer.
-        public const int InternalCircuit = 4;
+        public const int InternalCircuit = 5;
 
         // ArdisCVDMaster used this circuit's dT as a stand-in for "microwave
         // power is on", and gated the whole heat-load column on it.
@@ -76,14 +82,14 @@ namespace ArdisCVDCore.modules_hw
 
         private const byte UnitId = 1;
         private const ushort BlockStart = 206;
-        private const ushort BlockCount = 30;
+        private const ushort BlockCount = 34;
 
-        private const int TempOffset = 0;         // 206..217
-        private const int FlowOffset = 12;        // 218..229
-        private const int WaterOffset = 24;       // 230/231
-        private const int CdaOffset = 26;         // 232/233
-        private const int TempMaskOffset = 28;    // 234
-        private const int FlowMaskOffset = 29;    // 235
+        private const int TempOffset = 0;         // 206..219
+        private const int FlowOffset = 14;        // 220..233
+        private const int WaterOffset = 28;       // 234/235
+        private const int CdaOffset = 30;         // 236/237
+        private const int TempMaskOffset = 32;    // 238
+        private const int FlowMaskOffset = 33;    // 239, bits 0..6 circuits, 8 CDA, 9 water
 
         private const double Scale = 1000.0;
 
@@ -180,9 +186,9 @@ namespace ArdisCVDCore.modules_hw
                         StatusText = "PLC210 cooling inputs connected",
                         UpdatedAt = DateTime.Now,
                         WaterPressureBar = ReadFixed(block, WaterOffset),
-                        WaterPressureValid = (flowMask & 0x0080) != 0,
+                        WaterPressureValid = (flowMask & 0x0200) != 0,
                         CdaPressureBar = ReadFixed(block, CdaOffset),
-                        CdaPressureValid = (flowMask & 0x0040) != 0
+                        CdaPressureValid = (flowMask & 0x0100) != 0
                     };
 
                     for (int i = 0; i < CircuitCount; i++)
@@ -309,7 +315,7 @@ namespace ArdisCVDCore.modules_hw
             if (slaveException != null)
             {
                 return string.Format(
-                    "Modbus exception {0} {1}, func {2}, unit {3}; check CODESYS registers 206..235",
+                    "Modbus exception {0} {1}, func {2}, unit {3}; check CODESYS registers 206..239",
                     slaveException.SlaveExceptionCode,
                     DescribeSlaveExceptionCode(slaveException.SlaveExceptionCode),
                     slaveException.FunctionCode,

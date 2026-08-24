@@ -1,7 +1,7 @@
 PROGRAM PRG_Cooling
 VAR CONSTANT
-    (* Cooling loop acquisition: six water temperatures, six water flows, plus
-       water and CDA pressure, off the two МВ210-102 modules described in
+    (* Cooling loop acquisition: seven water temperatures, seven water flows,
+       plus water and CDA pressure, off the two МВ210-102 modules described in
        GVL_CoolingIO. Runs on MainTask -- these are slow thermal signals, there
        is nothing to gain from a fast task like the Thyracont gauge has.
 
@@ -11,12 +11,12 @@ VAR CONSTANT
        what a sensor's volts mean, and any future interlock can use the same
        numbers without duplicating the arithmetic.
 
-       All six circuits carry the same 1..5 V transmitters. ArdisCVDMaster's
+       All circuits carry the same 1..5 V transmitters. ArdisCVDMaster's
        ICPDAC_IO.cs had two families -- 1..5 V on Stage/Chamber/MW Head/MW
        Power and 0.5..2.5 V on Internal/External -- and that split was carried
        over here until the first live reading disproved it: with the pump off
-       every one of the six flow channels sat at exactly 1.00 V, and all six
-       temperature channels between 1.98 and 2.05 V on the same room-temperature
+       every one of the flow channels sat at exactly 1.00 V, and every
+       temperature channel between 1.98 and 2.05 V on the same room-temperature
        water. A 0.5..2.5 V transmitter would rest at 0.5 V and would have made
        Internal/External read 76 degC and 10 l/min, which is precisely the
        nonsense the old constants produced on screen. Whatever the old machine
@@ -28,9 +28,12 @@ VAR CONSTANT
 
        STILL UNCONFIRMED: the flow full scale. A zero-flow reading proves the
        electrical range but says nothing about litres per volt, so C_FLOW_SPAN
-       is the old machine's 4 l/min per volt for all six. If the Internal or
-       External flowmeter is a wider-range unit, that one number is what to
-       change -- read it off the meter's own label.
+       is the old machine's 4 l/min per volt for all seven. If the Internal,
+       External or Tuner flowmeter is a wider-range unit, that one number is
+       what to change -- read it off the meter's own label. The Tuner circuit
+       has never been read live at all: it was wired to module 2 after
+       commissioning, so its 1..5 V family is assumed from the other six rather
+       than measured.
 
        NOTE on a bug NOT carried over: ICPDAC_IO.cs line 445 zeroed
        TempExternalH2O in the else branch of the TempInternal test, so a dead
@@ -49,32 +52,75 @@ VAR CONSTANT
     C_FLOW_ZERO  : REAL := 1.0;    (* zero flow at 1 V *)
     C_FLOW_SPAN  : REAL := 4.0;    (* 16 l/min over 4.0 V -- see header *)
 
-    (* Pressure transmitters, both of them: 10 V full scale = 6 bar, so volts /
-       1.666 is bar. ArdisCVDMaster carried exactly this constant and had it
-       commented out on the CDA channel, which is why that one used to be
-       published raw; two named constants rather than one shared, so the day the
-       CDA line gets a wider transmitter only its own number changes. *)
+    (* Two DIFFERENT transmitters, which is the trap on this pair.
+
+       Water line: 10 V full scale = 6 bar, so volts / 1.666 is bar. Confirmed
+       against the machine -- 2.83 V on AI7 gives the 1.7..1.8 bar the loop
+       actually runs at.
+
+       CDA line: 1 bar per volt, i.e. a 0..10 bar transmitter, NOT the 6 bar
+       one. Seen live at 7.00 V on AI8 against a shop-air line the operator
+       expects at about 7 bar; a 6 bar unit would have pegged at 10 V long
+       before that. This is also why ArdisCVDMaster published the CDA channel
+       raw and had its "/= 1.666" commented out (ICPDAC_IO.cs:517) while
+       scaling the water channel on the very next line: on a 1 bar/V
+       transmitter the unscaled volts already read as bar, so the old display
+       was accidentally right and nobody chased it. Reading it as 6 bar/10 V,
+       which this file did at first, showed 4.2 instead of 7.0.
+
+       ASSUMED, worth a look at the transmitter label: exactly 0..10 bar. The
+       7.00 V reading fixes the ratio at roughly 1 bar/V but cannot tell a
+       10 bar unit from, say, a 10.5 bar one. *)
     C_WATER_BAR_PER_VOLT : REAL := 1.666;
-    C_CDA_BAR_PER_VOLT   : REAL := 1.666;
+    C_CDA_BAR_PER_VOLT   : REAL := 1.0;
 
     (* Cooling circuit index, in the order the HMI lists them and the order
-       registers 206..229 are published in. FlowTemp1..4 on the diagram are
-       assumed to be Stage / Chamber / MW Head / MW Power and FlowTemp5..6
-       Internal / External -- the diagram itself only numbers them. If the
-       machine is labelled differently, the two index tables below are the only
-       thing to change. *)
+       registers 206..233 are published in. *)
     C_STAGE    : INT := 0;
     C_CHAMBER  : INT := 1;
     C_MWHEAD   : INT := 2;
     C_MWPOWER  : INT := 3;
-    C_INTERNAL : INT := 4;
-    C_EXTERNAL : INT := 5;
+    C_TUNER    : INT := 4;
+    C_INTERNAL : INT := 5;
+    C_EXTERNAL : INT := 6;
+
+    C_CIRCUIT_MAX : INT := 6;      (* last circuit index, i.e. seven circuits *)
 
     (* Channel index in the combined 16-channel view built below: 0..7 are
        module 1's AI1..AI8, 8..15 are module 2's. *)
     C_MOD2_BASE : INT := 8;
-    C_CDA_CH    : INT := 12;   (* module 2, AI5 *)
-    C_WATER_CH  : INT := 13;   (* module 2, AI6 *)
+    C_WATER_CH  : INT := 14;   (* module 2, AI7 *)
+    C_CDA_CH    : INT := 15;   (* module 2, AI8 *)
+
+    (* Flow channel of each circuit, in HMI/register order; the circuit's
+       temperature is always the next channel up, because the sensors are
+       combined flow+temperature units wired to adjacent inputs.
+
+       This is a table rather than the arithmetic it used to be, because the
+       HMI order and the wiring order are no longer the same thing. Module 2
+       carries three combined sensors, and the third of them -- Tuner -- sits
+       above Internal and External electrically while the HMI wants it listed
+       directly under MW Power:
+
+         circuit            module / input      flat channel
+         0  Stage           U8  AI1 / AI2        0 / 1
+         1  Chamber         U8  AI3 / AI4        2 / 3
+         2  MW Head         U8  AI5 / AI6        4 / 5
+         3  MW Power        U8  AI7 / AI8        6 / 7
+         4  Tuner           U9  AI5 / AI6       12 / 13
+         5  Internal        U9  AI1 / AI2        8 / 9
+         6  External        U9  AI3 / AI4       10 / 11
+
+       Which physical sensor is which named circuit is still taken from the
+       wiring diagram's numbering rather than from a label on the machine --
+       this table is the one place to change it if the machine disagrees. *)
+    C_FLOW_CH : ARRAY[0..6] OF INT := [0, 2, 4, 6, 12, 8, 10];
+
+    (* Bit positions in awHolding[239]. Bits 0..6 are the seven circuits'
+       flows, so the two pressures -- which sat on bits 6 and 7 while there
+       were only six circuits -- moved up out of the way. *)
+    C_CDA_BIT   : INT := 8;
+    C_WATER_BIT : INT := 9;
 END_VAR
 VAR
     i          : INT;
@@ -90,8 +136,8 @@ VAR
     arChanVolt : ARRAY[0..15] OF REAL;
     axChanOk   : ARRAY[0..15] OF BOOL;
 
-    arTempC    : ARRAY[0..5] OF REAL;
-    arFlowLpm  : ARRAY[0..5] OF REAL;
+    arTempC    : ARRAY[0..6] OF REAL;
+    arFlowLpm  : ARRAY[0..6] OF REAL;
     rWaterBar  : REAL;
     rCdaBar    : REAL;
 END_VAR
@@ -118,17 +164,11 @@ FOR i := 0 TO 7 DO
     END_IF;
 END_FOR;
 
-(* ---- Six circuits, flow and temperature on adjacent channels ------------ *)
-(* FlowTemp1..4 fill module 1 (channels 0..7), FlowTemp5..6 open module 2
-   (channels 8..11); flow is always the lower channel of the pair. *)
+(* ---- Seven circuits, flow and temperature on adjacent channels ---------- *)
 wTempOk := WORD#0;
 wFlowOk := WORD#0;
-FOR i := 0 TO 5 DO
-    IF i < 4 THEN
-        iFlowCh := 2*i;
-    ELSE
-        iFlowCh := C_MOD2_BASE + 2*(i - 4);
-    END_IF;
+FOR i := 0 TO C_CIRCUIT_MAX DO
+    iFlowCh := C_FLOW_CH[i];
     iTempCh := iFlowCh + 1;
 
     IF axChanOk[iTempCh] THEN
@@ -151,43 +191,47 @@ FOR i := 0 TO 5 DO
     END_IF;
 END_FOR;
 
-(* ---- CDA and water pressure, module 2 AI5 and AI6 ----------------------- *)
-(* Both in bar. ArdisCVDMaster published CDA as raw volts and let the operator
-   read the gauge that way; on this machine it is a pressure like any other and
-   is scaled here, so nothing downstream has to remember which of the two
-   pressures is the odd one out. *)
+(* ---- Water and CDA pressure, module 2 AI7 and AI8 ----------------------- *)
+(* Both in bar, but on their own scales -- see the constants above; the CDA
+   line is a 0..10 bar transmitter and the water line a 0..6 bar one, and
+   reading both as 6 bar is what made this pair look swapped on screen.
+   ArdisCVDMaster published CDA raw in volts and let the operator read the
+   gauge that way; here it is a pressure like any other and is scaled, so
+   nothing downstream has to remember which of the two is the odd one out. *)
 rCdaBar := arChanVolt[C_CDA_CH] / C_CDA_BAR_PER_VOLT;
 IF axChanOk[C_CDA_CH] THEN
-    wFlowOk := wFlowOk OR SHL(WORD#1, 6);
+    wFlowOk := wFlowOk OR SHL(WORD#1, C_CDA_BIT);
 END_IF;
 
 rWaterBar := arChanVolt[C_WATER_CH] / C_WATER_BAR_PER_VOLT;
 IF axChanOk[C_WATER_CH] THEN
-    wFlowOk := wFlowOk OR SHL(WORD#1, 7);
+    wFlowOk := wFlowOk OR SHL(WORD#1, C_WATER_BIT);
 END_IF;
 
-(* ---- Publish, awHolding[206..235] ----------------------------------------- *)
+(* ---- Publish, awHolding[206..239] ----------------------------------------- *)
 (* Fixed point via F_ToFixed (signed, x1000, low word first) -- the same
-   convention every other block uses and PLC210CoolingClient reads back. The
-   register layout is unchanged by the rewiring: this block still publishes six
-   temperatures then six flows, whichever module they arrived on. *)
-FOR i := 0 TO 5 DO
+   convention every other block uses and PLC210CoolingClient reads back. Seven
+   temperatures then seven flows, whichever module they arrived on. The seventh
+   circuit pushed the flow block from 218 to 220 and everything after it by four
+   words, so PLC210CoolingClient's offsets moved with it -- the two must be
+   flashed and rebuilt together. *)
+FOR i := 0 TO C_CIRCUIT_MAX DO
     dwValue := F_ToFixed(arTempC[i]);
     awHolding[206 + 2*i] := DWORD_TO_WORD(dwValue);
     awHolding[207 + 2*i] := DWORD_TO_WORD(SHR(dwValue, 16));
 
     dwValue := F_ToFixed(arFlowLpm[i]);
-    awHolding[218 + 2*i] := DWORD_TO_WORD(dwValue);
-    awHolding[219 + 2*i] := DWORD_TO_WORD(SHR(dwValue, 16));
+    awHolding[220 + 2*i] := DWORD_TO_WORD(dwValue);
+    awHolding[221 + 2*i] := DWORD_TO_WORD(SHR(dwValue, 16));
 END_FOR;
 
 dwValue := F_ToFixed(rWaterBar);
-awHolding[230] := DWORD_TO_WORD(dwValue);
-awHolding[231] := DWORD_TO_WORD(SHR(dwValue, 16));
+awHolding[234] := DWORD_TO_WORD(dwValue);
+awHolding[235] := DWORD_TO_WORD(SHR(dwValue, 16));
 
 dwValue := F_ToFixed(rCdaBar);
-awHolding[232] := DWORD_TO_WORD(dwValue);
-awHolding[233] := DWORD_TO_WORD(SHR(dwValue, 16));
+awHolding[236] := DWORD_TO_WORD(dwValue);
+awHolding[237] := DWORD_TO_WORD(SHR(dwValue, 16));
 
-awHolding[234] := wTempOk;
-awHolding[235] := wFlowOk;
+awHolding[238] := wTempOk;
+awHolding[239] := wFlowOk;

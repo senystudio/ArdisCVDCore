@@ -156,6 +156,7 @@
             this.label64 = new System.Windows.Forms.Label();
             this.RodTemp = new System.Windows.Forms.TextBox();
             this.ExternalFlow = new System.Windows.Forms.TextBox();
+            this.TunerFlow = new System.Windows.Forms.TextBox();
             this.InternalFlow = new System.Windows.Forms.TextBox();
             this.MWPowerFlow = new System.Windows.Forms.TextBox();
             this.MWHeadFlow = new System.Windows.Forms.TextBox();
@@ -163,12 +164,14 @@
             this.StageFlow = new System.Windows.Forms.TextBox();
             this.label26 = new System.Windows.Forms.Label();
             this.label25 = new System.Windows.Forms.Label();
+            this.label72 = new System.Windows.Forms.Label();
             this.label13 = new System.Windows.Forms.Label();
             this.label11 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
             this.ExternalTemp = new System.Windows.Forms.TextBox();
             this.label31 = new System.Windows.Forms.Label();
+            this.TunerTemp = new System.Windows.Forms.TextBox();
             this.InternalTemp = new System.Windows.Forms.TextBox();
             this.MWPowerTemp = new System.Windows.Forms.TextBox();
             this.label29 = new System.Windows.Forms.Label();
@@ -435,6 +438,8 @@
             this.Vacuum_groupBox.Controls.Add(this.HiVacPressureMbar);
             this.Vacuum_groupBox.Controls.Add(this.Valve_24);
             this.Vacuum_groupBox.Controls.Add(this.pictureBox35);
+            this.Vacuum_groupBox.Controls.Add(this.Valve_18);
+            this.Vacuum_groupBox.Controls.Add(this.Valve_17);
             this.Vacuum_groupBox.Controls.Add(this.groupBox3);
             this.Vacuum_groupBox.Controls.Add(this.pictureBox26);
             this.Vacuum_groupBox.Controls.Add(this.pictureBox27);
@@ -445,8 +450,6 @@
             this.Vacuum_groupBox.Controls.Add(this.pictureBox28);
             this.Vacuum_groupBox.Controls.Add(this.pictureBox25);
             this.Vacuum_groupBox.Controls.Add(this.pictureBox24);
-            this.Vacuum_groupBox.Controls.Add(this.Valve_17);
-            this.Vacuum_groupBox.Controls.Add(this.Valve_18);
             this.Vacuum_groupBox.Controls.Add(this.pictureBox93);
             this.Vacuum_groupBox.Controls.Add(this.label23);
             this.Vacuum_groupBox.Location = new System.Drawing.Point(755, 223);
@@ -468,6 +471,7 @@
             this.label36.Size = new System.Drawing.Size(36, 15);
             this.label36.TabIndex = 437;
             this.label36.Text = "VPV7";
+            this.label36.Visible = false;
             // 
             // pictureBox34
             // 
@@ -502,6 +506,7 @@
             this.label27.Size = new System.Drawing.Size(36, 15);
             this.label27.TabIndex = 435;
             this.label27.Text = "VPV6";
+            this.label27.Visible = false;
             // 
             // label24
             // 
@@ -519,7 +524,7 @@
             this.label21.AutoSize = true;
             this.label21.BackColor = System.Drawing.Color.Transparent;
             this.label21.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label21.Location = new System.Drawing.Point(20, 110);
+            this.label21.Location = new System.Drawing.Point(219, 110);
             this.label21.Name = "label21";
             this.label21.Size = new System.Drawing.Size(36, 15);
             this.label21.TabIndex = 431;
@@ -530,7 +535,7 @@
             this.label20.AutoSize = true;
             this.label20.BackColor = System.Drawing.Color.Transparent;
             this.label20.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label20.Location = new System.Drawing.Point(20, 149);
+            this.label20.Location = new System.Drawing.Point(219, 149);
             this.label20.Name = "label20";
             this.label20.Size = new System.Drawing.Size(36, 15);
             this.label20.TabIndex = 430;
@@ -613,7 +618,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(150, 15);
             this.label1.TabIndex = 409;
-            this.label1.Text = "Hi-Vac (Torr / mbar)";
+            this.label1.Text = "Hi-Vac (Torr)";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // pictureBox39
@@ -627,17 +632,14 @@
             // 
             // HiVacPressure
             // 
+            // Only the Torr reading is shown; the mbar box next to it is kept in
+            // the tree but hidden, so the readout is a single 67x26 field centred
+            // under its caption. label1 spans 62..212 and centres on x=137, so the
+            // box sits at 103.
             this.HiVacPressure.BackColor = System.Drawing.Color.Blue;
-            // Torr and mbar as two boxes rather than one wide one, the same way
-            // the microwave group splits Incident / Reflected / Set Point: every
-            // box on this screen is then 67x26 at 12pt, and neither number can
-            // outgrow its field the way "1.23E-05 / 1.64E-05" did in a single
-            // one. The pair spans 67..207 and centres on x=137 with its caption,
-            // the middle of the clear span between the VPV6 label (ends at 56)
-            // and VPV7's valve (starts at 216).
             this.HiVacPressure.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.HiVacPressure.ForeColor = System.Drawing.Color.White;
-            this.HiVacPressure.Location = new System.Drawing.Point(67, 82);
+            this.HiVacPressure.Location = new System.Drawing.Point(103, 82);
             this.HiVacPressure.Margin = new System.Windows.Forms.Padding(3, 3, 0, 3);
             this.HiVacPressure.Name = "HiVacPressure";
             this.HiVacPressure.ReadOnly = true;
@@ -661,6 +663,7 @@
             this.HiVacPressureMbar.TabStop = false;
             this.HiVacPressureMbar.Text = "0";
             this.HiVacPressureMbar.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.HiVacPressureMbar.Visible = false;
             // 
             // Valve_24
             // 
@@ -674,6 +677,7 @@
             this.Valve_24.TabIndex = 405;
             this.Valve_24.TabStop = false;
             this.Valve_24.Tag = "10";
+            this.Valve_24.Visible = false;
             this.Valve_24.Click += new System.EventHandler(this.Valves_Click);
             // 
             // pictureBox35
@@ -687,11 +691,20 @@
             // 
             // groupBox3
             // 
+            // Swapped with VPV1: this block now sits against the chamber at
+            // x=17 and VPV1/VPV2 moved out to x=216, the same column VPV4 and
+            // the hidden VPV7 already use. A literal position swap was not
+            // possible -- the block is 192 px wide against the valve's 40, so
+            // dropping it on the valve's old spot would have swallowed it.
+            // The VPV1 pipe still runs the full width underneath and the block
+            // covers it, which reads as the readout being tapped into the
+            // line; that only works while groupBox3 is added to the group
+            // BEFORE pictureBox26, since first added is topmost.
             this.groupBox3.BackColor = System.Drawing.SystemColors.InactiveCaption;
             this.groupBox3.Controls.Add(this.ChamberPressureSetPoint);
             this.groupBox3.Controls.Add(this.ChamberPressure_SetVal);
             this.groupBox3.Controls.Add(this.ChamberPressure_textbox);
-            this.groupBox3.Location = new System.Drawing.Point(70, 141);
+            this.groupBox3.Location = new System.Drawing.Point(17, 141);
             this.groupBox3.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Padding = new System.Windows.Forms.Padding(2);
@@ -753,18 +766,18 @@
             // pictureBox26
             // 
             this.pictureBox26.BackColor = System.Drawing.Color.Black;
-            this.pictureBox26.Location = new System.Drawing.Point(57, 172);
+            this.pictureBox26.Location = new System.Drawing.Point(19, 172);
             this.pictureBox26.Name = "pictureBox26";
-            this.pictureBox26.Size = new System.Drawing.Size(216, 2);
+            this.pictureBox26.Size = new System.Drawing.Size(254, 2);
             this.pictureBox26.TabIndex = 402;
             this.pictureBox26.TabStop = false;
             // 
             // pictureBox27
             // 
             this.pictureBox27.BackColor = System.Drawing.Color.Black;
-            this.pictureBox27.Location = new System.Drawing.Point(57, 133);
+            this.pictureBox27.Location = new System.Drawing.Point(17, 133);
             this.pictureBox27.Name = "pictureBox27";
-            this.pictureBox27.Size = new System.Drawing.Size(216, 2);
+            this.pictureBox27.Size = new System.Drawing.Size(256, 2);
             this.pictureBox27.TabIndex = 401;
             this.pictureBox27.TabStop = false;
             // 
@@ -793,10 +806,18 @@
             // 
             // pictureBox31
             // 
+            // The Hi-Vac line from the chamber, in two pieces: pictureBox29 on
+            // the form runs to x=771 in client coordinates, which is x=16 in
+            // this group, and this one carries on to the gauge. It used to
+            // start at 57 because VPV6 sat in the 40 px between; with that
+            // valve hidden the pipe had a hole in it, so it starts at 16 now
+            // and runs to 103, where the readout box begins -- centring that
+            // box had left a 6 px stretch where only the thin pictureBox35
+            // showed through.
             this.pictureBox31.BackColor = System.Drawing.Color.Black;
-            this.pictureBox31.Location = new System.Drawing.Point(57, 95);
+            this.pictureBox31.Location = new System.Drawing.Point(16, 95);
             this.pictureBox31.Name = "pictureBox31";
-            this.pictureBox31.Size = new System.Drawing.Size(40, 5);
+            this.pictureBox31.Size = new System.Drawing.Size(87, 5);
             this.pictureBox31.TabIndex = 362;
             this.pictureBox31.TabStop = false;
             // 
@@ -812,6 +833,7 @@
             this.Valve_22.TabIndex = 361;
             this.Valve_22.TabStop = false;
             this.Valve_22.Tag = "10";
+            this.Valve_22.Visible = false;
             this.Valve_22.Click += new System.EventHandler(this.Valves_Click);
             // 
             // pictureBox28
@@ -845,7 +867,7 @@
             // 
             this.Valve_17.BackColor = System.Drawing.Color.Transparent;
             this.Valve_17.BackgroundImage = Res.ValveClosed;
-            this.Valve_17.Location = new System.Drawing.Point(17, 164);
+            this.Valve_17.Location = new System.Drawing.Point(216, 164);
             this.Valve_17.Margin = new System.Windows.Forms.Padding(2);
             this.Valve_17.Name = "Valve_17";
             this.Valve_17.Size = new System.Drawing.Size(40, 20);
@@ -859,7 +881,7 @@
             // 
             this.Valve_18.BackColor = System.Drawing.Color.Transparent;
             this.Valve_18.BackgroundImage = Res.ValveClosed;
-            this.Valve_18.Location = new System.Drawing.Point(17, 125);
+            this.Valve_18.Location = new System.Drawing.Point(216, 125);
             this.Valve_18.Margin = new System.Windows.Forms.Padding(2);
             this.Valve_18.Name = "Valve_18";
             this.Valve_18.Size = new System.Drawing.Size(40, 20);
@@ -1801,6 +1823,7 @@
             this.Cooling_groupBox.Controls.Add(this.label64);
             this.Cooling_groupBox.Controls.Add(this.RodTemp);
             this.Cooling_groupBox.Controls.Add(this.ExternalFlow);
+            this.Cooling_groupBox.Controls.Add(this.TunerFlow);
             this.Cooling_groupBox.Controls.Add(this.InternalFlow);
             this.Cooling_groupBox.Controls.Add(this.MWPowerFlow);
             this.Cooling_groupBox.Controls.Add(this.MWHeadFlow);
@@ -1808,12 +1831,14 @@
             this.Cooling_groupBox.Controls.Add(this.StageFlow);
             this.Cooling_groupBox.Controls.Add(this.label26);
             this.Cooling_groupBox.Controls.Add(this.label25);
+            this.Cooling_groupBox.Controls.Add(this.label72);
             this.Cooling_groupBox.Controls.Add(this.label13);
             this.Cooling_groupBox.Controls.Add(this.label11);
             this.Cooling_groupBox.Controls.Add(this.label8);
             this.Cooling_groupBox.Controls.Add(this.label7);
             this.Cooling_groupBox.Controls.Add(this.ExternalTemp);
             this.Cooling_groupBox.Controls.Add(this.label31);
+            this.Cooling_groupBox.Controls.Add(this.TunerTemp);
             this.Cooling_groupBox.Controls.Add(this.InternalTemp);
             this.Cooling_groupBox.Controls.Add(this.MWPowerTemp);
             this.Cooling_groupBox.Controls.Add(this.label29);
@@ -1890,7 +1915,7 @@
             // ExternalFlow
             // 
             this.ExternalFlow.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.ExternalFlow.Location = new System.Drawing.Point(138, 122);
+            this.ExternalFlow.Location = new System.Drawing.Point(138, 139);
             this.ExternalFlow.Margin = new System.Windows.Forms.Padding(3, 3, 0, 3);
             this.ExternalFlow.Name = "ExternalFlow";
             this.ExternalFlow.ReadOnly = true;
@@ -1902,7 +1927,7 @@
             // InternalFlow
             // 
             this.InternalFlow.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.InternalFlow.Location = new System.Drawing.Point(138, 105);
+            this.InternalFlow.Location = new System.Drawing.Point(138, 122);
             this.InternalFlow.Margin = new System.Windows.Forms.Padding(3, 3, 0, 3);
             this.InternalFlow.Name = "InternalFlow";
             this.InternalFlow.ReadOnly = true;
@@ -1910,6 +1935,18 @@
             this.InternalFlow.TabIndex = 18;
             this.InternalFlow.TabStop = false;
             this.InternalFlow.Text = "0";
+            // 
+            // TunerFlow
+            // 
+            this.TunerFlow.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.TunerFlow.Location = new System.Drawing.Point(138, 105);
+            this.TunerFlow.Margin = new System.Windows.Forms.Padding(3, 3, 0, 3);
+            this.TunerFlow.Name = "TunerFlow";
+            this.TunerFlow.ReadOnly = true;
+            this.TunerFlow.Size = new System.Drawing.Size(31, 21);
+            this.TunerFlow.TabIndex = 34;
+            this.TunerFlow.TabStop = false;
+            this.TunerFlow.Text = "0";
             // 
             // MWPowerFlow
             // 
@@ -1983,11 +2020,21 @@
             // 
             this.label13.AutoSize = true;
             this.label13.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label13.Location = new System.Drawing.Point(6, 106);
+            this.label13.Location = new System.Drawing.Point(6, 123);
             this.label13.Name = "label13";
             this.label13.Size = new System.Drawing.Size(48, 15);
             this.label13.TabIndex = 10;
             this.label13.Text = "Internal";
+            // 
+            // label72
+            // 
+            this.label72.AutoSize = true;
+            this.label72.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.label72.Location = new System.Drawing.Point(6, 106);
+            this.label72.Name = "label72";
+            this.label72.Size = new System.Drawing.Size(38, 15);
+            this.label72.TabIndex = 35;
+            this.label72.Text = "Tuner";
             // 
             // label11
             // 
@@ -2022,7 +2069,7 @@
             // ExternalTemp
             // 
             this.ExternalTemp.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.ExternalTemp.Location = new System.Drawing.Point(107, 122);
+            this.ExternalTemp.Location = new System.Drawing.Point(107, 139);
             this.ExternalTemp.Margin = new System.Windows.Forms.Padding(3, 3, 0, 3);
             this.ExternalTemp.Name = "ExternalTemp";
             this.ExternalTemp.ReadOnly = true;
@@ -2044,7 +2091,7 @@
             // InternalTemp
             // 
             this.InternalTemp.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.InternalTemp.Location = new System.Drawing.Point(107, 105);
+            this.InternalTemp.Location = new System.Drawing.Point(107, 122);
             this.InternalTemp.Margin = new System.Windows.Forms.Padding(3, 3, 0, 3);
             this.InternalTemp.Name = "InternalTemp";
             this.InternalTemp.ReadOnly = true;
@@ -2052,6 +2099,18 @@
             this.InternalTemp.TabIndex = 9;
             this.InternalTemp.TabStop = false;
             this.InternalTemp.Text = "20";
+            // 
+            // TunerTemp
+            // 
+            this.TunerTemp.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.TunerTemp.Location = new System.Drawing.Point(107, 105);
+            this.TunerTemp.Margin = new System.Windows.Forms.Padding(3, 3, 0, 3);
+            this.TunerTemp.Name = "TunerTemp";
+            this.TunerTemp.ReadOnly = true;
+            this.TunerTemp.Size = new System.Drawing.Size(31, 21);
+            this.TunerTemp.TabIndex = 33;
+            this.TunerTemp.TabStop = false;
+            this.TunerTemp.Text = "20";
             // 
             // MWPowerTemp
             // 
@@ -2069,7 +2128,7 @@
             // 
             this.label29.AutoSize = true;
             this.label29.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label29.Location = new System.Drawing.Point(6, 123);
+            this.label29.Location = new System.Drawing.Point(6, 140);
             this.label29.Name = "label29";
             this.label29.Size = new System.Drawing.Size(52, 15);
             this.label29.TabIndex = 12;
@@ -2126,9 +2185,9 @@
             // 
             // button8
             // 
-            this.button8.BackColor = System.Drawing.Color.CornflowerBlue;
+            this.button8.BackColor = System.Drawing.Color.Green;
             this.button8.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button8.ForeColor = System.Drawing.Color.White;
+            this.button8.ForeColor = System.Drawing.Color.Red;
             this.button8.Location = new System.Drawing.Point(0, 424);
             this.button8.Name = "button8";
             this.button8.Size = new System.Drawing.Size(51, 30);
@@ -2424,6 +2483,7 @@
             this.label5.Size = new System.Drawing.Size(40, 15);
             this.label5.TabIndex = 395;
             this.label5.Text = "MFC3";
+            this.label5.Visible = false;
             // 
             // CH4_groupBox
             // 
@@ -2485,6 +2545,7 @@
             this.label28.Size = new System.Drawing.Size(40, 15);
             this.label28.TabIndex = 396;
             this.label28.Text = "MFC2";
+            this.label28.Visible = false;
             // 
             // N2_groupBox
             // 
@@ -2557,6 +2618,7 @@
             this.label38.Size = new System.Drawing.Size(40, 15);
             this.label38.TabIndex = 397;
             this.label38.Text = "MFC4";
+            this.label38.Visible = false;
             // 
             // H2_groupBox
             // 
@@ -2630,6 +2692,7 @@
             this.label39.Size = new System.Drawing.Size(40, 15);
             this.label39.TabIndex = 398;
             this.label39.Text = "MFC1";
+            this.label39.Visible = false;
             // 
             // pictureBox4
             // 
@@ -2840,6 +2903,7 @@
             this.pictureBox42.Size = new System.Drawing.Size(11, 10);
             this.pictureBox42.TabIndex = 431;
             this.pictureBox42.TabStop = false;
+            this.pictureBox42.Visible = false;
             // 
             // label40
             // 
@@ -2897,6 +2961,7 @@
             this.label52.Size = new System.Drawing.Size(40, 15);
             this.label52.TabIndex = 3;
             this.label52.Text = "MFC6";
+            this.label52.Visible = false;
             // 
             // H22_Set
             // 
@@ -2992,6 +3057,7 @@
             this.label33.Size = new System.Drawing.Size(40, 15);
             this.label33.TabIndex = 3;
             this.label33.Text = "MFC5";
+            this.label33.Visible = false;
             // 
             // AR_Set
             // 
@@ -3063,6 +3129,7 @@
             this.pictureBox16.Size = new System.Drawing.Size(2, 356);
             this.pictureBox16.TabIndex = 551;
             this.pictureBox16.TabStop = false;
+            this.pictureBox16.Visible = false;
             // 
             // Gas_groupBox
             // 
@@ -3459,6 +3526,7 @@
         private System.Windows.Forms.TextBox RodTemp;
         private System.Windows.Forms.TextBox ExternalFlow;
         private System.Windows.Forms.TextBox InternalFlow;
+        private System.Windows.Forms.TextBox TunerFlow;
         private System.Windows.Forms.TextBox MWPowerFlow;
         private System.Windows.Forms.TextBox MWHeadFlow;
         private System.Windows.Forms.TextBox ChamberFlow;
@@ -3466,12 +3534,14 @@
         private System.Windows.Forms.Label label26;
         private System.Windows.Forms.Label label25;
         private System.Windows.Forms.Label label13;
+        private System.Windows.Forms.Label label72;
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.TextBox ExternalTemp;
         private System.Windows.Forms.Label label31;
         private System.Windows.Forms.TextBox InternalTemp;
+        private System.Windows.Forms.TextBox TunerTemp;
         private System.Windows.Forms.TextBox MWPowerTemp;
         private System.Windows.Forms.Label label29;
         private System.Windows.Forms.TextBox MWHeadTemp;

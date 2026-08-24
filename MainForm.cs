@@ -43,8 +43,9 @@ namespace ArdisCVDCore
         private PictureBox[] _gasValveBox;
 
         // Index == circuit index in PLC210CoolingClient (Stage, Chamber, MW
-        // Head, MW Power, Internal, External). Waveguide/Rod has no sensor on
-        // this machine, so its two boxes stay hidden and out of these arrays.
+        // Head, MW Power, Tuner, Internal, External). Waveguide/Rod has no
+        // sensor on this machine, so its two boxes stay hidden and out of
+        // these arrays.
         private TextBox[] _coolingTemp;
         private TextBox[] _coolingFlow;
 
@@ -109,8 +110,8 @@ namespace ArdisCVDCore
             // cross. It gets the first H2 line's step instead.
             H22_Set.Increment = H2_Set.Increment;
 
-            _coolingTemp = new[] { StageTemp, ChamberTemp, MWHeadTemp, MWPowerTemp, InternalTemp, ExternalTemp };
-            _coolingFlow = new[] { StageFlow, ChamberFlow, MWHeadFlow, MWPowerFlow, InternalFlow, ExternalFlow };
+            _coolingTemp = new[] { StageTemp, ChamberTemp, MWHeadTemp, MWPowerTemp, TunerTemp, InternalTemp, ExternalTemp };
+            _coolingFlow = new[] { StageFlow, ChamberFlow, MWHeadFlow, MWPowerFlow, TunerFlow, InternalFlow, ExternalFlow };
 
             _gasValveBox = new[] { Valve_1, Valve_2, Valve_3, Valve_4, Valve_5, Valve_6, Valve_7, Valve_8 };
             _vacuumValveBox = new[] { Valve_17, Valve_18, null, Valve_20, Valve_21, Valve_22, Valve_24, null };
@@ -163,8 +164,28 @@ namespace ArdisCVDCore
         /// the only view of a running reactor, and a stray Enter or double-click
         /// on the title bar should not be enough to lose it.
         /// </summary>
+        /// <remarks>
+        /// When something is still on, the dialog names it -- the same list, off
+        /// the same DescribeRunningEquipment, that Manual Mode Stop refuses on.
+        /// Stop refuses outright because ending a session with gas flowing is
+        /// never what the operator meant; closing the window only warns, because
+        /// there is nothing here that turns the plant off, so refusing would
+        /// leave the operator unable to close the screen at all while pumping.
+        /// </remarks>
         private bool ConfirmExit()
         {
+            string blocker = DescribeRunningEquipment();
+            if (blocker != null)
+                return MessageBox.Show(
+                    this,
+                    "Something is still switched on:\r\n\r\n" + blocker
+                        + "\r\n\r\nClosing this window leaves it running with "
+                        + "nothing watching it. Exit anyway?",
+                    "Ardis CVDCore",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning,
+                    MessageBoxDefaultButton.Button2) == DialogResult.Yes;
+
             return MessageBox.Show(
                 this,
                 "Are you sure you want to exit?",
@@ -203,7 +224,7 @@ namespace ArdisCVDCore
             PLC210MicrowaveClient.Start(host, port);    // 192..203, the generator on slave 9
             PLC210GasValveClient.Start(host, port);     // 133..134
             PLC210VacuumClient.Start(host, port);       // 135..138
-            PLC210CoolingClient.Start(host, port);      // 206..235, the two МВ210-102 analogue modules
+            PLC210CoolingClient.Start(host, port);      // 206..239, the two МВ210-102 analogue modules
 
             // The regulators used to be enabled by opening the Gas Section
             // window. There is no such window now -- the gas controls are always
@@ -539,9 +560,9 @@ namespace ArdisCVDCore
         }
 
         // --- Cooling Section ---
-        // Read-only throughout: the six circuits, the water pressure and the CDA
-        // pressure are measurements, and the only control in this group is the
-        // water pump button, which belongs to the vacuum client above.
+        // Read-only throughout: the seven circuits, the water pressure and the
+        // CDA pressure are measurements, and the only control in this group is
+        // the water pump button, which belongs to the vacuum client above.
         private void UpdateCoolingSection()
         {
             PLC210CoolingClient.State state = PLC210CoolingClient.GetState();
