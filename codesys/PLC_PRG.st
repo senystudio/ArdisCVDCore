@@ -1,137 +1,69 @@
-﻿    PROGRAM PLC_PRG
-    VAR
-        (* Modbus Holding Registers: awHolding now lives in GVL_ModbusHolding
-        (shared with PRG_Thyracont on the fast ThyracontTask). Normal PID
-        exchange does not map these values to physical outputs. The
-        xDoBlinkTest variable below is a manual bench output test and must be
-        mapped to a free DO channel in CODESYS I/O Mapping. The
-        wBenchMuAo1Output variable is a manual bench analog-output command
-        and must be mapped to the MU210 AO1 output/channel in CODESYS I/O
-        Mapping or in the Modbus TCP Client slave channel mapping. *)
-        xDoBlinkTest : BOOL;
-        wBenchMuAo1Output : ARRAY[0..0] OF WORD;
-
-        (* Traffic light (MU210-402 relay module, Ethernet Modbus TCP,
-           192.168.1.15, no native OWEN device profile -- added as a generic
-           Modbus TCP Slave). ArdisCVDMaster's PLC210PidClient writes these
-           into awHolding[1] bits 4-6 every cycle unconditionally (same flags
-           word as xChamberEnable/xPlenumEnable/xReset below), so the light
-           reflects ErrorDispatcher.errSwitchStatus even before the PID panel
-           has been touched. Physical wiring (confirmed on the panel, see
-           terminal labels DO1A/B/C..DO4A/B/C): DO1=green, DO2=yellow,
-           DO3=red, DO4..DO16=spare/unused -- common (+) is jumpered across
-           the used channels' COM terminal.
-
-           Output goes out as ONE bitmask word (wTrafficLightMask), not three
-           coils: the MU210-402 answers FC05 (Write Single Coil) with Modbus
-           exception 01 ILLEGAL FUNCTION -- confirmed live, the module simply
-           does not implement coil functions, like most OWEN Mx210 modules.
-           Its discrete outputs are driven by a holding register bitmask via
-           FC16/FC06 instead. Bit0=DO1(green), bit1=DO2(yellow),
-           bit2=DO3(red). Writing the whole word also forces DO4..DO16 to 0,
-           which is fine here -- nothing else is wired to this module. Map
-           wTrafficLightMask to a single Modbus channel (see comment on the
-           mask assembly further down). *)
-        xTrafficLightGreen  : BOOL;
-        xTrafficLightYellow : BOOL;
-        xTrafficLightRed    : BOOL;
-        wTrafficLightMask   : WORD;
-
-        (* HMI link watchdog. The lamp bits below are plain holding registers:
-           when the HMI dies its TCP socket drops, but the PLC keeps the last
-           flags word it was given, so a green tower goes on asserting "all
-           good" with nobody left producing that verdict. Detected here without
-           any change on the HMI side, by a probe bit the PLC arms and the HMI
-           unknowingly clears: bit 15 of awHolding[1] is not part of the
-           protocol (ComputeFlags in PLC210PidClient.cs only ever sets bits
-           0..6), and the HMI rewrites that whole word every exchange, ~200 ms,
-           whether or not SET has been pressed. So the PLC sets bit 15 at the
-           end of every cycle and looks at it again on the next one: cleared =
-           the HMI wrote in between, still set = nobody did. The heartbeat at
-           awHolding[2..3] is NOT used for this -- the HMI only writes that
-           block once SET has been pressed on the Chamber panel, so it would
-           read as "no link" through an entire healthy session before that.
-
-           While the link is stale the tower ignores the stale lamp bits and
-           blinks yellow instead -- "running, but unattended". Same state at
-           power-up, before the HMI has ever connected. Nothing else changes:
-           the PID keeps running exactly as it did before, which is a policy
-           decision nobody has taken yet. *)
-        xHmiWriteSeen         : BOOL;
-        udiHmiWritesSeen      : UDINT;
-        fbHmiStale            : TON;
-        fbBlink               : TON;
-        xHmiLinkLost          : BOOL;
-        xTrafficLightBlinkOn  : BOOL := TRUE;
-
-        (* Bench lever: not written by anything, so it can be forced from
-           the CODESYS online view to make the tower blink on demand. Use
-           it to separate "the watchdog never fires" from "the blink never
-           reaches the lamp" -- those are different faults with the same
-           symptom. Leave it FALSE in production. *)
-        xForceHmiLinkLost     : BOOL;
-        
-        awMvAi1Value  : ARRAY[0..1] OF WORD;
-        awMvAi1Status : ARRAY[0..0] OF WORD;
-        uMvAi1Value   : U_DWORD_REAL;
-        wMvAi1Status  : WORD;
-        xMvAi1Ok      : BOOL;
-        rMvAi1Percent : REAL;
-        rMvAi1Voltage : REAL;
-        rChMeasuredMv : REAL;
-        
-        rChamberMuAo1Command : REAL;
-        xChamberMuAo1Clamped : BOOL;
-        uiChamberMuAo1Command : UINT;
-
-        fbChamber : FB_IncrementalPid;
-        fbPlenum  : FB_IncrementalPid;
-        (* fbThyracont moved to PRG_Thyracont (own fast ThyracontTask). *)
-
-        xProtocolOk    : BOOL;
-        xChamberEnable : BOOL;
-        xPlenumEnable  : BOOL;
-        xReset         : BOOL;
-        udiCycle       : UDINT;
-
-        rChSetpoint : REAL;
-        rChMeasured : REAL;
-        rChKp       : REAL;
-        rChKi       : REAL;
-        rChKd       : REAL;
-        rChLower    : REAL;
-        rChUpper    : REAL;
-        rChDirect   : REAL;
-
-        rPlSetpoint : REAL;
-        rPlMeasured : REAL;
-        rPlKp       : REAL;
-        rPlKi       : REAL;
-        rPlKd       : REAL;
-        rPlLower    : REAL;
-        rPlUpper    : REAL;
-        rPlDirect   : REAL;
-        dwValue     : DWORD;
-        xDoBlinkTestEnable : BOOL;
-        xBenchMuAo1Enable : BOOL;
-        xBenchMuAo1Clamped : BOOL;
-        uiBenchMuAo1Command : UINT;
-        uiBenchMuAo1Applied : UINT;
-        awMvAi1Raw : ARRAY[0..1] OF WORD;
-    END_VAR
-
-    VAR CONSTANT
-        (* Real time, not cycle counts: the first version counted MainTask
-           cycles assuming 200 ms, which makes the blink rate a hostage to
-           the task period -- at a 20 ms task it would toggle every 40 ms,
-           far too fast for the relay module (and for the Modbus master's
-           own polling interval) to reproduce, which looks exactly like
-           "not blinking". 1 s on / 1 s off is slow enough to survive any
-           plausible task and bus period. 3 s of silence before the link
-           counts as lost -- the HMI writes every ~200 ms. *)
-        HMI_STALE_TIME    : TIME := T#3S;
-        BLINK_HALF_PERIOD : TIME := T#1S;
-    END_VAR
+﻿PROGRAM PLC_PRG
+VAR
+    xDoBlinkTest : BOOL;
+    wBenchMuAo1Output : ARRAY[0..0] OF WORD;
+    xTrafficLightGreen  : BOOL;
+    xTrafficLightYellow : BOOL;
+    xTrafficLightRed    : BOOL;
+    wTrafficLightMask   : WORD;
+  
+    xHmiWriteSeen         : BOOL;
+    udiHmiStaleCycles     : UDINT;
+    xHmiLinkLost          : BOOL;
+    
+    awMvAi1Value  : ARRAY[0..1] OF WORD;
+    awMvAi1Status : ARRAY[0..0] OF WORD;
+    uMvAi1Value   : U_DWORD_REAL;
+    wMvAi1Status  : WORD;
+    xMvAi1Ok      : BOOL;
+    rMvAi1Percent : REAL;
+    rMvAi1Voltage : REAL;
+    rChMeasuredMv : REAL;
+	
+	wDiscreteInputs : WORD;
+    iDiIndex        : INT;
+    
+    rChamberMuAo1Command : REAL;
+    xChamberMuAo1Clamped : BOOL;
+    uiChamberMuAo1Command : UINT;
+    fbChamber : FB_IncrementalPid;
+    fbPlenum  : FB_IncrementalPid;
+    xProtocolOk    : BOOL;
+    xChamberEnable : BOOL;
+    xPlenumEnable  : BOOL;
+    xReset         : BOOL;
+    udiCycle       : UDINT;
+    rChSetpoint : REAL;
+    rChMeasured : REAL;
+    rChKp       : REAL;
+    rChKi       : REAL;
+    rChKd       : REAL;
+    rChLower    : REAL;
+    rChUpper    : REAL;
+    rChDirect   : REAL;
+    rPlSetpoint : REAL;
+    rPlMeasured : REAL;
+    rPlKp       : REAL;
+    rPlKi       : REAL;
+    rPlKd       : REAL;
+    rPlLower    : REAL;
+    rPlUpper    : REAL;
+    rPlDirect   : REAL;
+    dwValue     : DWORD;
+    xDoBlinkTestEnable : BOOL;
+    xBenchMuAo1Enable : BOOL;
+    xBenchMuAo1Clamped : BOOL;
+    uiBenchMuAo1Command : UINT;
+    uiBenchMuAo1Applied : UINT;
+    awMvAi1Raw : ARRAY[0..1] OF WORD;
+END_VAR
+VAR CONSTANT
+    (* MainTask cycles, not seconds: 15 x 200 ms = 3 s of silence before the
+       link counts as lost, against an HMI that writes every ~200 ms. This is
+       hostage to the task period -- at a 20 ms MainTask it would fire after
+       300 ms -- so if MainTask is ever retimed, retime this with it. *)
+    HMI_STALE_CYCLES  : UDINT := UDINT#15;
+END_VAR
 
 xProtocolOk := awHolding[0] = WORD#1;
 xChamberEnable := xProtocolOk AND (awHolding[1] AND WORD#16#0001) <> WORD#0;
@@ -141,45 +73,30 @@ xTrafficLightGreen  := (awHolding[1] AND WORD#16#0010) <> WORD#0;
 xTrafficLightYellow := (awHolding[1] AND WORD#16#0020) <> WORD#0;
 xTrafficLightRed    := (awHolding[1] AND WORD#16#0040) <> WORD#0;
 
-(* HMI link watchdog -- see the declarations above for how the probe bit
-   works. Read before the bit is re-armed at the end of this block.
-   udiHmiWritesSeen is pure diagnostics: watch it in the online view and it
-   runs while the HMI is alive, stops dead when it is not. If it never
-   moves at all, the probe bit is not surviving the Modbus slave device's
-   process image and this whole approach is the wrong one -- say so and it
-   gets rebuilt on the awHolding[2..3] heartbeat instead. *)
+
 xHmiWriteSeen := (awHolding[1] AND WORD#16#8000) = WORD#0;
 
 IF xHmiWriteSeen THEN
-    udiHmiWritesSeen := udiHmiWritesSeen + UDINT#1;
+    udiHmiStaleCycles := UDINT#0;
+ELSIF udiHmiStaleCycles < HMI_STALE_CYCLES THEN
+    udiHmiStaleCycles := udiHmiStaleCycles + UDINT#1;
 END_IF;
 
-fbHmiStale(IN := NOT xHmiWriteSeen, PT := HMI_STALE_TIME);
-xHmiLinkLost := fbHmiStale.Q OR xForceHmiLinkLost;
+(* This assignment was missing: the counter above ran, but nothing ever turned
+   it into the flag the tower is driven from, so xHmiLinkLost stayed FALSE for
+   ever and the lost-link branch below was dead code. *)
+xHmiLinkLost := udiHmiStaleCycles >= HMI_STALE_CYCLES;
 
-(* Free-running blink. The TON retriggers itself: Q is true for exactly one
-   cycle each half period, which flips the lamp state. *)
-fbBlink(IN := NOT fbBlink.Q, PT := BLINK_HALF_PERIOD);
-IF fbBlink.Q THEN
-    xTrafficLightBlinkOn := NOT xTrafficLightBlinkOn;
-END_IF;
-
-(* Re-arm the probe. Only bit 15 is touched, so the protocol bits 0..6 stay
-   exactly as the HMI wrote them, and PRG_GasFlow -- which reads bit 3 of this
-   same word on its own task -- is unaffected. *)
-awHolding[1] := awHolding[1] OR WORD#16#8000;
-
-(* Assemble the MU210-402 output bitmask. Map wTrafficLightMask to that
-   module's single "discrete output state" holding register, written with
-   FC16 (Write Multiple Registers, length 1) or FC06 (Write Single
-   Register) -- NOT FC05, which the module rejects with ILLEGAL FUNCTION. *)
+(* Cleared every cycle. Without this the ELSE branch below ORs onto last
+   cycle's value, so a lamp that came on once could never go off again. *)
 wTrafficLightMask := WORD#0;
 IF xHmiLinkLost THEN
-    (* The lamp bits are stale by definition here, so they are not consulted
-       at all: blinking yellow is the whole verdict. *)
-    IF xTrafficLightBlinkOn THEN
-        wTrafficLightMask := WORD#16#0002;
-    END_IF;
+    (* The lamp bits are stale by definition here, so they are not consulted at
+       all: all three lamps together is the whole verdict. The HMI itself never
+       commands that combination -- ComputeFlags in PLC210PidClient.cs lights
+       exactly one -- so it cannot be mistaken for a state the operator put the
+       tower into. *)
+    wTrafficLightMask := WORD#16#0007;
 ELSE
     IF xTrafficLightGreen THEN
         wTrafficLightMask := wTrafficLightMask OR WORD#16#0001;
@@ -191,6 +108,9 @@ ELSE
         wTrafficLightMask := wTrafficLightMask OR WORD#16#0004;
     END_IF;
 END_IF;
+
+
+awHolding[1] := awHolding[1] OR WORD#16#8000;
 
 rChamberMuAo1Command := fbChamber.rOutput / 10.0;
 xChamberMuAo1Clamped := rChamberMuAo1Command > 500.0;
@@ -303,18 +223,24 @@ dwValue := F_ToFixed(fbPlenum.rOutput);
 awHolding[128] := DWORD_TO_WORD(dwValue);
 awHolding[129] := DWORD_TO_WORD(SHR(dwValue, 16));
 
-(* Chamber pressure as actually measured from MV210 (rChMeasuredMv), published
-   so the HMI can read it -- previously nothing exposed this over Modbus.
-   130/131 and 132 are free registers inside the 100..137 block the HMI
-   already reads every cycle, so no extra Modbus round trip is needed. *)
 dwValue := F_ToFixed(rChMeasuredMv);
 awHolding[130] := DWORD_TO_WORD(dwValue);
 awHolding[131] := DWORD_TO_WORD(SHR(dwValue, 16));
 awHolding[132] := wMvAi1Status;
 
-(* Thyracont poll + awHolding[140..147] publishing moved to PRG_Thyracont,
-   which runs on its own fast cyclic task (ThyracontTask, 50 ms) so the
-   sensor updates several times per second instead of once per 600-800 ms. *)
+wDiscreteInputs := WORD#0;
+FOR iDiIndex := 1 TO 8 DO
+    IF axFastDigitalIn[iDiIndex] THEN
+        wDiscreteInputs := wDiscreteInputs OR SHL(WORD#1, iDiIndex - 1);
+    END_IF;
+END_FOR;
+FOR iDiIndex := 9 TO 12 DO
+    IF axDigitalIn[iDiIndex] THEN
+        wDiscreteInputs := wDiscreteInputs OR SHL(WORD#1, iDiIndex - 1);
+    END_IF;
+END_FOR;
+awHolding[139] := wDiscreteInputs;
+
 
 uiBenchMuAo1Command := WORD_TO_UINT(awHolding[154]);
 xBenchMuAo1Enable := awHolding[155] = WORD#16#A55A;

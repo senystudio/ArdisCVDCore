@@ -57,6 +57,17 @@ namespace ArdisCVDCore.modules_hw
             // our decoding against CODESYS/the generator's own screen directly.
             public ushort[] RawRegisters;
 
+            /// <summary>
+            /// The generator itself is answering, not just the PLC. Everything
+            /// PRG_Microwave.st publishes about preheat is an echo of the last
+            /// request -- status bit 0x0020 and the awHolding[205] counter alike
+            /// -- so none of it means anything unless this is true.
+            /// </summary>
+            public bool GeneratorAnswering
+            {
+                get { return Connected && !CommError; }
+            }
+
             public State Clone()
             {
                 State copy = (State)MemberwiseClone();

@@ -1,5 +1,6 @@
 ﻿using NModbus;
 using System;
+using System.Globalization;
 using System.Net.Sockets;
 using System.Threading;
 
@@ -14,6 +15,11 @@ namespace ArdisCVDCore.modules_hw
     /// Which lamp of the panel signal tower is lit. One at a time -- the three
     /// relays are independent, but the tower is read at a glance and two lamps
     /// at once say nothing useful.
+    ///
+    /// There is one combination this enum deliberately cannot express: all
+    /// three at once, which PLC_PRG.st lights by itself when the HMI stops
+    /// writing. Keeping it out of reach here is what makes it unambiguous on
+    /// the panel -- if the whole tower is lit, nobody asked for it.
     /// </summary>
     public enum TrafficLight
     {
@@ -75,6 +81,26 @@ namespace ArdisCVDCore.modules_hw
             public string PlcPressureSource;
             public string PlcPressureStatusText;
 
+            // awHolding[139]: all twelve of the controller's own discrete
+            // inputs, bit 0..7 = FDI1..FDI8, bit 8..11 = DI9..DI12, 1 = contact
+            // closed. Published by PLC_PRG.st; the chamber lid switch is one of
+            // these bits, see LidInputChannel.
+            public ushort DiscreteInputs;
+
+            /// <summary>
+            /// The chamber lid switch reads closed.
+            /// </summary>
+            /// <remarks>
+            /// False on a lost link, an unmapped channel or a cut wire as well
+            /// as on a genuinely open lid. That is the right way round for an
+            /// interlock: the alarm is on the open state, so every failure of
+            /// the chain errs towards "go and look".
+            /// </remarks>
+            public bool LidClosed
+            {
+                get { return IsDiscreteInputOn(DiscreteInputs, LidInputChannel); }
+            }
+
             public State Clone()
             {
                 return new State
@@ -89,7 +115,8 @@ namespace ArdisCVDCore.modules_hw
                     PlcPressureValid = PlcPressureValid,
                     PlcPressureTorr = PlcPressureTorr,
                     PlcPressureSource = PlcPressureSource,
-                    PlcPressureStatusText = PlcPressureStatusText
+                    PlcPressureStatusText = PlcPressureStatusText,
+                    DiscreteInputs = DiscreteInputs
                 };
             }
         }
@@ -192,7 +219,12 @@ namespace ArdisCVDCore.modules_hw
         private const ushort InputRegisterStart = 0;
         private const ushort InputRegisterCount = 64;
         private const ushort OutputRegisterStart = 100;
-        private const ushort OutputRegisterCount = 38;
+
+        // 40, not 38: two words past the PID block to reach awHolding[139], the
+        // controller's own discrete inputs. 138 comes along for the ride and is
+        // ignored -- it is the vacuum pump status word, which PLC210VacuumClient
+        // reads on its own connection.
+        private const ushort OutputRegisterCount = 40;
 
         // Chamber pressure (rChMeasuredMv from MV210) and its status word,
         // published by PLC_PRG at awHolding[130..132] -- free registers inside
@@ -203,6 +235,54 @@ namespace ArdisCVDCore.modules_hw
         private const int ChamberPressureStatusOffset = 32;
 
         private const double Scale = 1000.0;
+
+        // awHolding[139], same free-word-in-a-block-we-already-read argument.
+        private const int DiscreteInputsOffset = 39;
+
+        public const int DiscreteInputCount = 12;
+
+        // Which discrete input the chamber lid switch is wired to: 1..8 =
+        // FDI1..FDI8, 9..12 = DI9..DI12. Which terminal it lands on is a fact
+        // about the panel, not about either program, so PLC_PRG.st publishes all
+        // twelve bits and the choice is made here from config.ini ([PLC210]
+        // LidInput) -- a switch that moves does not need either side rebuilt.
+        public const int DefaultLidInputChannel = 1;
+
+        // Set once from the config before the worker thread starts and never
+        // written again, so it needs no lock of its own.
+        private static int _lidInputChannel = DefaultLidInputChannel;
+
+        public static int LidInputChannel
+        {
+            get { return _lidInputChannel; }
+        }
+
+        public static void SetLidInputChannel(int channel)
+        {
+            _lidInputChannel = channel >= 1 && channel <= DiscreteInputCount
+                ? channel
+                : DefaultLidInputChannel;
+        }
+
+        public static bool IsDiscreteInputOn(ushort mask, int channel)
+        {
+            return channel >= 1
+                && channel <= DiscreteInputCount
+                && (mask & (1 << (channel - 1))) != 0;
+        }
+
+        /// <summary>
+        /// A discrete input under the name printed on the front of the
+        /// controller, so the Status window names the terminal an electrician
+        /// would look for.
+        /// </summary>
+        public static string DiscreteInputName(int channel)
+        {
+            if (channel < 1 || channel > DiscreteInputCount)
+                return "no input";
+
+            return (channel <= 8 ? "FDI" : "DI") + channel.ToString(CultureInfo.InvariantCulture);
+        }
 
         private static readonly object Sync = new object();
         private static readonly PreviewController ChamberPreview = new PreviewController();
@@ -612,7 +692,8 @@ namespace ArdisCVDCore.modules_hw
                 PlcPressureValid = mvStatus == 0,
                 PlcPressureTorr = ReadFixed(registers, ChamberPressureOffset),
                 PlcPressureSource = "PLC (MV210 via MV210 AI1)",
-                PlcPressureStatusText = mvStatus == 0 ? "OK" : "MV210 status " + mvStatus.ToString("X4")
+                PlcPressureStatusText = mvStatus == 0 ? "OK" : "MV210 status " + mvStatus.ToString("X4"),
+                DiscreteInputs = registers[DiscreteInputsOffset]
             };
         }
 

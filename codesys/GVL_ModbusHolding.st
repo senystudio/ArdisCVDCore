@@ -2,8 +2,15 @@
     (* Moved here from PLC_PRG's VAR so both MainTask (PLC_PRG) and the fast
        ThyracontTask (PRG_Thyracont) can reach it. Same array, same %QW0
        Modbus mapping as before. Ownership split by region, so the two tasks
-       never write the same words: PLC_PRG writes 100..137 and 150..157,
-       PRG_Thyracont writes only 140..147. One exception, by design:
+       never write the same words: PLC_PRG writes 100..137, 139 and
+       150..157, PRG_Thyracont writes only 140..147.
+       139 is the controller's own twelve discrete inputs as a bitmask
+       (bit 0..7 = FDI1..FDI8, bit 8..11 = DI9..DI12, 1 = contact closed).
+       It sits directly under the Thyracont block so the HMI's PID client
+       picks it up by reading two words further than the 100..137 it already
+       reads, rather than opening a ninth connection for one bit; the chamber
+       lid switch is one of those bits, and which one is chosen HMI-side from
+       config.ini. See GVL_PlcIO.st. One exception, by design:
        PLC_PRG also sets bit 15 of awHolding[1] every cycle -- that bit is
        not part of the HMI protocol and is used as the HMI link watchdog
        probe (the HMI clears it implicitly by rewriting the flags word);

@@ -47,6 +47,7 @@ namespace ArdisCVDCore
         {
             List<StatusLine> lines = new List<StatusLine>();
 
+            AddChamberLid(lines);
             AddPid(lines);
             AddHiVac(lines);
             AddGasFlow(lines);
@@ -107,6 +108,37 @@ namespace ArdisCVDCore
             return statusText.StartsWith(Prefix, StringComparison.Ordinal)
                 ? statusText.Substring(Prefix.Length)
                 : statusText;
+        }
+
+        /// <summary>
+        /// The chamber lid switch, on one of the controller's own discrete
+        /// inputs. First in the list: an open lid outranks anything else on it.
+        /// </summary>
+        /// <remarks>
+        /// Error rather than Warning, because the switch is wired so that a
+        /// closed lid holds its input on -- which makes "open" also what a cut
+        /// wire, an unmapped channel or a PLC that has not been reflashed looks
+        /// like. That is the right way round for an interlock, and all of those
+        /// are things somebody has to walk over and look at.
+        /// </remarks>
+        private static void AddChamberLid(ICollection<StatusLine> lines)
+        {
+            PLC210PidClient.State state = PLC210PidClient.GetState();
+            string input = PLC210PidClient.DiscreteInputName(PLC210PidClient.LidInputChannel);
+
+            if (!state.Connected)
+            {
+                // AddPid below already reports a dead link as an Error. A second
+                // red row for the same cause would only bury the sections that
+                // still have something of their own to say.
+                lines.Add(new StatusLine("Chamber lid", StatusLevel.Ok,
+                    "No reading, PLC not connected (" + input + ")"));
+                return;
+            }
+
+            lines.Add(state.LidClosed
+                ? new StatusLine("Chamber lid", StatusLevel.Ok, "Closed (" + input + ")")
+                : new StatusLine("Chamber lid", StatusLevel.Error, "OPEN (" + input + ")"));
         }
 
         private static void AddPid(ICollection<StatusLine> lines)
@@ -279,9 +311,16 @@ namespace ArdisCVDCore
         {
             PLC210MicrowaveClient.State state = PLC210MicrowaveClient.GetState();
 
-            if (!state.Connected)
+            // A generator that is simply switched off is not something the
+            // operator has lost control of -- it is how the machine sits between
+            // runs -- so it no longer turns the Status plate red. The Microwave
+            // Section carries a grey "Not connected" instead, and this line stays
+            // only so the detail list still says what is going on. Checked ahead
+            // of FaultActive because CommError sets that flag too, and the rest
+            // of the fault bits are stale coil reads once the generator is quiet.
+            if (!state.GeneratorAnswering)
             {
-                lines.Add(new StatusLine("Microwave", StatusLevel.Error, Reason(state.StatusText)));
+                lines.Add(new StatusLine("Microwave", StatusLevel.Ok, "Not connected"));
                 return;
             }
 
@@ -289,13 +328,6 @@ namespace ArdisCVDCore
             {
                 lines.Add(new StatusLine("Microwave", StatusLevel.Error,
                     "Fault — " + FaultReason(state) + ", press RESET"));
-                return;
-            }
-
-            if (state.CommError)
-            {
-                lines.Add(new StatusLine("Microwave", StatusLevel.Error,
-                    "No reply from generator (slave 9)"));
                 return;
             }
 

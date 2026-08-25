@@ -106,6 +106,7 @@
             this.IncMWPower = new System.Windows.Forms.TextBox();
             this.label30 = new System.Windows.Forms.Label();
             this.TimeToStart = new System.Windows.Forms.Label();
+            this.MWNotConnected = new System.Windows.Forms.Label();
             this.SuperCycle = new System.Windows.Forms.Timer(this.components);
             this.ManualRun = new System.Windows.Forms.Button();
             this.Water_Btn = new System.Windows.Forms.Button();
@@ -1189,6 +1190,7 @@
             this.Microwave_groupBox.Controls.Add(this.StartMW);
             this.Microwave_groupBox.Controls.Add(this.MicrowaveIncident_groupBox);
             this.Microwave_groupBox.Controls.Add(this.label30);
+            this.Microwave_groupBox.Controls.Add(this.MWNotConnected);
             this.Microwave_groupBox.Controls.Add(this.TimeToStart);
             this.Microwave_groupBox.Location = new System.Drawing.Point(755, 33);
             this.Microwave_groupBox.Margin = new System.Windows.Forms.Padding(2);
@@ -1336,6 +1338,18 @@
             this.TimeToStart.TabIndex = 393;
             this.TimeToStart.Text = "150s";
             this.TimeToStart.Click += new System.EventHandler(this.TimeToStart_Click);
+            // 
+            // MWNotConnected
+            // 
+            this.MWNotConnected.AutoSize = true;
+            this.MWNotConnected.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.MWNotConnected.ForeColor = System.Drawing.Color.DarkGray;
+            this.MWNotConnected.Location = new System.Drawing.Point(222, 38);
+            this.MWNotConnected.Name = "MWNotConnected";
+            this.MWNotConnected.Size = new System.Drawing.Size(88, 15);
+            this.MWNotConnected.TabIndex = 506;
+            this.MWNotConnected.Text = "Not connected";
+            this.MWNotConnected.Visible = false;
             // 
             // SuperCycle
             // 
@@ -3457,6 +3471,7 @@
         private System.Windows.Forms.TextBox ReflMWPower;
         public System.Windows.Forms.GroupBox MicrowaveIncident_groupBox;
         private System.Windows.Forms.ProgressBar PreheatProgress;
+        private System.Windows.Forms.Label MWNotConnected;
         private System.Windows.Forms.Button MWPowerSet;
         private System.Windows.Forms.TextBox IncMWPower;
         private System.Windows.Forms.Button StartMW;

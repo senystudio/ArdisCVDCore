@@ -26,6 +26,13 @@ namespace ArdisCVDCore.modules_hw
             public bool ClosedByDisable;
             public int FaultCode;
 
+            // awHolding[96] bit i: PRG_GasFlow.st reading MFC_*.xError straight
+            // off the Modbus device in the CODESYS tree -- this one regulator is
+            // not answering on RS485. MeasuredSccm above is whatever it last
+            // said and is never cleared, so it goes stale rather than to zero:
+            // nothing may believe the reading while this is set.
+            public bool SlaveError;
+
             public ChannelState Clone()
             {
                 return (ChannelState)MemberwiseClone();
@@ -237,6 +244,7 @@ namespace ArdisCVDCore.modules_hw
 
             ushort busStatus = registers[0];
             uint sweepCounter = registers[1];
+            ushort slaveErrorMask = registers[32];
 
             ChannelState[] channels = new ChannelState[GasNames.Length];
             for (int i = 0; i < channels.Length; i++)
@@ -256,7 +264,8 @@ namespace ArdisCVDCore.modules_hw
                     FaultActive = (status & 0x0002) != 0,
                     CloseConfirmed = (status & 0x0004) != 0,
                     ClosedByDisable = (status & 0x0008) != 0,
-                    FaultCode = status >> 8
+                    FaultCode = status >> 8,
+                    SlaveError = (slaveErrorMask & (1 << i)) != 0
                 };
             }
 
@@ -268,7 +277,7 @@ namespace ArdisCVDCore.modules_hw
                 SubsystemEnabled = (busStatus & 0x0008) != 0,
                 SweepCounter = sweepCounter,
                 Channels = channels,
-                DiagSlaveErrorMask = registers[32],
+                DiagSlaveErrorMask = slaveErrorMask,
                 DiagH2MeasuredRaw = registers[33],
                 DiagH2InitState = (short)registers[34],
                 DiagCh4InitState = (short)registers[35]

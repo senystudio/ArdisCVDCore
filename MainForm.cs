@@ -29,9 +29,10 @@ namespace ArdisCVDCore
         // The generator reports only a done/not-done flag, never a percentage or
         // a remaining time, so both "Time to preheat" and the bar under the
         // buttons run against this nominal duration rather than against anything
-        // the device says. The countdown starts when the PLC confirms preheat is
-        // on -- which is what PREHEAT requests -- so it tracks the real filament,
-        // not the moment the button happened to be clicked.
+        // the device says. Nor does the PLC confirm anything: status bit 0x0020
+        // is the last PREHEAT request echoed back, so the countdown is only
+        // meaningful while the generator is actually answering -- which is what
+        // UpdateMicrowaveSection gates it on.
         private const int PreheatSeconds = 150;
 
         // Index == PLC channel index in PLC210GasFlowClient (H2, CH4, N2, O2,
@@ -217,7 +218,14 @@ namespace ArdisCVDCore
             string host = ReadIniString("PLC210", "IP", "192.168.1.10");
             int port = ReadIniInt("PLC210", "Port", 502);
 
-            PLC210PidClient.Start(host, port);          // 100..137, plus chamber pressure at 130..132
+            // Which of the controller's own discrete inputs carries the chamber
+            // lid switch (1..8 = FDI1..FDI8, 9..12 = DI9..DI12). A wiring fact,
+            // so it is read from the config rather than fixed in the client --
+            // see GVL_PlcIO.st for the other half of that argument.
+            PLC210PidClient.SetLidInputChannel(
+                ReadIniInt("PLC210", "LidInput", PLC210PidClient.DefaultLidInputChannel));
+
+            PLC210PidClient.Start(host, port);          // 100..139, plus chamber pressure at 130..132 and the discrete inputs at 139
             PLC210ThyracontClient.Start(host, port);    // 140..147, the vacuum gauge
             PLC210GasFlowClient.Start(host, port);      // 64..99, the six РРГ-20 regulators
             PLC210PyrometerClient.Start(host, port);    // 160..191, the two Kelvin pyrometers
@@ -306,8 +314,20 @@ namespace ArdisCVDCore
             PLC210GasFlowClient.State state = PLC210GasFlowClient.GetState();
 
             for (int i = 0; i < _gasMeasured.Length; i++)
-                _gasMeasured[i].Text = state.Channels[i].MeasuredSccm.ToString(
-                    _gasSetpoint[i].DecimalPlaces == 0 ? "F0" : "F2", CultureInfo.InvariantCulture);
+            {
+                PLC210GasFlowClient.ChannelState channel = state.Channels[i];
+
+                // Same rule as the cooling readouts: a frozen number reads as gas
+                // that is still flowing. Nothing clears the measured value at
+                // either end -- PRG_GasFlow.st keeps the last word the regulator
+                // sent, and the client hands the previous Channels array back when
+                // the TCP link drops -- so the dashes have to come off the link,
+                // not off the value.
+                _gasMeasured[i].Text = state.Connected && !channel.SlaveError
+                    ? channel.MeasuredSccm.ToString(
+                        _gasSetpoint[i].DecimalPlaces == 0 ? "F0" : "F2", CultureInfo.InvariantCulture)
+                    : "---";
+            }
         }
 
         private void GasesSet_Click(object sender, EventArgs e)
@@ -477,30 +497,63 @@ namespace ArdisCVDCore
             PLC210MicrowaveClient.State state = PLC210MicrowaveClient.GetState();
             _microwaveState = state;
 
-            IncMWPower.Text = state.IncidentKw.ToString("F2", CultureInfo.InvariantCulture);
-            ReflMWPower.Text = state.ReflectedKw.ToString("F2", CultureInfo.InvariantCulture);
+            // Status bit 0x0020 is not a confirmation from the generator, it is
+            // the PLC echoing stMw.xLastPreheatValue -- i.e. what this screen
+            // last asked for -- and awHolding[205] counts up off that same
+            // request. With the generator powered down or its RS485 link cut,
+            // PRG_Microwave.st still echoes and still counts, so PREHEAT used to
+            // go green and run a countdown against a filament that never got the
+            // order. Nothing here is believed unless the generator is answering.
+            bool generatorAlive = state.GeneratorAnswering;
 
-            StartMW.BackColor = state.PreheatOn ? Color.LightGreen : SystemColors.Control;
-            button1.BackColor = state.MicrowaveOn ? Color.LightGreen : SystemColors.Control;
+            // Incident and reflected are the last words PRG_Microwave.st got out
+            // of the generator and are never cleared either, so like the gas
+            // flows they freeze on screen rather than fall to zero once it goes
+            // quiet.
+            IncMWPower.Text = generatorAlive
+                ? state.IncidentKw.ToString("F2", CultureInfo.InvariantCulture)
+                : "---";
+            ReflMWPower.Text = generatorAlive
+                ? state.ReflectedKw.ToString("F2", CultureInfo.InvariantCulture)
+                : "---";
+
+            // The Status plate deliberately says nothing about a generator that
+            // is merely switched off (see SystemStatus.AddMicrowave), so this is
+            // the only place the operator is told -- quietly, in grey, next to
+            // the countdown it explains the absence of.
+            MWNotConnected.Visible = !generatorAlive;
+
+            StartMW.BackColor = generatorAlive && state.PreheatOn ? Color.LightGreen : SystemColors.Control;
+            button1.BackColor = generatorAlive && state.MicrowaveOn ? Color.LightGreen : SystemColors.Control;
 
             // Matches the generator's own touch screen, where Microwave greys out
             // while Fault is lit -- RESET (or STOP) is the way forward from
             // there. Also blocked below 9 Torr: PRG_Microwave.st refuses the coil
             // write regardless, and a button that visibly does nothing is worse
             // than a disabled one.
-            button1.Enabled = state.Connected && !state.FaultActive && !state.ChamberPressureLow;
+            StartMW.Enabled = generatorAlive;
+            button1.Enabled = generatorAlive && !state.FaultActive && !state.ChamberPressureLow;
 
-            bool preheating = state.PreheatOn && !state.FilamentPreheatDone;
+            bool preheating = generatorAlive && state.PreheatOn && !state.FilamentPreheatDone;
             int remaining = Math.Max(0, PreheatSeconds - state.PreheatElapsedSeconds);
 
-            TimeToStart.Text = preheating
-                ? remaining.ToString(CultureInfo.InvariantCulture) + "s"
-                : "0s";
+            if (preheating)
+                TimeToStart.Text = remaining.ToString(CultureInfo.InvariantCulture) + "s";
+            else if (generatorAlive && state.FilamentPreheatDone)
+                TimeToStart.Text = "0s";
+            else
+                // Nothing is preheating, so the whole nominal run is still ahead;
+                // "0s" here used to read as "ready to fire" on a cold filament.
+                TimeToStart.Text = PreheatSeconds.ToString(CultureInfo.InvariantCulture) + "s";
 
             PreheatProgress.Visible = preheating;
             // Capped, so a preheat that runs longer than nominal shows a full bar
-            // instead of throwing on an out-of-range Value.
-            PreheatProgress.Value = Math.Max(0, Math.Min(state.PreheatElapsedSeconds, PreheatSeconds));
+            // instead of throwing on an out-of-range Value. Reset while idle so a
+            // counter the PLC kept running with the generator off cannot make the
+            // next preheat start from a full bar.
+            PreheatProgress.Value = preheating
+                ? Math.Max(0, Math.Min(state.PreheatElapsedSeconds, PreheatSeconds))
+                : 0;
         }
 
         private void StartMW_Click(object sender, EventArgs e)
@@ -786,7 +839,11 @@ namespace ArdisCVDCore
                     running.Add("the water pump is on");
             }
 
-            if (microwave.Connected && (microwave.MicrowaveOn || microwave.PreheatOn))
+            // ...and for the microwave that means the generator answering, not
+            // just the PLC: both flags below are the PLC echoing the last request
+            // back, so with the generator off they would hold the session open on
+            // a filament that is stone cold.
+            if (microwave.GeneratorAnswering && (microwave.MicrowaveOn || microwave.PreheatOn))
                 running.Add(microwave.MicrowaveOn
                     ? "the microwave generator is on"
                     : "the generator filament is preheating");
