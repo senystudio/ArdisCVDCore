@@ -6,6 +6,9 @@ VAR
     rPyroRxtRatio  : REAL;
     wPyroRxtStatus : WORD;
     dwValue : DWORD;
+    fbPyroOk      : TON;
+    fbPyroConfirm : TON;
+    xPyroRxtLinkOk : BOOL;
 END_VAR
 
 uPyroValue.dwValue := SHL(WORD_TO_DWORD(awPyroRxtCh1Raw[1]), 16) OR WORD_TO_DWORD(awPyroRxtCh1Raw[0]);
@@ -25,8 +28,11 @@ dwValue := F_ToFixed(rPyroRxtRatio);
 awHolding[164] := DWORD_TO_WORD(dwValue);
 awHolding[165] := DWORD_TO_WORD(SHR(dwValue, 16));
 
+fbPyroOk(IN := NOT PYRO_RXT.xError, PT := T#3S);
+xPyroRxtLinkOk := fbPyroOk.Q;
+
 wPyroRxtStatus := WORD#0;
-IF NOT PYRO_RXT.xError THEN
+IF xPyroRxtLinkOk THEN
     wPyroRxtStatus := wPyroRxtStatus OR WORD#16#0001;
 END_IF;
 IF (wPyroRxtAdcStatus AND WORD#16#0001) <> WORD#0 THEN
@@ -35,8 +41,11 @@ END_IF;
 IF (wPyroRxtAdcStatus AND WORD#16#0002) <> WORD#0 THEN
     wPyroRxtStatus := wPyroRxtStatus OR WORD#16#0004;
 END_IF;
-IF PYRO_RXT.xError THEN
+IF NOT xPyroRxtLinkOk THEN
     wPyroRxtStatus := wPyroRxtStatus OR WORD#16#0008;
 END_IF;
 awHolding[166] := wPyroRxtStatus;
 awHolding[167] := wPyroRxtDevStatus;
+
+fbPyroConfirm(IN := PYRO_RXT.xError AND (NOT fbPyroConfirm.Q), PT := T#2S);
+PYRO_RXT.xConfirmError := fbPyroConfirm.Q;

@@ -47,12 +47,10 @@ namespace ArdisCVDCore
         {
             List<StatusLine> lines = new List<StatusLine>();
 
+            AddPlc(lines);
             AddChamberLid(lines);
-            AddPid(lines);
             AddHiVac(lines);
             AddGasFlow(lines);
-            AddGasValves(lines);
-            AddVacuum(lines);
             AddPyrometers(lines);
             AddMicrowave(lines);
             AddCooling(lines);
@@ -80,37 +78,6 @@ namespace ArdisCVDCore
         }
 
         /// <summary>
-        /// Strips a client's self-identifying prefix off its status text, so the
-        /// detail column carries only the reason.
-        /// </summary>
-        /// <remarks>
-        /// Every client formats its failures as "PLC210 &lt;subsystem&gt; not
-        /// connected: &lt;reason&gt;", which reads as seven near-identical rows
-        /// once they are listed side by side -- and the Section and State columns
-        /// already say which subsystem it is and that it is broken. Only the part
-        /// after the prefix differs, so that is all this returns.
-        ///
-        /// Splitting on ": " and not on ':' is deliberate: the reason usually
-        /// ends in an endpoint like "192.168.1.10:502".
-        /// </remarks>
-        private static string Reason(string statusText)
-        {
-            if (string.IsNullOrWhiteSpace(statusText))
-                return "";
-
-            int split = statusText.IndexOf(": ", StringComparison.Ordinal);
-            if (split >= 0)
-                return statusText.Substring(split + 2);
-
-            // The transient states (connecting, disabled) carry no reason after
-            // a colon, only the prefix.
-            const string Prefix = "PLC210 ";
-            return statusText.StartsWith(Prefix, StringComparison.Ordinal)
-                ? statusText.Substring(Prefix.Length)
-                : statusText;
-        }
-
-        /// <summary>
         /// The chamber lid switch, on one of the controller's own discrete
         /// inputs. First in the list: an open lid outranks anything else on it.
         /// </summary>
@@ -124,51 +91,47 @@ namespace ArdisCVDCore
         private static void AddChamberLid(ICollection<StatusLine> lines)
         {
             PLC210PidClient.State state = PLC210PidClient.GetState();
-            string input = PLC210PidClient.DiscreteInputName(PLC210PidClient.LidInputChannel);
 
             if (!state.Connected)
             {
-                // AddPid below already reports a dead link as an Error. A second
-                // red row for the same cause would only bury the sections that
-                // still have something of their own to say.
-                lines.Add(new StatusLine("Chamber lid", StatusLevel.Ok,
-                    "No reading, PLC not connected (" + input + ")"));
+                lines.Add(new StatusLine("Chamber lid", StatusLevel.Error, "Not connected"));
                 return;
             }
 
             lines.Add(state.LidClosed
-                ? new StatusLine("Chamber lid", StatusLevel.Ok, "Closed (" + input + ")")
-                : new StatusLine("Chamber lid", StatusLevel.Error, "OPEN (" + input + ")"));
+                ? new StatusLine("Chamber lid", StatusLevel.Ok, "Closed")
+                : new StatusLine("Chamber lid", StatusLevel.Error, "OPEN"));
         }
 
-        private static void AddPid(ICollection<StatusLine> lines)
+        private static void AddPlc(ICollection<StatusLine> lines)
         {
-            PLC210PidClient.State state = PLC210PidClient.GetState();
+            PLC210PidClient.State pid = PLC210PidClient.GetState();
+            PLC210GasValveClient.State valves = PLC210GasValveClient.GetState();
+            PLC210VacuumClient.State vacuum = PLC210VacuumClient.GetState();
 
-            if (!state.Connected || state.UsingLocalPreview)
+            if (!pid.Connected || pid.UsingLocalPreview || !valves.Connected || !vacuum.Connected)
             {
-                lines.Add(new StatusLine("PID / chamber pressure", StatusLevel.Error, Reason(state.StatusText)));
+                lines.Add(new StatusLine("PLC", StatusLevel.Error, "Not connected"));
                 return;
             }
 
-            if (!state.PlcPressureAvailable)
+            if (!pid.PlcPressureAvailable)
             {
-                lines.Add(new StatusLine("PID / chamber pressure", StatusLevel.Warning,
+                lines.Add(new StatusLine("PLC", StatusLevel.Warning,
                     "No chamber pressure reading from the PLC"));
                 return;
             }
 
-            if (!state.PlcPressureValid)
+            if (!pid.PlcPressureValid)
             {
-                lines.Add(new StatusLine("PID / chamber pressure", StatusLevel.Warning,
-                    string.IsNullOrWhiteSpace(state.PlcPressureStatusText)
+                lines.Add(new StatusLine("PLC", StatusLevel.Warning,
+                    string.IsNullOrWhiteSpace(pid.PlcPressureStatusText)
                         ? "Chamber pressure reading not valid"
-                        : state.PlcPressureStatusText));
+                        : pid.PlcPressureStatusText));
                 return;
             }
 
-            lines.Add(new StatusLine("PID / chamber pressure", StatusLevel.Ok,
-                string.Format(CultureInfo.InvariantCulture, "Connected, {0:F1} Torr", state.PlcPressureTorr)));
+            lines.Add(new StatusLine("PLC", StatusLevel.Ok, "Connected"));
         }
 
         private static void AddHiVac(ICollection<StatusLine> lines)
@@ -183,7 +146,7 @@ namespace ArdisCVDCore
 
             if (!state.Connected)
             {
-                lines.Add(new StatusLine("Hi-Vac gauge", StatusLevel.Error, Reason(state.StatusText)));
+                lines.Add(new StatusLine("Hi-Vac gauge", StatusLevel.Error, "Not connected"));
                 return;
             }
 
@@ -207,7 +170,7 @@ namespace ArdisCVDCore
 
             if (!state.Connected)
             {
-                lines.Add(new StatusLine("Gas regulators", StatusLevel.Error, Reason(state.StatusText)));
+                lines.Add(new StatusLine("Gas regulators", StatusLevel.Error, "Not connected"));
                 return;
             }
 
@@ -217,27 +180,23 @@ namespace ArdisCVDCore
                 return;
             }
 
-            bool anyProblem = false;
+            lines.Add(new StatusLine("Gas regulators", StatusLevel.Ok, "Connected"));
+
             for (int i = 0; i < state.Channels.Length; i++)
             {
                 PLC210GasFlowClient.ChannelState channel = state.Channels[i];
                 if (channel.FaultActive)
                 {
-                    anyProblem = true;
                     lines.Add(new StatusLine("Gas " + channel.GasName, StatusLevel.Warning,
                         (channel.CloseConfirmed ? "Fault — closed (" : "Fault — closing… (")
                         + FaultCodeText(channel.FaultCode) + ")"));
                 }
                 else if (channel.ClosedByDisable)
                 {
-                    anyProblem = true;
                     lines.Add(new StatusLine("Gas " + channel.GasName, StatusLevel.Warning,
                         "Closed (subsystem disabled)"));
                 }
             }
-
-            if (!anyProblem)
-                lines.Add(new StatusLine("Gas regulators", StatusLevel.Ok, "All six channels healthy"));
         }
 
         // Mirrors F_MbValidateResponse.st's fault codes -- kept in sync with that
@@ -259,29 +218,13 @@ namespace ArdisCVDCore
             }
         }
 
-        private static void AddGasValves(ICollection<StatusLine> lines)
-        {
-            PLC210GasValveClient.State state = PLC210GasValveClient.GetState();
-            lines.Add(state.Connected
-                ? new StatusLine("Gas valves (GPV)", StatusLevel.Ok, "Connected")
-                : new StatusLine("Gas valves (GPV)", StatusLevel.Error, Reason(state.StatusText)));
-        }
-
-        private static void AddVacuum(ICollection<StatusLine> lines)
-        {
-            PLC210VacuumClient.State state = PLC210VacuumClient.GetState();
-            lines.Add(state.Connected
-                ? new StatusLine("Vacuum valves / pumps", StatusLevel.Ok, "Connected")
-                : new StatusLine("Vacuum valves / pumps", StatusLevel.Error, Reason(state.StatusText)));
-        }
-
         private static void AddPyrometers(ICollection<StatusLine> lines)
         {
             PLC210PyrometerClient.State state = PLC210PyrometerClient.GetState();
 
             if (!state.Connected)
             {
-                lines.Add(new StatusLine("Pyrometers", StatusLevel.Error, Reason(state.StatusText)));
+                lines.Add(new StatusLine("Pyrometers", StatusLevel.Error, "Not connected"));
                 return;
             }
 
@@ -302,9 +245,7 @@ namespace ArdisCVDCore
                 return;
             }
 
-            lines.Add(new StatusLine("Pyrometers", StatusLevel.Ok,
-                string.Format(CultureInfo.InvariantCulture, "Ch1 {0:F0} °C, Ch2 {1:F0} °C, ratio {2:F0} °C",
-                    active.Ch1Temp, active.Ch2Temp, active.RatioTemp)));
+            lines.Add(new StatusLine("Pyrometers", StatusLevel.Ok, "Connected"));
         }
 
         private static void AddMicrowave(ICollection<StatusLine> lines)
@@ -318,9 +259,15 @@ namespace ArdisCVDCore
             // only so the detail list still says what is going on. Checked ahead
             // of FaultActive because CommError sets that flag too, and the rest
             // of the fault bits are stale coil reads once the generator is quiet.
+            if (!state.Connected)
+            {
+                lines.Add(new StatusLine("Microwave", StatusLevel.Error, "Not connected"));
+                return;
+            }
+
             if (!state.GeneratorAnswering)
             {
-                lines.Add(new StatusLine("Microwave", StatusLevel.Ok, "Not connected"));
+                lines.Add(new StatusLine("Microwave", StatusLevel.Warning, "Not connected"));
                 return;
             }
 
@@ -358,7 +305,7 @@ namespace ArdisCVDCore
 
             if (!state.Connected)
             {
-                lines.Add(new StatusLine("Cooling", StatusLevel.Error, Reason(state.StatusText)));
+                lines.Add(new StatusLine("Cooling", StatusLevel.Error, "Not connected"));
                 return;
             }
 
@@ -385,9 +332,7 @@ namespace ArdisCVDCore
                 return;
             }
 
-            lines.Add(new StatusLine("Cooling", StatusLevel.Ok,
-                string.Format(CultureInfo.InvariantCulture,
-                    "All channels healthy, water {0:F1} bar", state.WaterPressureBar)));
+            lines.Add(new StatusLine("Cooling", StatusLevel.Ok, "Connected"));
         }
 
         public static string DescribeRunState(PLC210MicrowaveClient.State state)

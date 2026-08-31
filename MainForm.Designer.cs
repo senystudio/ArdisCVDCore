@@ -1199,7 +1199,7 @@
             this.Microwave_groupBox.Size = new System.Drawing.Size(381, 184);
             this.Microwave_groupBox.TabIndex = 375;
             this.Microwave_groupBox.TabStop = false;
-            this.Microwave_groupBox.Text = "Microwave Section";
+            this.Microwave_groupBox.Text = "Microwave Section (kW)";
             this.Microwave_groupBox.Enter += new System.EventHandler(this.Microwave_groupBox_Enter);
             // 
             // StartMW

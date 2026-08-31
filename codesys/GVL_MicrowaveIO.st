@@ -5,10 +5,12 @@ VAR_GLOBAL
     axMwStatusBlock3   : ARRAY[0..7] OF BOOL;
 
     xMwPreheatValue    : BOOL;
-    xMwPreheatTrigger  : BOOL;
     xMwOnValue         : BOOL;
-    xMwOnTrigger       : BOOL;
     xMwResetTrigger    : BOOL;
     wMwSetpointRaw     : WORD;
-    xMwSetpointTrigger : BOOL;
+
+    xMwPreheatPending  : BOOL;
+    xMwOnPending       : BOOL;
+    xMwResetPending    : BOOL;
+    xMwSetpointPending : BOOL;
 END_VAR

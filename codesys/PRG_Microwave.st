@@ -38,11 +38,16 @@ VAR
     rReflectedKw : REAL;
     dwValue      : DWORD;
     wStatus      : WORD;
+    fbCommOk       : TON;
+    fbConfirmTick  : TON;
+    fbPreheatTimer : TON;
 END_VAR
 
 xMwPreheatRequest := (awHolding[192] AND WORD#16#0001) <> WORD#0;
 xMwOnRequest      := (awHolding[192] AND WORD#16#0002) <> WORD#0;
 xMwResetRequest   := (awHolding[192] AND WORD#16#0004) <> WORD#0;
+
+fbCommOk(IN := NOT MW_GEN.xError, PT := T#4S);
 
 (* NOT reversed -- confirmed only on axMwStatusBlock2 (see below), applying
    that to this block too was wrong (it misread coil 19 "working" as coil 20
@@ -53,7 +58,7 @@ xMwFailure     := axMwStatusBlock1[1];
    empirically (fault fired exactly when preheat completed, not on reflection). *)
 xMwReflective  := axMwStatusBlock2[5];
 xMwPreheatDone := axMwStatusBlock2[0];
-xMwCommError   := MW_GEN.xError;
+xMwCommError   := NOT fbCommOk.Q;
 
 xMwFilamentFlowFault  := axMwStatusBlock3[7];
 xMwFilamentUnderflow  := axMwStatusBlock3[6];
@@ -89,30 +94,17 @@ ELSE
 END_IF;
 
 IF xMwResetRequest AND (NOT stMw.xLastResetRequest) THEN
-    stMw.iResetHoldScans := 10;
+    xMwResetPending := TRUE;
 END_IF;
 stMw.xLastResetRequest := xMwResetRequest;
 
-IF stMw.iResetHoldScans > 0 THEN
-    xMwResetTrigger := TRUE;
-    stMw.iResetHoldScans := stMw.iResetHoldScans - 1;
-ELSE
-    xMwResetTrigger := FALSE;
-END_IF;
-
 IF xMwPreheatRequest <> stMw.xLastPreheatValue THEN
     xMwPreheatValue := xMwPreheatRequest;
-    xMwPreheatTrigger := TRUE;
-    IF xMwPreheatRequest THEN
-        stMw.iPreheatElapsedScans := 0;
-    END_IF;
+    xMwPreheatPending := TRUE;
     stMw.xLastPreheatValue := xMwPreheatRequest;
-ELSE
-    xMwPreheatTrigger := FALSE;
 END_IF;
-IF xMwPreheatRequest AND (NOT xMwPreheatDone) THEN
-    stMw.iPreheatElapsedScans := stMw.iPreheatElapsedScans + 1;
-END_IF;
+
+fbPreheatTimer(IN := xMwPreheatRequest AND (NOT xMwPreheatDone), PT := T#1H);
 
 (* awHolding[130/131] is the chamber pressure PLC_PRG.st already measures and
    publishes (MV210, Torr) -- same array, no new channel needed. Below this
@@ -125,10 +117,8 @@ xMwOnAllowed := xMwOnRequest AND (NOT xChamberPressureLow);
 
 IF xMwOnAllowed <> stMw.xLastOnValue THEN
     xMwOnValue := xMwOnAllowed;
-    xMwOnTrigger := TRUE;
+    xMwOnPending := TRUE;
     stMw.xLastOnValue := xMwOnAllowed;
-ELSE
-    xMwOnTrigger := FALSE;
 END_IF;
 
 rSetpointKw := F_ReadFixed(awHolding[193], awHolding[194]);
@@ -141,10 +131,8 @@ iRawSetpoint := REAL_TO_INT(rSetpointKw * 100.0 + 0.5);
 
 IF iRawSetpoint <> stMw.iLastSetpointRaw THEN
     wMwSetpointRaw := INT_TO_WORD(iRawSetpoint);
-    xMwSetpointTrigger := TRUE;
+    xMwSetpointPending := TRUE;
     stMw.iLastSetpointRaw := iRawSetpoint;
-ELSE
-    xMwSetpointTrigger := FALSE;
 END_IF;
 
 rIncidentKw  := INT_TO_REAL(WORD_TO_INT(awMwPowerRaw[0])) / 100.0;
@@ -180,4 +168,7 @@ awHolding[201] := awHolding[201] + WORD#1;
 awHolding[202] := awMwPowerRaw[0];
 awHolding[203] := awMwPowerRaw[1];
 awHolding[204] := stMw.wFaultReason;
-awHolding[205] := INT_TO_WORD(stMw.iPreheatElapsedScans);
+awHolding[205] := DWORD_TO_WORD(TIME_TO_DWORD(fbPreheatTimer.ET) / DWORD#1000);
+
+fbConfirmTick(IN := MW_GEN.xError AND (NOT fbConfirmTick.Q), PT := T#4S);
+MW_GEN.xConfirmError := fbConfirmTick.Q;

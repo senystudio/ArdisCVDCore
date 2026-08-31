@@ -81,7 +81,6 @@ namespace ArdisCVDCore.modules_hw
         private const ushort RegisterStart = 192;
         private const ushort RegisterCount = 14;
         private const double Scale = 1000.0;
-        private const double ScanSeconds = 0.05;
         public const double MinSetpointKw = 1.0;
         public const double MaxSetpointKw = 10.0;
 
@@ -277,7 +276,7 @@ namespace ArdisCVDCore.modules_hw
                 MagnetronTooWarm = (status & 0x4000) != 0,
                 WaterFlowFault = (status & 0x8000) != 0,
                 FaultReasonBits = registers[12],
-                PreheatElapsedSeconds = (int)(registers[13] * ScanSeconds),
+                PreheatElapsedSeconds = registers[13],
                 Heartbeat = registers[9],
                 DiagIncidentRaw = (short)registers[10],
                 DiagReflectedRaw = (short)registers[11],
