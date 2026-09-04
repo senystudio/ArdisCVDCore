@@ -68,6 +68,26 @@ namespace ArdisCVDCore.modules_hw
                 get { return Connected && !CommError; }
             }
 
+            public bool Idle
+            {
+                get { return !PreheatOn && !MicrowaveOn; }
+            }
+
+            public bool FaultReportable
+            {
+                get
+                {
+                    if (!FaultActive)
+                        return false;
+
+                    if (WaterFlowFault && Idle)
+                        return ReflectiveProtection || FilamentFlowFault || FilamentUnderflowFault
+                            || MagnetronAbnormal1 || AnodeFlowFault || FireFailure || MagnetronTooWarm;
+
+                    return true;
+                }
+            }
+
             public State Clone()
             {
                 State copy = (State)MemberwiseClone();

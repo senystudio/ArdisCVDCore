@@ -43,42 +43,42 @@ namespace ArdisCVDCore
         public PidViewerForm()
         {
             Text = "PID Viewer";
-            ClientSize = new Size(232, 164);
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             StartPosition = FormStartPosition.Manual;
             Icon = Res.AppIcon;
 
-            // Straight onto the form, with no group box around them: with the
-            // caption gone the frame was a border round the whole window saying
-            // nothing, and the title bar already says which window this is.
-            _error = AddReadout(this, "Error", 12);
-            _p = AddReadout(this, "P", 34);
-            _i = AddReadout(this, "I", 56);
-            _d = AddReadout(this, "D", 78);
-            _output = AddReadout(this, "Output", 100);
+            GroupBox chamber = AddBlock("Chamber", BlockTop, ChamberBlockHeight);
+
+            _error = AddReadout(chamber, "Error", 22);
+            _p = AddReadout(chamber, "P", 44);
+            _i = AddReadout(chamber, "I", 66);
+            _d = AddReadout(chamber, "D", 88);
+            _output = AddReadout(chamber, "Output", 110);
 
             // Below the readouts, separated from them: this is the one control on
             // the window, and everything above it is just reporting.
             _direct = new CheckBox
             {
                 AutoSize = true,
-                Location = new Point(LabelX, 134),
+                Location = new Point(LabelX, 144),
                 Text = "Direct Input",
                 UseVisualStyleBackColor = true
             };
             _direct.CheckedChanged += Direct_CheckedChanged;
-            Controls.Add(_direct);
+            chamber.Controls.Add(_direct);
 
             _directValue = new CustomNumericUpDown
             {
-                Location = new Point(ValueX, 132),
+                Location = new Point(ValueX, 142),
                 Size = new Size(ValueWidth, 20),
                 Maximum = 5000,
                 WheelIncrement = 5
             };
             _directValue.ValueChanged += DirectValue_ValueChanged;
-            Controls.Add(_directValue);
+            chamber.Controls.Add(_directValue);
+
+            ClientSize = new Size(BlockLeft * 2 + BlockWidth, chamber.Bottom + BlockLeft);
 
             LoadFromSettings();
 
@@ -92,6 +92,23 @@ namespace ArdisCVDCore
         private const int LabelX = 12;
         private const int ValueX = 120;
         private const int ValueWidth = 100;
+
+        private const int BlockLeft = 12;
+        private const int BlockTop = 8;
+        private const int BlockWidth = 232;
+        private const int ChamberBlockHeight = 176;
+
+        private GroupBox AddBlock(string caption, int y, int height)
+        {
+            GroupBox box = new GroupBox
+            {
+                Location = new Point(BlockLeft, y),
+                Size = new Size(BlockWidth, height),
+                Text = caption
+            };
+            Controls.Add(box);
+            return box;
+        }
 
         private static Label AddReadout(Control parent, string caption, int y)
         {

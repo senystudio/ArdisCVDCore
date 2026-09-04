@@ -108,8 +108,8 @@ namespace ArdisCVDCore.trends
         /// <summary>Adds the dashed companion line a setpoint series is drawn with.</summary>
         protected Series AddSetPointSeries(string name, string legendText, Color color)
         {
-            Series series = AddSeries(name, legendText, color, 2);
-            series.BorderDashStyle = ChartDashStyle.DashDot;
+            Series series = AddSeries(name, legendText, color, 1);
+            series.BorderDashStyle = ChartDashStyle.Dash;
             return series;
         }
 
@@ -192,6 +192,7 @@ namespace ArdisCVDCore.trends
                 if (!_valChangingOn)
                 {
                     _scrollBar.Maximum = count;
+                    _scrollBar.Minimum = _leftLimit;
                     _scrollBar.LargeChange = numberOfPointsInArea / count + numberOfPointsInArea;
                     _scrollBar.Value = _scrollBar.Maximum - numberOfPointsInArea;
                 }
@@ -222,8 +223,9 @@ namespace ArdisCVDCore.trends
 
         private void ScrollBar_ValueChanged(object sender, EventArgs e)
         {
-            chart.ChartAreas["ChartArea1"].AxisX.Minimum = _leftLimit + (double)_scrollBar.Value;
-            chart.ChartAreas["ChartArea1"].AxisX.Maximum = _leftLimit + _scrollBar.Value + numberOfPointsInArea;
+            double first = _scrollBar.Value - _leftLimit;
+            chart.ChartAreas["ChartArea1"].AxisX.Minimum = first;
+            chart.ChartAreas["ChartArea1"].AxisX.Maximum = first + numberOfPointsInArea;
         }
 
         private void Chart_MouseClick(object sender, MouseEventArgs e)
@@ -248,7 +250,7 @@ namespace ArdisCVDCore.trends
             // "Last N points" -- entry 10 means "everything recorded so far",
             // and a fixed N is refused until that many points actually exist.
             if (PointsViewIndex == 10)
-                numberOfPointsInArea = _tickCount;
+                numberOfPointsInArea = Math.Min(_tickCount, numberOfPointsInChart);
             else
             {
                 int requested = (PointsViewIndex + 1) * 100;

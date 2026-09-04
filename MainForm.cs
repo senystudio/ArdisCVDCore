@@ -77,6 +77,10 @@ namespace ArdisCVDCore
         private const string IdleTime = "00:00:00";
         private const string IdleDuration = "00:00:00:00";
 
+        private const int MicrowaveAutoResetDelayTicks = 5;
+        private int _microwaveAutoResetTicks;
+        private bool _waterFaultWarned;
+
         private GasTrendForm _gasTrendForm;
         private PressureTrendForm _pressureTrendForm;
         private MWPowerTrendForm _mwPowerTrendForm;
@@ -532,7 +536,7 @@ namespace ArdisCVDCore
             // write regardless, and a button that visibly does nothing is worse
             // than a disabled one.
             StartMW.Enabled = generatorAlive;
-            button1.Enabled = generatorAlive && !state.FaultActive && !state.ChamberPressureLow;
+            button1.Enabled = generatorAlive && !state.FaultReportable && !state.ChamberPressureLow;
 
             bool preheating = generatorAlive && state.PreheatOn && !state.FilamentPreheatDone;
             int remaining = Math.Max(0, PreheatSeconds - state.PreheatElapsedSeconds);
@@ -554,6 +558,36 @@ namespace ArdisCVDCore
             PreheatProgress.Value = preheating
                 ? Math.Max(0, Math.Min(state.PreheatElapsedSeconds, PreheatSeconds))
                 : 0;
+
+            CheckMicrowaveWater(state);
+        }
+
+        private void CheckMicrowaveWater(PLC210MicrowaveClient.State state)
+        {
+            if (state.GeneratorAnswering && state.WaterFlowFault && !state.Idle)
+            {
+                if (_waterFaultWarned)
+                    return;
+
+                _waterFaultWarned = true;
+                PLC210MicrowaveClient.RequestMicrowave(false);
+                PLC210MicrowaveClient.RequestPreheat(false);
+
+                BeginInvoke(new MethodInvoker(delegate
+                {
+                    MessageBox.Show(
+                        this,
+                        "No cooling water at the microwave generator.",
+                        "Microwave",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                }));
+
+                return;
+            }
+
+            if (state.Idle)
+                _waterFaultWarned = false;
         }
 
         private void StartMW_Click(object sender, EventArgs e)
@@ -590,6 +624,13 @@ namespace ArdisCVDCore
 
             ShowPump(ForeVacPump, state.Connected && _manualRunActive, state.ForeVacPumpOn);
             ShowPump(Water_Btn, state.Connected && _manualRunActive, state.WaterPumpOn);
+
+            if (_microwaveAutoResetTicks > 0)
+            {
+                _microwaveAutoResetTicks--;
+                if (_microwaveAutoResetTicks == 0 && state.Connected && state.WaterPumpOn)
+                    ClearMicrowaveFaultOnWater();
+            }
         }
 
         private static void ShowPump(Button button, bool operable, bool running)
@@ -609,7 +650,19 @@ namespace ArdisCVDCore
 
         private void Water_Btn_Click(object sender, EventArgs e)
         {
-            PLC210VacuumClient.RequestWaterPump(!PLC210VacuumClient.GetState().WaterPumpOn);
+            bool turnOn = !PLC210VacuumClient.GetState().WaterPumpOn;
+            PLC210VacuumClient.RequestWaterPump(turnOn);
+            _microwaveAutoResetTicks = turnOn ? MicrowaveAutoResetDelayTicks : 0;
+        }
+
+        private static void ClearMicrowaveFaultOnWater()
+        {
+            PLC210MicrowaveClient.State microwave = PLC210MicrowaveClient.GetState();
+            if (!microwave.GeneratorAnswering || !microwave.FaultActive)
+                return;
+
+            PLC210MicrowaveClient.RequestMicrowave(false);
+            PLC210MicrowaveClient.RequestReset();
         }
 
         // --- Cooling Section ---

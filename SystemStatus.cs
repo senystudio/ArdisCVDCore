@@ -159,9 +159,7 @@ namespace ArdisCVDCore
                 return;
             }
 
-            lines.Add(new StatusLine("Hi-Vac gauge", StatusLevel.Ok,
-                string.Format(CultureInfo.InvariantCulture, "{0:G3} Torr / {1:G3} mbar",
-                    state.PressureTorr, state.PressureMbar)));
+            lines.Add(new StatusLine("Hi-Vac gauge", StatusLevel.Ok, "Connected"));
         }
 
         private static void AddGasFlow(ICollection<StatusLine> lines)
@@ -271,7 +269,7 @@ namespace ArdisCVDCore
                 return;
             }
 
-            if (state.FaultActive)
+            if (state.FaultReportable)
             {
                 lines.Add(new StatusLine("Microwave", StatusLevel.Error,
                     "Fault — " + FaultReason(state) + ", press RESET"));
@@ -285,7 +283,7 @@ namespace ArdisCVDCore
                 return;
             }
 
-            lines.Add(new StatusLine("Microwave", StatusLevel.Ok, DescribeRunState(state)));
+            lines.Add(new StatusLine("Microwave", StatusLevel.Ok, "Connected"));
         }
 
         /// <summary>
@@ -335,19 +333,6 @@ namespace ArdisCVDCore
             lines.Add(new StatusLine("Cooling", StatusLevel.Ok, "Connected"));
         }
 
-        public static string DescribeRunState(PLC210MicrowaveClient.State state)
-        {
-            if (state.MicrowaveOn)
-                return "Microwave on";
-
-            if (state.PreheatOn)
-                return state.FilamentPreheatDone
-                    ? "Preheated, ready"
-                    : "Preheating filament... " + state.PreheatElapsedSeconds.ToString(CultureInfo.InvariantCulture) + "s";
-
-            return "Idle";
-        }
-
         /// <summary>
         /// Decodes the reason PRG_Microwave.st latched at the moment it tripped
         /// (awHolding[204]) -- not the live status bits, which may already have
@@ -357,6 +342,8 @@ namespace ArdisCVDCore
         public static string FaultReason(PLC210MicrowaveClient.State state)
         {
             ushort bits = state.FaultReasonBits;
+            if (state.Idle)
+                bits = (ushort)(bits & 0xFDFF);
             if ((bits & 0x0200) != 0) return "no water flow";
             if ((bits & 0x0080) != 0) return "arc/fire detected";
             if ((bits & 0x0100) != 0) return "magnetron overheating";
