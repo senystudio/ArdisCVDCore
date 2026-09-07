@@ -341,6 +341,9 @@ namespace ArdisCVDCore
         /// </summary>
         public static string FaultReason(PLC210MicrowaveClient.State state)
         {
+            if (state.WaterFaultLatched)
+                return "no water flow";
+
             ushort bits = state.FaultReasonBits;
             if (state.Idle)
                 bits = (ushort)(bits & 0xFDFF);

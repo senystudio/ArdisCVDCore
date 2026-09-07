@@ -79,10 +79,13 @@ namespace ArdisCVDCore.modules_hw
             {
                 get
                 {
+                    if (WaterFaultLatched)
+                        return true;
+
                     if (!FaultActive)
                         return false;
 
-                    if (WaterFlowFault && Idle && !WaterFaultLatched)
+                    if (WaterFlowFault && Idle)
                         return ReflectiveProtection || FilamentFlowFault || FilamentUnderflowFault
                             || MagnetronAbnormal1 || AnodeFlowFault || FireFailure || MagnetronTooWarm;
 
@@ -188,7 +191,11 @@ namespace ArdisCVDCore.modules_hw
         public static void RequestReset()
         {
             lock (Sync)
+            {
                 _resetPending = true;
+                _waterFaultLatched = false;
+                _state.WaterFaultLatched = false;
+            }
         }
 
         public static void LatchWaterFault()
@@ -264,8 +271,6 @@ namespace ArdisCVDCore.modules_hw
 
                     lock (Sync)
                     {
-                        if (!plcState.WaterFlowFault)
-                            _waterFaultLatched = false;
                         plcState.WaterFaultLatched = _waterFaultLatched;
                         _state = plcState;
                     }
