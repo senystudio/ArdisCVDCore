@@ -6,3 +6,4 @@
 - [PLC210 register contract](plc210-register-contract.md) — awHolding map, which client reads what, and the signals that are only an echo
 - [Pyrometer / MW RS-485 conflict](pyrometer-mw-rs485-conflict.md) — why PYRO_RXT hangs, what was ruled out, and the fix that is still pending
 - [Memory location](memory-location.md) — the files live in the repo now; the ~/.claude path is a junction to them
+- [Microwave water fault](microwave-water-fault-flow.md) — when the no-water error shows, what drops Preheat/MW, what clears it

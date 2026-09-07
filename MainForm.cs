@@ -570,6 +570,7 @@ namespace ArdisCVDCore
                     return;
 
                 _waterFaultWarned = true;
+                PLC210MicrowaveClient.LatchWaterFault();
                 PLC210MicrowaveClient.RequestMicrowave(false);
                 PLC210MicrowaveClient.RequestPreheat(false);
 
@@ -653,6 +654,9 @@ namespace ArdisCVDCore
             bool turnOn = !PLC210VacuumClient.GetState().WaterPumpOn;
             PLC210VacuumClient.RequestWaterPump(turnOn);
             _microwaveAutoResetTicks = turnOn ? MicrowaveAutoResetDelayTicks : 0;
+
+            if (turnOn)
+                PLC210MicrowaveClient.ClearWaterFaultLatch();
         }
 
         private static void ClearMicrowaveFaultOnWater()

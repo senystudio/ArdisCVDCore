@@ -33,6 +33,8 @@ VAR
     rReflectedKw : REAL;
     dwValue      : DWORD;
     wStatus      : WORD;
+
+    fbPreheatTimer : TON;
 END_VAR
 
 
@@ -94,16 +96,12 @@ END_IF;
 IF xMwPreheatRequest <> stMw.xLastPreheatValue THEN
     xMwPreheatValue := xMwPreheatRequest;
     xMwPreheatTrigger := TRUE;
-    IF xMwPreheatRequest THEN
-        stMw.iPreheatElapsedScans := 0;
-    END_IF;
     stMw.xLastPreheatValue := xMwPreheatRequest;
 ELSE
     xMwPreheatTrigger := FALSE;
 END_IF;
-IF xMwPreheatRequest AND (NOT xMwPreheatDone) THEN
-    stMw.iPreheatElapsedScans := stMw.iPreheatElapsedScans + 1;
-END_IF;
+
+fbPreheatTimer(IN := xMwPreheatRequest AND (NOT xMwPreheatDone), PT := T#1H);
 
 IF xMwOnRequest <> stMw.xLastOnValue THEN
     xMwOnValue := xMwOnRequest;
@@ -161,4 +159,4 @@ awHolding[201] := awHolding[201] + WORD#1;
 awHolding[202] := awMwPowerRaw[0];
 awHolding[203] := awMwPowerRaw[1];
 awHolding[204] := stMw.wFaultReason;
-awHolding[205] := INT_TO_WORD(stMw.iPreheatElapsedScans);
+awHolding[205] := DWORD_TO_WORD(TIME_TO_DWORD(fbPreheatTimer.ET) / DWORD#1000);

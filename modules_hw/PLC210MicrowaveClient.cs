@@ -73,6 +73,8 @@ namespace ArdisCVDCore.modules_hw
                 get { return !PreheatOn && !MicrowaveOn; }
             }
 
+            public bool WaterFaultLatched;
+
             public bool FaultReportable
             {
                 get
@@ -80,7 +82,7 @@ namespace ArdisCVDCore.modules_hw
                     if (!FaultActive)
                         return false;
 
-                    if (WaterFlowFault && Idle)
+                    if (WaterFlowFault && Idle && !WaterFaultLatched)
                         return ReflectiveProtection || FilamentFlowFault || FilamentUnderflowFault
                             || MagnetronAbnormal1 || AnodeFlowFault || FireFailure || MagnetronTooWarm;
 
@@ -113,6 +115,7 @@ namespace ArdisCVDCore.modules_hw
         private static bool _preheatRequested;
         private static bool _microwaveRequested;
         private static bool _resetPending;
+        private static bool _waterFaultLatched;
         private static double _setpointKw = MinSetpointKw;
         private static Thread _worker;
         private static TcpClient _tcpClient;
@@ -188,6 +191,24 @@ namespace ArdisCVDCore.modules_hw
                 _resetPending = true;
         }
 
+        public static void LatchWaterFault()
+        {
+            lock (Sync)
+            {
+                _waterFaultLatched = true;
+                _state.WaterFaultLatched = true;
+            }
+        }
+
+        public static void ClearWaterFaultLatch()
+        {
+            lock (Sync)
+            {
+                _waterFaultLatched = false;
+                _state.WaterFaultLatched = false;
+            }
+        }
+
         private static void WorkerLoop()
         {
             while (true)
@@ -242,7 +263,12 @@ namespace ArdisCVDCore.modules_hw
                     plcState.UpdatedAt = DateTime.Now;
 
                     lock (Sync)
+                    {
+                        if (!plcState.WaterFlowFault)
+                            _waterFaultLatched = false;
+                        plcState.WaterFaultLatched = _waterFaultLatched;
                         _state = plcState;
+                    }
                 }
                 catch (Exception ex)
                 {
