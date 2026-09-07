@@ -1,0 +1,8 @@
+- [Working style](ardis-cvdcore-working-style.md) — NO comments in .st or C# code, Russian only, don't build until told, ask instead of inventing
+- [Open work](ardis-cvdcore-open-work.md) — what's inert on purpose, what's parked, and the decisions still outstanding
+- [Reference projects](ardis-reference-projects.md) — where the two older Ardis apps live and what each is good for
+- [Build and smoke test](ardis-cvdcore-build.md) — MSBuild invocation, the NModbus trap, how to screenshot the running app
+- [МВ210-102 Modbus map](mv210-102-modbus-map.md) — register addresses and the three traps that break the cooling modules
+- [PLC210 register contract](plc210-register-contract.md) — awHolding map, which client reads what, and the signals that are only an echo
+- [Pyrometer / MW RS-485 conflict](pyrometer-mw-rs485-conflict.md) — why PYRO_RXT hangs, what was ruled out, and the fix that is still pending
+- [Memory location](memory-location.md) — the files live in the repo now; the ~/.claude path is a junction to them
