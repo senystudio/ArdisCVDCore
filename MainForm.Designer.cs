@@ -104,6 +104,9 @@
             this.MWPowerSet = new System.Windows.Forms.Button();
             this.ReflMWPower = new System.Windows.Forms.TextBox();
             this.IncMWPower = new System.Windows.Forms.TextBox();
+            this.MWIncLabel = new System.Windows.Forms.Label();
+            this.MWReflLabel = new System.Windows.Forms.Label();
+            this.MWSetPointLabel = new System.Windows.Forms.Label();
             this.label30 = new System.Windows.Forms.Label();
             this.TimeToStart = new System.Windows.Forms.Label();
             this.MWNotConnected = new System.Windows.Forms.Label();
@@ -1199,14 +1202,14 @@
             this.Microwave_groupBox.Size = new System.Drawing.Size(381, 184);
             this.Microwave_groupBox.TabIndex = 375;
             this.Microwave_groupBox.TabStop = false;
-            this.Microwave_groupBox.Text = "Microwave Section (kW)";
+            this.Microwave_groupBox.Text = "Microwave Section";
             this.Microwave_groupBox.Enter += new System.EventHandler(this.Microwave_groupBox_Enter);
             // 
             // StartMW
             // 
             this.StartMW.BackColor = System.Drawing.SystemColors.Control;
             this.StartMW.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.StartMW.Location = new System.Drawing.Point(9, 94);
+            this.StartMW.Location = new System.Drawing.Point(9, 104);
             this.StartMW.Name = "StartMW";
             this.StartMW.Size = new System.Drawing.Size(100, 26);
             this.StartMW.TabIndex = 16;
@@ -1216,7 +1219,7 @@
             // 
             // PreheatProgress
             //
-            this.PreheatProgress.Location = new System.Drawing.Point(9, 152);
+            this.PreheatProgress.Location = new System.Drawing.Point(9, 160);
             this.PreheatProgress.Maximum = 150;
             this.PreheatProgress.Name = "PreheatProgress";
             this.PreheatProgress.Size = new System.Drawing.Size(208, 20);
@@ -1231,14 +1234,17 @@
             this.MicrowaveIncident_groupBox.Controls.Add(this.MWPowerSet);
             this.MicrowaveIncident_groupBox.Controls.Add(this.ReflMWPower);
             this.MicrowaveIncident_groupBox.Controls.Add(this.IncMWPower);
-            this.MicrowaveIncident_groupBox.Location = new System.Drawing.Point(7, 16);
+            this.MicrowaveIncident_groupBox.Controls.Add(this.MWIncLabel);
+            this.MicrowaveIncident_groupBox.Controls.Add(this.MWReflLabel);
+            this.MicrowaveIncident_groupBox.Controls.Add(this.MWSetPointLabel);
+            this.MicrowaveIncident_groupBox.Location = new System.Drawing.Point(7, 14);
             this.MicrowaveIncident_groupBox.Margin = new System.Windows.Forms.Padding(2);
             this.MicrowaveIncident_groupBox.Name = "MicrowaveIncident_groupBox";
             this.MicrowaveIncident_groupBox.Padding = new System.Windows.Forms.Padding(2);
-            this.MicrowaveIncident_groupBox.Size = new System.Drawing.Size(210, 72);
+            this.MicrowaveIncident_groupBox.Size = new System.Drawing.Size(210, 86);
             this.MicrowaveIncident_groupBox.TabIndex = 1;
             this.MicrowaveIncident_groupBox.TabStop = false;
-            this.MicrowaveIncident_groupBox.Text = " Incident         Reflected        Set Point";
+            this.MicrowaveIncident_groupBox.Text = "Microwave Power (kW)";
             // 
             // MWPowerSetPoint
             // 
@@ -1249,7 +1255,7 @@
             0,
             0,
             65536});
-            this.MWPowerSetPoint.Location = new System.Drawing.Point(136, 13);
+            this.MWPowerSetPoint.Location = new System.Drawing.Point(136, 27);
             this.MWPowerSetPoint.Maximum = new decimal(new int[] {
             10,
             0,
@@ -1280,7 +1286,7 @@
             // 
             this.MWPowerSet.BackColor = System.Drawing.SystemColors.Control;
             this.MWPowerSet.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.MWPowerSet.Location = new System.Drawing.Point(145, 43);
+            this.MWPowerSet.Location = new System.Drawing.Point(145, 57);
             this.MWPowerSet.Name = "MWPowerSet";
             this.MWPowerSet.Size = new System.Drawing.Size(58, 25);
             this.MWPowerSet.TabIndex = 15;
@@ -1293,7 +1299,7 @@
             this.ReflMWPower.BackColor = System.Drawing.Color.Blue;
             this.ReflMWPower.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.ReflMWPower.ForeColor = System.Drawing.Color.White;
-            this.ReflMWPower.Location = new System.Drawing.Point(70, 14);
+            this.ReflMWPower.Location = new System.Drawing.Point(70, 28);
             this.ReflMWPower.Margin = new System.Windows.Forms.Padding(3, 3, 0, 3);
             this.ReflMWPower.Name = "ReflMWPower";
             this.ReflMWPower.ReadOnly = true;
@@ -1308,7 +1314,7 @@
             this.IncMWPower.BackColor = System.Drawing.Color.Blue;
             this.IncMWPower.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.IncMWPower.ForeColor = System.Drawing.Color.White;
-            this.IncMWPower.Location = new System.Drawing.Point(5, 14);
+            this.IncMWPower.Location = new System.Drawing.Point(5, 28);
             this.IncMWPower.Margin = new System.Windows.Forms.Padding(3, 3, 0, 3);
             this.IncMWPower.Name = "IncMWPower";
             this.IncMWPower.ReadOnly = true;
@@ -1317,6 +1323,33 @@
             this.IncMWPower.TabStop = false;
             this.IncMWPower.Text = "0";
             this.IncMWPower.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            // 
+            // MWIncLabel
+            // 
+            this.MWIncLabel.Location = new System.Drawing.Point(5, 14);
+            this.MWIncLabel.Name = "MWIncLabel";
+            this.MWIncLabel.Size = new System.Drawing.Size(62, 13);
+            this.MWIncLabel.TabIndex = 506;
+            this.MWIncLabel.Text = "Inc";
+            this.MWIncLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // MWReflLabel
+            // 
+            this.MWReflLabel.Location = new System.Drawing.Point(70, 14);
+            this.MWReflLabel.Name = "MWReflLabel";
+            this.MWReflLabel.Size = new System.Drawing.Size(62, 13);
+            this.MWReflLabel.TabIndex = 507;
+            this.MWReflLabel.Text = "Ref";
+            this.MWReflLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // MWSetPointLabel
+            // 
+            this.MWSetPointLabel.Location = new System.Drawing.Point(136, 14);
+            this.MWSetPointLabel.Name = "MWSetPointLabel";
+            this.MWSetPointLabel.Size = new System.Drawing.Size(70, 13);
+            this.MWSetPointLabel.TabIndex = 508;
+            this.MWSetPointLabel.Text = "Set Point";
+            this.MWSetPointLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // label30
             // 
@@ -3203,7 +3236,7 @@
             // 
             this.button1.BackColor = System.Drawing.SystemColors.Control;
             this.button1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button1.Location = new System.Drawing.Point(115, 94);
+            this.button1.Location = new System.Drawing.Point(115, 104);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(102, 26);
             this.button1.TabIndex = 394;
@@ -3215,7 +3248,7 @@
             // 
             this.button2.BackColor = System.Drawing.SystemColors.Control;
             this.button2.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button2.Location = new System.Drawing.Point(9, 122);
+            this.button2.Location = new System.Drawing.Point(9, 132);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(100, 26);
             this.button2.TabIndex = 395;
@@ -3227,7 +3260,7 @@
             // 
             this.button9.BackColor = System.Drawing.SystemColors.Control;
             this.button9.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button9.Location = new System.Drawing.Point(115, 122);
+            this.button9.Location = new System.Drawing.Point(115, 132);
             this.button9.Name = "button9";
             this.button9.Size = new System.Drawing.Size(102, 26);
             this.button9.TabIndex = 396;
@@ -3474,6 +3507,9 @@
         private System.Windows.Forms.Label MWNotConnected;
         private System.Windows.Forms.Button MWPowerSet;
         private System.Windows.Forms.TextBox IncMWPower;
+        private System.Windows.Forms.Label MWIncLabel;
+        private System.Windows.Forms.Label MWReflLabel;
+        private System.Windows.Forms.Label MWSetPointLabel;
         private System.Windows.Forms.Button StartMW;
         private System.Windows.Forms.Timer SuperCycle;
         private System.Windows.Forms.Button ManualRun;

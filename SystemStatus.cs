@@ -222,28 +222,28 @@ namespace ArdisCVDCore
 
             if (!state.Connected)
             {
-                lines.Add(new StatusLine("Pyrometers", StatusLevel.Error, "Not connected"));
+                lines.Add(new StatusLine("Pyrometer", StatusLevel.Error, "Not connected"));
                 return;
             }
 
             PLC210PyrometerClient.PyrometerReading active = MainForm.SelectActivePyrometer(state);
             if (active == null)
             {
-                lines.Add(new StatusLine("Pyrometers", StatusLevel.Warning,
+                lines.Add(new StatusLine("Pyrometer", StatusLevel.Warning,
                     "Neither pyrometer is returning a valid reading"));
                 return;
             }
 
             if (active.Ch1Overload || active.Ch2Overload)
             {
-                lines.Add(new StatusLine("Pyrometers", StatusLevel.Warning,
+                lines.Add(new StatusLine("Pyrometer", StatusLevel.Warning,
                     "Overload on " + (active.Ch1Overload && active.Ch2Overload
                         ? "Ch1 and Ch2"
                         : active.Ch1Overload ? "Ch1" : "Ch2")));
                 return;
             }
 
-            lines.Add(new StatusLine("Pyrometers", StatusLevel.Ok, "Connected"));
+            lines.Add(new StatusLine("Pyrometer", StatusLevel.Ok, "Connected"));
         }
 
         private static void AddMicrowave(ICollection<StatusLine> lines)
@@ -259,31 +259,31 @@ namespace ArdisCVDCore
             // of the fault bits are stale coil reads once the generator is quiet.
             if (!state.Connected)
             {
-                lines.Add(new StatusLine("Microwave", StatusLevel.Error, "Not connected"));
+                lines.Add(new StatusLine("Microwave Power Supply", StatusLevel.Error, "Not connected"));
                 return;
             }
 
             if (!state.GeneratorAnswering)
             {
-                lines.Add(new StatusLine("Microwave", StatusLevel.Warning, "Not connected"));
+                lines.Add(new StatusLine("Microwave Power Supply", StatusLevel.Warning, "Not connected"));
                 return;
             }
 
             if (state.FaultReportable)
             {
-                lines.Add(new StatusLine("Microwave", StatusLevel.Error,
+                lines.Add(new StatusLine("Microwave Power Supply", StatusLevel.Error,
                     "Fault — " + FaultReason(state) + ", press RESET"));
                 return;
             }
 
             if (state.ChamberPressureLow)
             {
-                lines.Add(new StatusLine("Microwave", StatusLevel.Warning,
+                lines.Add(new StatusLine("Microwave Power Supply", StatusLevel.Warning,
                     "Chamber pressure too low (<9 Torr), Microwave blocked"));
                 return;
             }
 
-            lines.Add(new StatusLine("Microwave", StatusLevel.Ok, "Connected"));
+            lines.Add(new StatusLine("Microwave Power Supply", StatusLevel.Ok, "Connected"));
         }
 
         /// <summary>
@@ -303,7 +303,7 @@ namespace ArdisCVDCore
 
             if (!state.Connected)
             {
-                lines.Add(new StatusLine("Cooling", StatusLevel.Error, "Not connected"));
+                lines.Add(new StatusLine("Cooling System", StatusLevel.Error, "Not connected"));
                 return;
             }
 
@@ -325,12 +325,12 @@ namespace ArdisCVDCore
 
             if (dead.Count > 0)
             {
-                lines.Add(new StatusLine("Cooling", StatusLevel.Warning,
+                lines.Add(new StatusLine("Cooling System", StatusLevel.Warning,
                     "No valid reading: " + string.Join(", ", dead.ToArray())));
                 return;
             }
 
-            lines.Add(new StatusLine("Cooling", StatusLevel.Ok, "Connected"));
+            lines.Add(new StatusLine("Cooling System", StatusLevel.Ok, "Connected"));
         }
 
         /// <summary>

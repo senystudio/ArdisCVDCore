@@ -12,7 +12,7 @@ namespace ArdisCVDCore.trends
         private static readonly string[] SeriesLabel = { "H2", "CH4", "N2", "O2", "Ar", "H2 (2)" };
         private static readonly Color[] ChannelColor =
         {
-            Color.Blue, Color.Orange, Color.Brown, Color.DeepSkyBlue, Color.Purple, Color.SeaGreen
+            Color.Green, Color.Red, Color.Black, Color.SkyBlue, SystemColors.ControlDark, Color.DarkGreen
         };
 
         public GasTrendForm()

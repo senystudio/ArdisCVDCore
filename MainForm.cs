@@ -593,12 +593,31 @@ namespace ArdisCVDCore
 
         private void StartMW_Click(object sender, EventArgs e)
         {
-            PLC210MicrowaveClient.RequestPreheat(!_microwaveState.PreheatOn);
+            bool turnOn = !_microwaveState.PreheatOn;
+            if (!turnOn && !ConfirmSwitchOff("Preheat"))
+                return;
+
+            PLC210MicrowaveClient.RequestPreheat(turnOn);
         }
 
         private void button1_Click_1(object sender, EventArgs e)
         {
-            PLC210MicrowaveClient.RequestMicrowave(!_microwaveState.MicrowaveOn);
+            bool turnOn = !_microwaveState.MicrowaveOn;
+            if (!turnOn && !ConfirmSwitchOff("Microwave"))
+                return;
+
+            PLC210MicrowaveClient.RequestMicrowave(turnOn);
+        }
+
+        private bool ConfirmSwitchOff(string equipment)
+        {
+            return MessageBox.Show(
+                this,
+                "Are you sure you want to switch " + equipment + " off?",
+                "Ardis CVDCore",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question,
+                MessageBoxDefaultButton.Button2) == DialogResult.Yes;
         }
 
         private void ResetMW_Click(object sender, EventArgs e)

@@ -62,7 +62,7 @@ namespace ArdisCVDCore
             {
                 AutoSize = true,
                 Location = new Point(LabelX, 144),
-                Text = "Direct Input",
+                Text = "Direct Output",
                 UseVisualStyleBackColor = true
             };
             _direct.CheckedChanged += Direct_CheckedChanged;

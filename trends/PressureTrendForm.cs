@@ -21,7 +21,7 @@ namespace ArdisCVDCore.trends
             : base("PressureTrend", "Pressure Trend", 0, 800)
         {
             AddSeries("ChamberPressure", "ChamberPressure (Torr)", Color.RoyalBlue, 3);
-            AddSetPointSeries("ChamberPressureSetPoint", "ChamberPressureSetPoint (Torr)", Color.Black);
+            AddSetPointSeries("ChamberPressureSetPoint", "ChamberPressureSetPoint (Torr)", Color.LightSkyBlue);
             AddSeries("HiVac", "HiVac (Torr)", Color.Fuchsia, 1);
         }
 
