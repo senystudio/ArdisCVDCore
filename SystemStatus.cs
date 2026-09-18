@@ -27,7 +27,7 @@ namespace ArdisCVDCore
     }
 
     /// <summary>
-    /// Rolls the eight Modbus clients up into one verdict for the Status plate on
+    /// Rolls the nine Modbus clients up into one verdict for the Status plate on
     /// the main window, plus the per-section detail lines behind it.
     /// </summary>
     /// <remarks>
@@ -54,6 +54,7 @@ namespace ArdisCVDCore
             AddPyrometers(lines);
             AddMicrowave(lines);
             AddCooling(lines);
+            AddTurboPump(lines);
 
             return lines;
         }
@@ -331,6 +332,58 @@ namespace ArdisCVDCore
             }
 
             lines.Add(new StatusLine("Cooling System", StatusLevel.Ok, "Connected"));
+        }
+
+        /// <summary>
+        /// The turbo pump's KYKY TD drive.
+        /// </summary>
+        /// <remarks>
+        /// A drive that is not answering is a Warning, not an Error, for the
+        /// same reason the microwave generator is: between runs the pump is
+        /// simply switched off, and the drive is quiet, which is not something
+        /// the operator has lost control of. A fault while it is answering is a
+        /// different matter -- every one of those bits means the rotor has
+        /// either stopped or is about to -- and the forevacuum interlock hangs
+        /// off the same reading, so it goes up as an Error.
+        /// </remarks>
+        private static void AddTurboPump(ICollection<StatusLine> lines)
+        {
+            PLC210TurboPumpClient.State state = PLC210TurboPumpClient.GetState();
+
+            if (!state.Connected)
+            {
+                lines.Add(new StatusLine("Turbo pump", StatusLevel.Error, "Not connected"));
+                return;
+            }
+
+            if (!state.DriveAnswering)
+            {
+                lines.Add(new StatusLine("Turbo pump", StatusLevel.Warning, "Drive not answering"));
+                return;
+            }
+
+            if (state.FaultActive)
+            {
+                lines.Add(new StatusLine("Turbo pump", StatusLevel.Error,
+                    "Fault — " + state.FaultText));
+                return;
+            }
+
+            if (!state.Working)
+            {
+                lines.Add(new StatusLine("Turbo pump", StatusLevel.Ok, "Stopped"));
+                return;
+            }
+
+            // Drive current as well as speed and temperature: a rotor working
+            // against a gas load draws more of it long before it gets hot enough
+            // to trip, so it is the reading that says "this was started too
+            // early" while there is still time to do something about it.
+            lines.Add(new StatusLine("Turbo pump", StatusLevel.Ok,
+                (state.AtNormalSpeed ? "At speed, " : "Spinning up, ")
+                + state.SpeedHz.ToString(CultureInfo.InvariantCulture) + " Hz, "
+                + state.DriveCurrent.ToString("F2", CultureInfo.InvariantCulture) + " A, "
+                + state.TemperatureC.ToString(CultureInfo.InvariantCulture) + " °C"));
         }
 
         /// <summary>

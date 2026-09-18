@@ -47,6 +47,20 @@
        carry a third combined sensor -- the Tuner circuit. Everything from the
        flows down shifted, and the two pressure validity bits moved off bits
        6/7, which the seventh circuit now occupies.
-       All values are signed fixed point x1000, low word first. *)
-    awHolding AT %QW0 : ARRAY[0..239] OF WORD;
+       240..247 is owned by PRG_TurboPump, on MainTask -- the KYKY TD drive
+       module of the turbo pump, Modbus RTU slave 16 behind a Modbus_COM
+       master. See GVL_TurboPumpIO for the mapped channel variables and
+       comments.txt for the rest.
+         240       command from the HMI: bit0 run, bit15 command valid
+         241       bit0 run latched by the PLC, bit1 a command has been sent
+         242       rotation speed, Hz        (drive register 16#1000)
+         243       drive voltage, 0.01 V     (16#1001)
+         244       drive current, 0.01 A     (16#1002)
+         245       drive status word, raw    (16#1003)
+         246       motor temperature, degC   (16#1004, low byte)
+         247       bit0 the drive is answering
+       That block is in raw device units, not fixed point.
+       All values are signed fixed point x1000, low word first, except where
+       a block says otherwise. *)
+    awHolding AT %QW0 : ARRAY[0..247] OF WORD;
 END_VAR

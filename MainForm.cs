@@ -81,6 +81,14 @@ namespace ArdisCVDCore
         private int _microwaveAutoResetTicks;
         private bool _waterFaultWarned;
 
+        // What TurboSpeedBar_Paint draws. Held here rather than read out of the
+        // client inside the paint handler, so that a repaint Windows asks for --
+        // the window being uncovered, say -- draws the same bar the last
+        // exchange put there instead of whatever the polling thread has since
+        // written.
+        private int _turboBarSpeedHz;
+        private bool _turboBarAtSpeed;
+
         private GasTrendForm _gasTrendForm;
         private PressureTrendForm _pressureTrendForm;
         private MWPowerTrendForm _mwPowerTrendForm;
@@ -159,6 +167,7 @@ namespace ArdisCVDCore
             PLC210GasValveClient.Stop();
             PLC210VacuumClient.Stop();
             PLC210CoolingClient.Stop();
+            PLC210TurboPumpClient.Stop();
 
             IniWriter.INI.Write("MainForm", "X", Location.X.ToString(CultureInfo.InvariantCulture));
             IniWriter.INI.Write("MainForm", "Y", Location.Y.ToString(CultureInfo.InvariantCulture));
@@ -213,7 +222,7 @@ namespace ArdisCVDCore
         }
 
         // --- PLC210 connection (config.ini [PLC210]) ---
-        // Eight parallel Modbus TCP connections to the same PLC, one per
+        // Nine parallel Modbus TCP connections to the same PLC, one per
         // register block: the PLC's own scan publishes them all into awHolding,
         // but a single client polling every block would make the slowest one
         // (the РРГ-20 serial sweep) set the update rate for all of them.
@@ -237,6 +246,7 @@ namespace ArdisCVDCore
             PLC210GasValveClient.Start(host, port);     // 133..134
             PLC210VacuumClient.Start(host, port);       // 135..138
             PLC210CoolingClient.Start(host, port);      // 206..239, the two МВ210-102 analogue modules
+            PLC210TurboPumpClient.Start(host, port);    // 240..247, the KYKY TD turbo pump drive
 
             // The regulators used to be enabled by opening the Gas Section
             // window. There is no such window now -- the gas controls are always
@@ -270,6 +280,7 @@ namespace ArdisCVDCore
             UpdateChamber();
             UpdateMicrowaveSection();
             UpdatePumps();
+            UpdateTurboPump();
             UpdateCoolingSection();
             UpdateStatusPlate();
 
@@ -665,7 +676,192 @@ namespace ArdisCVDCore
 
         private void ForeVacPump_Click(object sender, EventArgs e)
         {
-            PLC210VacuumClient.RequestForeVacPump(!PLC210VacuumClient.GetState().ForeVacPumpOn);
+            bool turnOn = !PLC210VacuumClient.GetState().ForeVacPumpOn;
+
+            // The turbo pump exhausts into the forevacuum line, so pulling the
+            // backing pump out from under a rotor that is still turning is the
+            // one sequence that damages it. ArdisCVDMaster refused this too
+            // ("Can't turn off. HiVac Pump is working"), and it is refused off
+            // the speed the drive reports rather than off the latched command:
+            // a pump told to stop two seconds ago is still at full speed.
+            if (!turnOn)
+            {
+                PLC210TurboPumpClient.State turbo = PLC210TurboPumpClient.GetState();
+                if (turbo.Connected && turbo.DriveAnswering && (turbo.Working || turbo.SpeedHz > 0))
+                {
+                    MessageBox.Show(
+                        this,
+                        "Can't stop the forevacuum pump: the turbo pump is still turning at "
+                            + turbo.SpeedHz.ToString(CultureInfo.InvariantCulture)
+                            + " Hz.\r\n\r\nStop the turbo pump and let it spin down first.",
+                        "Forevacuum pump",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+            }
+
+            PLC210VacuumClient.RequestForeVacPump(turnOn);
+        }
+
+        // --- Turbo pump -------------------------------------------------------
+        // A turbo pump may only be started once the chamber has been roughed
+        // out: at anything much above a couple of Torr the rotor is working
+        // against a gas load it was never sized for, and it overheats or trips
+        // instead of spinning up. The three conditions below are the ones
+        // ArdisCVDMaster refused on -- backing valve open, forevacuum pump
+        // running, chamber under the pressure limit -- kept as they were, except
+        // that this names the one that is actually in the way rather than
+        // printing all three every time.
+
+        private const double TurboMaxChamberPressureTorr = 2.0;
+
+        // VPV7: valve bit 6 in PLC210VacuumClient, index 6 of _vacuumValveBox.
+        // The valve between the turbo pump's exhaust and the forevacuum line, so
+        // with it shut the pump has nothing backing it.
+        private const int TurboBackingValveIndex = 6;
+
+        private void UpdateTurboPump()
+        {
+            PLC210TurboPumpClient.State state = PLC210TurboPumpClient.GetState();
+            bool live = state.Connected && state.DriveAnswering;
+
+            // Same rule as the other pumps: nothing to toggle until the drive
+            // has confirmed a state, and nothing starts outside a session.
+            TurboVacPump.Enabled = live && _manualRunActive;
+            TurboVacPump.Text = state.Working ? "TURBO PUMP ON" : "TURBO PUMP OFF";
+            TurboVacPump.BackColor = TurboButtonColor(state);
+
+            TurboSpeedValue.Text = live
+                ? state.SpeedHz.ToString(CultureInfo.InvariantCulture)
+                : "---";
+            TurboTempValue.Text = live
+                ? state.TemperatureC.ToString(CultureInfo.InvariantCulture)
+                : "---";
+
+            int speed = live ? state.SpeedHz : 0;
+            bool atSpeed = live && state.AtNormalSpeed;
+            if (speed != _turboBarSpeedHz || atSpeed != _turboBarAtSpeed)
+            {
+                _turboBarSpeedHz = speed;
+                _turboBarAtSpeed = atSpeed;
+                TurboSpeedBar.Invalidate();
+            }
+        }
+
+        private static Color TurboButtonColor(PLC210TurboPumpClient.State state)
+        {
+            if (state.Connected && state.DriveAnswering && state.FaultActive)
+                return Color.Red;
+
+            if (!state.Working)
+                return Color.LightSalmon;
+
+            // Spin-up takes minutes, and a green button for all of it would say
+            // the pump is ready when it is nowhere near.
+            return state.AtNormalSpeed ? Color.LightGreen : Color.YellowGreen;
+        }
+
+        private void TurboSpeedBar_Paint(object sender, PaintEventArgs e)
+        {
+            e.Graphics.Clear(TurboSpeedBar.BackColor);
+
+            if (_turboBarSpeedHz <= 0)
+                return;
+
+            double fraction = Math.Min(
+                1.0, (double)_turboBarSpeedHz / PLC210TurboPumpClient.RatedSpeedHz);
+
+            using (SolidBrush brush = new SolidBrush(_turboBarAtSpeed ? Color.Green : Color.GreenYellow))
+                e.Graphics.FillRectangle(
+                    brush,
+                    0,
+                    0,
+                    (float)(TurboSpeedBar.ClientSize.Width * fraction),
+                    TurboSpeedBar.ClientSize.Height);
+        }
+
+        private void TurboVacPump_Click(object sender, EventArgs e)
+        {
+            PLC210TurboPumpClient.State state = PLC210TurboPumpClient.GetState();
+
+            // Stopping is never refused, and it toggles off what the drive
+            // reports rather than off a remembered request -- the same reasoning
+            // as the valves and the microwave buttons. RunLatched is in there so
+            // that the seconds between pressing start and the rotor actually
+            // moving are still cancellable.
+            if (state.Working || state.RunLatched)
+            {
+                PLC210TurboPumpClient.RequestRun(false);
+                return;
+            }
+
+            string blocker = DescribeTurboStartBlockers(state);
+            if (blocker != null)
+            {
+                MessageBox.Show(
+                    this,
+                    "Can't start the turbo pump:\r\n\r\n" + blocker,
+                    "Turbo pump",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            PLC210TurboPumpClient.RequestRun(true);
+        }
+
+        /// <summary>
+        /// What stands in the way of starting the turbo pump, or null if nothing
+        /// does.
+        /// </summary>
+        private static string DescribeTurboStartBlockers(PLC210TurboPumpClient.State turbo)
+        {
+            if (!turbo.Connected)
+                return "the PLC is not answering";
+
+            if (!turbo.DriveAnswering)
+                return "the pump drive is not answering the PLC";
+
+            string fault = turbo.FaultText;
+            if (fault != null)
+                return "the drive is reporting a fault: " + fault;
+
+            List<string> blockers = new List<string>();
+
+            PLC210VacuumClient.State vacuum = PLC210VacuumClient.GetState();
+            if (!vacuum.Connected)
+            {
+                blockers.Add("the vacuum outputs are not answering, so neither VPV7 "
+                    + "nor the forevacuum pump can be confirmed");
+            }
+            else
+            {
+                if (!vacuum.ValveOn[TurboBackingValveIndex])
+                    blockers.Add("VPV7 is closed, so the pump has no backing line");
+                if (!vacuum.ForeVacPumpOn)
+                    blockers.Add("the forevacuum pump is off");
+            }
+
+            string limit = TurboMaxChamberPressureTorr.ToString("0.#", CultureInfo.InvariantCulture);
+
+            // An unavailable reading blocks exactly as a high one does: the
+            // condition is "the chamber is known to be below the limit", and a
+            // gauge that is not answering does not establish that.
+            PLC210PidClient.State pid = PLC210PidClient.GetState();
+            if (!pid.Connected || !pid.PlcPressureAvailable)
+            {
+                blockers.Add("there is no chamber pressure reading to check against the "
+                    + limit + " Torr limit");
+            }
+            else if (pid.PlcPressureTorr > TurboMaxChamberPressureTorr)
+            {
+                blockers.Add("the chamber is at "
+                    + pid.PlcPressureTorr.ToString("F1", CultureInfo.InvariantCulture)
+                    + " Torr, above the " + limit + " Torr limit");
+            }
+
+            return blockers.Count == 0 ? null : string.Join("\r\n", blockers.ToArray());
         }
 
         private void Water_Btn_Click(object sender, EventArgs e)
@@ -914,6 +1110,14 @@ namespace ArdisCVDCore
                 if (vacuum.WaterPumpOn)
                     running.Add("the water pump is on");
             }
+
+            // Off the speed the drive reports, not the latched command: a rotor
+            // coasting down after a stop is still spinning, and a session must
+            // not close out from under it.
+            PLC210TurboPumpClient.State turbo = PLC210TurboPumpClient.GetState();
+            if (turbo.Connected && turbo.DriveAnswering && (turbo.Working || turbo.SpeedHz > 0))
+                running.Add("the turbo pump is turning at "
+                    + turbo.SpeedHz.ToString(CultureInfo.InvariantCulture) + " Hz");
 
             // ...and for the microwave that means the generator answering, not
             // just the PLC: both flags below are the PLC echoing the last request

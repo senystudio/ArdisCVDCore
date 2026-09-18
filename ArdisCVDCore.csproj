@@ -86,6 +86,7 @@
     <Compile Include="modules_hw\PLC210MicrowaveClient.cs" />
     <Compile Include="modules_hw\PLC210GasValveClient.cs" />
     <Compile Include="modules_hw\PLC210VacuumClient.cs" />
+    <Compile Include="modules_hw\PLC210TurboPumpClient.cs" />
     <Compile Include="modules_hw\PLC210CoolingClient.cs" />
     <Compile Include="GraphScaler.cs">
       <SubType>Form</SubType>

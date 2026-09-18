@@ -36,6 +36,12 @@
             this.button6 = new System.Windows.Forms.Button();
             this.button7 = new System.Windows.Forms.Button();
             this.Vacuum_groupBox = new System.Windows.Forms.GroupBox();
+            this.TurboTempCaption = new System.Windows.Forms.Label();
+            this.TurboTempValue = new System.Windows.Forms.Label();
+            this.TurboSpeedCaption = new System.Windows.Forms.Label();
+            this.TurboSpeedValue = new System.Windows.Forms.Label();
+            this.TurboSpeedBar = new System.Windows.Forms.PictureBox();
+            this.TurboVacPump = new System.Windows.Forms.Button();
             this.label36 = new System.Windows.Forms.Label();
             this.pictureBox34 = new System.Windows.Forms.PictureBox();
             this.Valve_21 = new System.Windows.Forms.PictureBox();
@@ -271,6 +277,7 @@
             this.button9 = new System.Windows.Forms.Button();
             this.pictureBox3 = new System.Windows.Forms.PictureBox();
             this.Vacuum_groupBox.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.TurboSpeedBar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox34)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.Valve_21)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox22)).BeginInit();
@@ -423,6 +430,16 @@
             // Vacuum_groupBox
             // 
             this.Vacuum_groupBox.BackColor = System.Drawing.SystemColors.GradientActiveCaption;
+            // The turbo pump block goes in at the front of the collection, which
+            // is the top of the z-order: the button stands on the Hi-Vac line
+            // (pictureBox31/pictureBox35) the way the pump stands in the pipe,
+            // so it has to cover it rather than be covered by it.
+            this.Vacuum_groupBox.Controls.Add(this.TurboTempValue);
+            this.Vacuum_groupBox.Controls.Add(this.TurboTempCaption);
+            this.Vacuum_groupBox.Controls.Add(this.TurboSpeedValue);
+            this.Vacuum_groupBox.Controls.Add(this.TurboSpeedCaption);
+            this.Vacuum_groupBox.Controls.Add(this.TurboSpeedBar);
+            this.Vacuum_groupBox.Controls.Add(this.TurboVacPump);
             this.Vacuum_groupBox.Controls.Add(this.label36);
             this.Vacuum_groupBox.Controls.Add(this.pictureBox34);
             this.Vacuum_groupBox.Controls.Add(this.Valve_21);
@@ -464,9 +481,104 @@
             this.Vacuum_groupBox.TabIndex = 364;
             this.Vacuum_groupBox.TabStop = false;
             this.Vacuum_groupBox.Text = "     Vacuum Section";
-            // 
+            //
+            // TurboVacPump
+            //
+            // Centred on x=137 like the Hi-Vac readout above it, and sitting on
+            // the Hi-Vac line at y=95..99 -- between VPV6 on the chamber side
+            // and VPV7 on the forevacuum side, which is where the pump is.
+            this.TurboVacPump.BackColor = System.Drawing.Color.LightSalmon;
+            this.TurboVacPump.Enabled = false;
+            this.TurboVacPump.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.TurboVacPump.Location = new System.Drawing.Point(82, 86);
+            this.TurboVacPump.Margin = new System.Windows.Forms.Padding(2);
+            this.TurboVacPump.Name = "TurboVacPump";
+            this.TurboVacPump.Size = new System.Drawing.Size(110, 25);
+            this.TurboVacPump.TabIndex = 510;
+            this.TurboVacPump.Text = "TURBO PUMP OFF";
+            this.TurboVacPump.UseVisualStyleBackColor = false;
+            this.TurboVacPump.Click += new System.EventHandler(this.TurboVacPump_Click);
+            //
+            // TurboSpeedBar
+            //
+            // Spin-up takes minutes and the pump is only usable at the far end
+            // of it, so the speed gets a bar as well as a number: a figure
+            // climbing through the hundreds says much less at a glance than how
+            // far along the bar has got. Painted in OnPaint rather than over a
+            // cached Graphics, so it survives the window being covered.
+            //
+            // Sits across the seam between the readout and the button, three of
+            // its six rows overlapping the button's top edge, which is why it
+            // goes into the group before the button does -- first added is
+            // topmost. Straight out of ArdisCVDMaster, where the strip reads as
+            // part of the pump body rather than as a control of its own.
+            this.TurboSpeedBar.BackColor = System.Drawing.SystemColors.Control;
+            this.TurboSpeedBar.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.TurboSpeedBar.Location = new System.Drawing.Point(83, 83);
+            this.TurboSpeedBar.Name = "TurboSpeedBar";
+            this.TurboSpeedBar.Size = new System.Drawing.Size(108, 6);
+            this.TurboSpeedBar.TabIndex = 511;
+            this.TurboSpeedBar.TabStop = false;
+            this.TurboSpeedBar.Paint += new System.Windows.Forms.PaintEventHandler(this.TurboSpeedBar_Paint);
+            //
+            // TurboSpeedCaption
+            //
+            // Hz, not rpm. ArdisCVDMaster labelled this one "rpm" because the
+            // field is called 转速 -- rotational speed -- in the drive's manual,
+            // but the same sentence gives its unit: "16位无符号二进制整数，单位是
+            // Hz" (TD manual 4.2.2, 读工作状态). It is the drive output frequency,
+            // and the manual gives no pole count to convert it with.
+            //
+            // The four x positions pack the row against the widths the captions
+            // actually measure -- "Hz: " 28, "Temp: " 45 -- with a slot of 28
+            // for each value, which is three digits, and an 8 px gap between
+            // the speed and the next caption: 28+28+8+45+28 = 137 wide, laid
+            // out from x=68 so it centres on 137 like the button and the
+            // readout above it.
+            this.TurboSpeedCaption.AutoSize = true;
+            this.TurboSpeedCaption.BackColor = System.Drawing.Color.Transparent;
+            this.TurboSpeedCaption.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.TurboSpeedCaption.Location = new System.Drawing.Point(68, 112);
+            this.TurboSpeedCaption.Name = "TurboSpeedCaption";
+            this.TurboSpeedCaption.Size = new System.Drawing.Size(28, 15);
+            this.TurboSpeedCaption.TabIndex = 512;
+            this.TurboSpeedCaption.Text = "Hz: ";
+            //
+            // TurboSpeedValue
+            //
+            this.TurboSpeedValue.AutoSize = true;
+            this.TurboSpeedValue.BackColor = System.Drawing.Color.Transparent;
+            this.TurboSpeedValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.TurboSpeedValue.Location = new System.Drawing.Point(96, 112);
+            this.TurboSpeedValue.Name = "TurboSpeedValue";
+            this.TurboSpeedValue.Size = new System.Drawing.Size(24, 15);
+            this.TurboSpeedValue.TabIndex = 513;
+            this.TurboSpeedValue.Text = "---";
+            //
+            // TurboTempCaption
+            //
+            this.TurboTempCaption.AutoSize = true;
+            this.TurboTempCaption.BackColor = System.Drawing.Color.Transparent;
+            this.TurboTempCaption.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.TurboTempCaption.Location = new System.Drawing.Point(132, 112);
+            this.TurboTempCaption.Name = "TurboTempCaption";
+            this.TurboTempCaption.Size = new System.Drawing.Size(45, 15);
+            this.TurboTempCaption.TabIndex = 514;
+            this.TurboTempCaption.Text = "Temp: ";
+            //
+            // TurboTempValue
+            //
+            this.TurboTempValue.AutoSize = true;
+            this.TurboTempValue.BackColor = System.Drawing.Color.Transparent;
+            this.TurboTempValue.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.TurboTempValue.Location = new System.Drawing.Point(177, 112);
+            this.TurboTempValue.Name = "TurboTempValue";
+            this.TurboTempValue.Size = new System.Drawing.Size(24, 15);
+            this.TurboTempValue.TabIndex = 515;
+            this.TurboTempValue.Text = "---";
+            //
             // label36
-            // 
+            //
             this.label36.AutoSize = true;
             this.label36.BackColor = System.Drawing.Color.Transparent;
             this.label36.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
@@ -475,7 +587,6 @@
             this.label36.Size = new System.Drawing.Size(36, 15);
             this.label36.TabIndex = 437;
             this.label36.Text = "VPV7";
-            this.label36.Visible = false;
             // 
             // pictureBox34
             // 
@@ -510,7 +621,6 @@
             this.label27.Size = new System.Drawing.Size(36, 15);
             this.label27.TabIndex = 435;
             this.label27.Text = "VPV6";
-            this.label27.Visible = false;
             // 
             // label24
             // 
@@ -611,14 +721,19 @@
             this.Valve_20.Click += new System.EventHandler(this.Valves_Click);
             // 
             // label1
-            // 
+            //
             // AutoSize off and centred inside a fixed 150px box: with AutoSize on,
             // the caption's width depends on font metrics, so it could not be
             // reliably centred over the readout below it.
+            //
+            // Caption and readout moved up 23 px to make room for the turbo pump
+            // underneath. Everything from here down to the Chamber Pressure block
+            // is one column, and the pump needs the height between the readout
+            // and the VPV1 pipe at y=134.
             this.label1.AutoSize = false;
             this.label1.BackColor = System.Drawing.Color.Transparent;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label1.Location = new System.Drawing.Point(62, 64);
+            this.label1.Location = new System.Drawing.Point(62, 41);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(150, 15);
             this.label1.TabIndex = 409;
@@ -643,7 +758,7 @@
             this.HiVacPressure.BackColor = System.Drawing.Color.Blue;
             this.HiVacPressure.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.HiVacPressure.ForeColor = System.Drawing.Color.White;
-            this.HiVacPressure.Location = new System.Drawing.Point(103, 82);
+            this.HiVacPressure.Location = new System.Drawing.Point(103, 58);
             this.HiVacPressure.Margin = new System.Windows.Forms.Padding(3, 3, 0, 3);
             this.HiVacPressure.Name = "HiVacPressure";
             this.HiVacPressure.ReadOnly = true;
@@ -658,7 +773,7 @@
             this.HiVacPressureMbar.BackColor = System.Drawing.Color.Blue;
             this.HiVacPressureMbar.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.HiVacPressureMbar.ForeColor = System.Drawing.Color.White;
-            this.HiVacPressureMbar.Location = new System.Drawing.Point(140, 82);
+            this.HiVacPressureMbar.Location = new System.Drawing.Point(140, 58);
             this.HiVacPressureMbar.Margin = new System.Windows.Forms.Padding(3, 3, 0, 3);
             this.HiVacPressureMbar.Name = "HiVacPressureMbar";
             this.HiVacPressureMbar.ReadOnly = true;
@@ -681,7 +796,6 @@
             this.Valve_24.TabIndex = 405;
             this.Valve_24.TabStop = false;
             this.Valve_24.Tag = "10";
-            this.Valve_24.Visible = false;
             this.Valve_24.Click += new System.EventHandler(this.Valves_Click);
             // 
             // pictureBox35
@@ -817,16 +931,15 @@
             // 
             // The Hi-Vac line from the chamber, in two pieces: pictureBox29 on
             // the form runs to x=771 in client coordinates, which is x=16 in
-            // this group, and this one carries on to the gauge. It used to
-            // start at 57 because VPV6 sat in the 40 px between; with that
-            // valve hidden the pipe had a hole in it, so it starts at 16 now
-            // and runs to 103, where the readout box begins -- centring that
-            // box had left a 6 px stretch where only the thin pictureBox35
-            // showed through.
+            // this group, and this one carries on from VPV6 to the turbo pump.
+            // It starts at 57 rather than 16 because VPV6 occupies the 40 px
+            // between -- while that valve was hidden this ran the whole way and
+            // the pipe had no hole in it; putting the pump in put the valve
+            // back, and the pipe back to the length it covers.
             this.pictureBox31.BackColor = System.Drawing.Color.Black;
-            this.pictureBox31.Location = new System.Drawing.Point(16, 95);
+            this.pictureBox31.Location = new System.Drawing.Point(57, 95);
             this.pictureBox31.Name = "pictureBox31";
-            this.pictureBox31.Size = new System.Drawing.Size(87, 5);
+            this.pictureBox31.Size = new System.Drawing.Size(40, 5);
             this.pictureBox31.TabIndex = 362;
             this.pictureBox31.TabStop = false;
             // 
@@ -842,7 +955,6 @@
             this.Valve_22.TabIndex = 361;
             this.Valve_22.TabStop = false;
             this.Valve_22.Tag = "10";
-            this.Valve_22.Visible = false;
             this.Valve_22.Click += new System.EventHandler(this.Valves_Click);
             // 
             // pictureBox28
@@ -3333,6 +3445,7 @@
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.Vacuum_groupBox.ResumeLayout(false);
             this.Vacuum_groupBox.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.TurboSpeedBar)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox34)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.Valve_21)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox22)).EndInit();
@@ -3475,6 +3588,12 @@
         private System.Windows.Forms.PictureBox pictureBox93;
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.Button ForeVacPump;
+        private System.Windows.Forms.Button TurboVacPump;
+        private System.Windows.Forms.PictureBox TurboSpeedBar;
+        private System.Windows.Forms.Label TurboSpeedCaption;
+        private System.Windows.Forms.Label TurboSpeedValue;
+        private System.Windows.Forms.Label TurboTempCaption;
+        private System.Windows.Forms.Label TurboTempValue;
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
