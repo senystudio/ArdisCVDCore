@@ -91,6 +91,7 @@
             this.StatusToolMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.ConnectionStatusToolMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.FaultStatusToolMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.StatusTrendSeparator = new System.Windows.Forms.ToolStripSeparator();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.label58 = new System.Windows.Forms.Label();
@@ -1076,12 +1077,13 @@
             // viewToolStripMenuItem
             // 
             this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.StatusToolMenu,
+            this.StatusTrendSeparator,
             this.GasTrendToolMenu,
             this.PressureTrendToolMenu,
             this.MWPowerToolStripMenuItem,
             this.temperatureTrendToolStripMenuItem,
-            this.PIDToolStripMenuItem,
-            this.StatusToolMenu});
+            this.PIDToolStripMenuItem});
             this.viewToolStripMenuItem.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
             this.viewToolStripMenuItem.Size = new System.Drawing.Size(55, 23);
@@ -1090,11 +1092,18 @@
             // StatusToolMenu
             //
             this.StatusToolMenu.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.ConnectionStatusToolMenu,
-            this.FaultStatusToolMenu});
+            this.FaultStatusToolMenu,
+            this.ConnectionStatusToolMenu});
             this.StatusToolMenu.Name = "StatusToolMenu";
             this.StatusToolMenu.Size = new System.Drawing.Size(216, 24);
             this.StatusToolMenu.Text = "Status";
+            //
+            // FaultStatusToolMenu
+            //
+            this.FaultStatusToolMenu.Name = "FaultStatusToolMenu";
+            this.FaultStatusToolMenu.Size = new System.Drawing.Size(216, 24);
+            this.FaultStatusToolMenu.Text = "Fault Status";
+            this.FaultStatusToolMenu.Click += new System.EventHandler(this.FaultStatusToolMenu_Click);
             //
             // ConnectionStatusToolMenu
             //
@@ -1103,12 +1112,10 @@
             this.ConnectionStatusToolMenu.Text = "Connection Status";
             this.ConnectionStatusToolMenu.Click += new System.EventHandler(this.ConnectionStatusToolMenu_Click);
             //
-            // FaultStatusToolMenu
+            // StatusTrendSeparator
             //
-            this.FaultStatusToolMenu.Name = "FaultStatusToolMenu";
-            this.FaultStatusToolMenu.Size = new System.Drawing.Size(216, 24);
-            this.FaultStatusToolMenu.Text = "Fault Status";
-            this.FaultStatusToolMenu.Click += new System.EventHandler(this.FaultStatusToolMenu_Click);
+            this.StatusTrendSeparator.Name = "StatusTrendSeparator";
+            this.StatusTrendSeparator.Size = new System.Drawing.Size(212, 6);
             //
             // GasTrendToolMenu
             //
@@ -3761,6 +3768,7 @@
         private System.Windows.Forms.ToolStripMenuItem StatusToolMenu;
         private System.Windows.Forms.ToolStripMenuItem ConnectionStatusToolMenu;
         private System.Windows.Forms.ToolStripMenuItem FaultStatusToolMenu;
+        private System.Windows.Forms.ToolStripSeparator StatusTrendSeparator;
         private System.Windows.Forms.Label label36;
         private System.Windows.Forms.Button button5;
         private System.Windows.Forms.Button RecipeOpen;

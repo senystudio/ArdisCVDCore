@@ -19,7 +19,18 @@ On Windows, build with VS MSBuild, not `dotnet`:
     'ArdisCVDCore.csproj' /t:Rebuild /p:Configuration=Debug
 ```
 
-On the macOS machine Mono's `msbuild` and `dotnet` are both on PATH, but a .NET Framework WinForms target will not produce a runnable app there — building and smoke testing stay on the Windows side. Do not promise a screenshot from macOS.
+On the macOS machine Mono's `msbuild` and `dotnet` are both on PATH, but a .NET Framework WinForms target will not produce a runnable app there. **The Windows side is reachable from the Mac shell**, though: Parallels Desktop runs a `Windows 11` VM (ARM64, Parallels Tools 26.3.3) and `/usr/local/bin/prlctl` drives it without any GUI or SSH. Verified 22.09.2026:
+
+```
+prlctl list -a
+prlctl exec "Windows 11" cmd.exe /c "..."            # stdout comes back, exit code propagates
+prlctl exec "Windows 11" powershell.exe -NoProfile -Command "..."
+prlctl capture "Windows 11" --file <mac path>.png    # full guest screen as PNG
+```
+
+The guest has VS 18 Community with MSBuild at the exact path this file already lists, the v4.7.2 reference assemblies, git, VS Code and CODESYS 3.5.17.30. So MSBuild plus a screenshot can both be driven from macOS; the old line here saying they cannot was written before the VM was checked.
+
+Two traps. **Mac folders are not shared into the VM** — `Host Shared Folders: (-)`, and `\\Mac\Home` resolves but lists nothing, so the repo at `/Users/sennix/Desktop/ArdisCVDCore` is invisible to MSBuild until sharing is turned on (`prlctl set "Windows 11" --shf-host-add ArdisCVDCore --path /Users/sennix/Desktop/ArdisCVDCore`). **The guest holds a separate, unversioned copy** at `C:\Users\sennix\Desktop\ArdisCVDCore\ArdisCVDCore` (note the doubled folder) with no `.git`, whose files are the Mac's with CRLF line endings; it drifts from the repo and must not be treated as the same tree. Escaping note: `&`-chained commands inside `prlctl exec cmd.exe /c "..."` mangle easily — one command per call, or PowerShell with `;`.
 
 **NModbus used to resolve by accident.** The old csproj pointed `HintPath` at a solution-level `..\packages\` folder that does not exist; the build only succeeded because a stale `NModbus.dll` happened to sit in `bin\`. It is now vendored at `lib\NModbus.dll`. If the reference ever breaks again, that is the first thing to check rather than a NuGet restore.
 

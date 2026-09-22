@@ -200,7 +200,9 @@
             this.H22_AlarmEnable = new System.Windows.Forms.CheckBox();
             this.label23 = new System.Windows.Forms.Label();
             this.label24 = new System.Windows.Forms.Label();
-            this.button1 = new System.Windows.Forms.Button();
+            this.menuStrip1 = new System.Windows.Forms.MenuStrip();
+            this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.ResetValuesToolMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.ParametersGroup.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.PlasmaDrop_AbortVal)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.PlasmaDrop_AlarmVal)).BeginInit();
@@ -245,6 +247,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.TInternalH2O_AbortVal)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.TSample_AlarmVal)).BeginInit();
             this.groupBox1.SuspendLayout();
+            this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.GCFH22)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.GCFAR)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.GCFO2)).BeginInit();
@@ -336,7 +339,7 @@
             this.ParametersGroup.Controls.Add(this.label4);
             this.ParametersGroup.Controls.Add(this.label3);
             this.ParametersGroup.Controls.Add(this.label2);
-            this.ParametersGroup.Location = new System.Drawing.Point(4, 4);
+            this.ParametersGroup.Location = new System.Drawing.Point(4, 31);
             this.ParametersGroup.Name = "ParametersGroup";
             this.ParametersGroup.Size = new System.Drawing.Size(394, 416);
             this.ParametersGroup.TabIndex = 213;
@@ -1069,7 +1072,7 @@
             this.ChamberPIDParametersGroupBox.Controls.Add(this.Chamber_pid_D);
             this.ChamberPIDParametersGroupBox.Controls.Add(this.Chamber_pid_I);
             this.ChamberPIDParametersGroupBox.Controls.Add(this.Chamber_pid_P);
-            this.ChamberPIDParametersGroupBox.Location = new System.Drawing.Point(402, 4);
+            this.ChamberPIDParametersGroupBox.Location = new System.Drawing.Point(402, 31);
             this.ChamberPIDParametersGroupBox.Name = "ChamberPIDParametersGroupBox";
             this.ChamberPIDParametersGroupBox.Size = new System.Drawing.Size(325, 90);
             this.ChamberPIDParametersGroupBox.TabIndex = 219;
@@ -1256,7 +1259,7 @@
             this.LogicInputGroupBox.Controls.Add(this.InputChamberOpen_CheckBox);
             this.LogicInputGroupBox.Controls.Add(this.ChamberFlow_CheckBox);
             this.LogicInputGroupBox.Controls.Add(this.StageFlow_CheckBox);
-            this.LogicInputGroupBox.Location = new System.Drawing.Point(402, 94);
+            this.LogicInputGroupBox.Location = new System.Drawing.Point(402, 121);
             this.LogicInputGroupBox.Name = "LogicInputGroupBox";
             this.LogicInputGroupBox.Size = new System.Drawing.Size(325, 220);
             this.LogicInputGroupBox.TabIndex = 220;
@@ -1487,7 +1490,7 @@
             this.TemperatureGroupBox.Controls.Add(this.TInternalH2O_AbortVal);
             this.TemperatureGroupBox.Controls.Add(this.label33);
             this.TemperatureGroupBox.Controls.Add(this.TSample_AlarmVal);
-            this.TemperatureGroupBox.Location = new System.Drawing.Point(4, 424);
+            this.TemperatureGroupBox.Location = new System.Drawing.Point(4, 451);
             this.TemperatureGroupBox.Name = "TemperatureGroupBox";
             this.TemperatureGroupBox.Size = new System.Drawing.Size(394, 293);
             this.TemperatureGroupBox.TabIndex = 222;
@@ -1950,7 +1953,7 @@
             this.groupBox1.Controls.Add(this.GCFCH4);
             this.groupBox1.Controls.Add(this.GCFN2);
             this.groupBox1.Controls.Add(this.GCFH2);
-            this.groupBox1.Location = new System.Drawing.Point(402, 319);
+            this.groupBox1.Location = new System.Drawing.Point(402, 346);
             this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
@@ -2237,7 +2240,7 @@
             this.OK.BackColor = System.Drawing.SystemColors.Window;
             this.OK.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.OK.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.OK.Location = new System.Drawing.Point(402, 681);
+            this.OK.Location = new System.Drawing.Point(402, 671);
             this.OK.Margin = new System.Windows.Forms.Padding(2);
             this.OK.Name = "OK";
             this.OK.Size = new System.Drawing.Size(325, 36);
@@ -2312,31 +2315,47 @@
             this.label24.TabIndex = 183;
             this.label24.Text = "H2_2";
             // 
-            // button1
+            // menuStrip1
             // 
-            this.button1.BackColor = System.Drawing.SystemColors.Window;
-            this.button1.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button1.Location = new System.Drawing.Point(402, 644);
-            this.button1.Margin = new System.Windows.Forms.Padding(2);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(325, 36);
-            this.button1.TabIndex = 227;
-            this.button1.Text = "Reset";
-            this.button1.UseVisualStyleBackColor = false;
-            this.button1.Click += new System.EventHandler(this.Reset_Click);
+            this.menuStrip1.ImageScalingSize = new System.Drawing.Size(20, 20);
+            this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.fileToolStripMenuItem});
+            this.menuStrip1.Location = new System.Drawing.Point(0, 0);
+            this.menuStrip1.Name = "menuStrip1";
+            this.menuStrip1.Padding = new System.Windows.Forms.Padding(4, 2, 0, 2);
+            this.menuStrip1.Size = new System.Drawing.Size(729, 27);
+            this.menuStrip1.TabIndex = 227;
+            this.menuStrip1.Text = "menuStrip1";
+            // 
+            // fileToolStripMenuItem
+            // 
+            this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.ResetValuesToolMenu});
+            this.fileToolStripMenuItem.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(45, 23);
+            this.fileToolStripMenuItem.Text = "File";
+            // 
+            // ResetValuesToolMenu
+            // 
+            this.ResetValuesToolMenu.Name = "ResetValuesToolMenu";
+            this.ResetValuesToolMenu.Size = new System.Drawing.Size(216, 24);
+            this.ResetValuesToolMenu.Text = "Reset Values";
+            this.ResetValuesToolMenu.Click += new System.EventHandler(this.Reset_Click);
             // 
             // ProcessParametersForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(729, 720);
-            this.Controls.Add(this.button1);
+            this.ClientSize = new System.Drawing.Size(729, 710);
             this.Controls.Add(this.OK);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.TemperatureGroupBox);
             this.Controls.Add(this.LogicInputGroupBox);
             this.Controls.Add(this.ChamberPIDParametersGroupBox);
             this.Controls.Add(this.ParametersGroup);
+            this.Controls.Add(this.menuStrip1);
+            this.MainMenuStrip = this.menuStrip1;
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "ProcessParametersForm";
             this.Text = "Process Parameters";
@@ -2390,6 +2409,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.TSample_AlarmVal)).EndInit();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
+            this.menuStrip1.ResumeLayout(false);
+            this.menuStrip1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.GCFH22)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.GCFAR)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.GCFO2)).EndInit();
@@ -2399,6 +2420,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.H22_AbortVal)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.H22_AlarmVal)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -2576,6 +2598,8 @@
         private System.Windows.Forms.CheckBox H22_AlarmEnable;
         private System.Windows.Forms.Label label23;
         private System.Windows.Forms.Label label24;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.MenuStrip menuStrip1;
+        private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ResetValuesToolMenu;
     }
 }

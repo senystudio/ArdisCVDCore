@@ -251,29 +251,6 @@ namespace ArdisCVDCore
             }
         }
 
-        private bool ConfirmDisarming()
-        {
-            bool wasArmed = AlarmSettings.AnyEnabled();
-
-            StoreAlarms();
-
-            if (!wasArmed || AlarmSettings.AnyEnabled())
-                return true;
-
-            DialogResult answer = MessageBox.Show(this,
-                "This turns off every alarm and abort check. The reactor will not be supervised.\n\nApply anyway?",
-                "Process Parameters",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning,
-                MessageBoxDefaultButton.Button2);
-
-            if (answer == DialogResult.Yes)
-                return true;
-
-            LoadAlarms();
-            return false;
-        }
-
         private void OK_Click(object sender, EventArgs e)
         {
             ChamberPid.Kp = (double)Chamber_pid_P.Value;
@@ -283,9 +260,7 @@ namespace ArdisCVDCore
             ChamberPid.LowerLimit = (double)Chamber_LowerLimit.Value;
             ChamberPid.Committed = true;
 
-            if (!ConfirmDisarming())
-                return;
-
+            StoreAlarms();
             AlarmSettings.Save();
             PLC210AlarmClient.PushThresholds(AlarmSettings.Pack());
 
@@ -301,6 +276,17 @@ namespace ArdisCVDCore
         /// </summary>
         private void Reset_Click(object sender, EventArgs e)
         {
+            DialogResult answer = MessageBox.Show(this,
+                "This puts every field on this screen back to its default and clears every alarm and abort check.\n\n"
+                + "Nothing reaches the PLC until Apply is pressed.\n\nReset the values?",
+                "Process Parameters",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning,
+                MessageBoxDefaultButton.Button2);
+
+            if (answer != DialogResult.Yes)
+                return;
+
             Chamber_pid_P.Value = Clamp(Chamber_pid_P, (decimal)ChamberPid.DefaultKp);
             Chamber_pid_I.Value = Clamp(Chamber_pid_I, (decimal)ChamberPid.DefaultKi);
             Chamber_pid_D.Value = Clamp(Chamber_pid_D, (decimal)ChamberPid.DefaultKd);
