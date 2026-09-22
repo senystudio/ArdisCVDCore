@@ -264,7 +264,7 @@ namespace ArdisCVDCore
                     RecommendationOf(code, level)
                 });
 
-                Paint(item, level, true);
+                PaintRow(item, level, true);
                 _current.Items.Add(item);
             }
         }
@@ -296,7 +296,7 @@ namespace ArdisCVDCore
                         entry.Raised ? RecommendationOf(entry.Code, entry.Level) : string.Empty
                     });
 
-                    Paint(item, entry.Level, entry.Raised);
+                    PaintRow(item, entry.Level, entry.Raised);
                     _history.Items.Add(item);
                 }
 
@@ -311,7 +311,7 @@ namespace ArdisCVDCore
             }
         }
 
-        private static void Paint(ListViewItem item, AlarmLevel level, bool raised)
+        private static void PaintRow(ListViewItem item, AlarmLevel level, bool raised)
         {
             if (!raised)
             {
