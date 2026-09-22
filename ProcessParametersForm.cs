@@ -1,3 +1,4 @@
+using ArdisCVDCore.modules_hw;
 using System;
 using System.Drawing;
 using System.Globalization;
@@ -10,36 +11,39 @@ namespace ArdisCVDCore
     /// the alarm/abort thresholds and gas correction factors the previous machine
     /// carried.
     /// </summary>
-    /// <remarks>
-    /// Only the Chamber PID group has anywhere to write today -- it edits the
-    /// same <see cref="ChamberPid"/> values as View -&gt; PID Viewer, and MainForm
-    /// pushes them to the PLC once a second.
-    ///
-    /// The other four groups are switched off on purpose, see
-    /// <see cref="DisableGroupsWithNoBackend"/>. They belong to machinery this
-    /// application does not have yet: an alarm/abort engine that compares every
-    /// signal against a percentage window and either warns or trips the
-    /// microwave, gas correction factors applied to the РРГ setpoints, and the
-    /// logic inputs for the cooling flow and pressure switches. Leaving them
-    /// clickable would be worse than leaving them out -- an operator would enter
-    /// an abort threshold, press Apply, and believe the reactor was protected.
-    /// </remarks>
     public partial class ProcessParametersForm : Form
     {
         private const string IniSection = "ProcessParameters";
+
+        private CheckBox[] _paramAlarmEnable;
+        private CheckBox[] _paramAbortEnable;
+        private NumericUpDown[] _paramAlarmVal;
+        private NumericUpDown[] _paramAbortVal;
+
+        private CheckBox[] _waterAlarmEnable;
+        private CheckBox[] _waterAbortEnable;
+        private NumericUpDown[] _waterTarget;
+        private NumericUpDown[] _waterAlarmVal;
+        private NumericUpDown[] _waterAbortVal;
+
+        private CheckBox[] _inputEnable;
+        private ComboBox[] _inputReaction;
 
         public ProcessParametersForm()
         {
             InitializeComponent();
             Icon = Res.AppIcon;
             StartPosition = FormStartPosition.Manual;
+            BindAlarmControls();
         }
 
         private void ProcessParametersForm_Load(object sender, EventArgs e)
         {
             RestoreWindowPlacement();
             DisableGroupsWithNoBackend();
+            HideRowsWithNoHardware();
             LoadChamberPid();
+            LoadAlarms();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -60,6 +64,76 @@ namespace ArdisCVDCore
                 Location = new Point(0, 0);
         }
 
+        private void BindAlarmControls()
+        {
+            _paramAlarmEnable = new[]
+            {
+                Chamber_AlarmEnable, H2_AlarmEnable, CH4_AlarmEnable, N2_AlarmEnable,
+                O2_AlarmEnable, AR_AlarmEnable, H22_AlarmEnable, MWRef_AlarmEnable
+            };
+
+            _paramAbortEnable = new[]
+            {
+                Chamber_AbortEnable, H2_AbortEnable, CH4_AbortEnable, N2_AbortEnable,
+                O2_AbortEnable, AR_AbortEnable, H22_AbortEnable, MWRef_AbortEnable
+            };
+
+            _paramAlarmVal = new[]
+            {
+                ChamberPressure_AlarmVal, H2_AlarmVal, CH4_AlarmVal, N2_AlarmVal,
+                O2_AlarmVal, AR_AlarmVal, H22_AlarmVal, MWRef_AlarmVal
+            };
+
+            _paramAbortVal = new[]
+            {
+                ChamberPressure_AbortVal, H2_AbortVal, CH4_AbortVal, N2_AbortVal,
+                O2_AbortVal, AR_AbortVal, H22_AbortVal, MWRef_AbortVal
+            };
+
+            _waterAlarmEnable = new[]
+            {
+                TInternalH2O_AlarmEnable, TExternalH2O_AlarmEnable,
+                TStageH2O_AlarmEnable, TChamberH2O_AlarmEnable
+            };
+
+            _waterAbortEnable = new[]
+            {
+                TInternalH2O_AbortEnable, TExternalH2O_AbortEnable,
+                TStageH2O_AbortEnable, TChamberH2O_AbortEnable
+            };
+
+            _waterTarget = new[] { TInternalH2O, TExternalH2O, TStageH2O, TChamberH2O };
+
+            _waterAlarmVal = new[]
+            {
+                TInternalH2O_AlarmVal, TExternalH2O_AlarmVal,
+                TStageH2O_AlarmVal, TChamberH2O_AlarmVal
+            };
+
+            _waterAbortVal = new[]
+            {
+                TInternalH2O_AbortVal, TExternalH2O_AbortVal,
+                TStageH2O_AbortVal, TChamberH2O_AbortVal
+            };
+
+            _inputEnable = new[]
+            {
+                StageFlow_CheckBox, ChamberFlow_CheckBox, MWHeadFlow_CheckBox,
+                MWPowerFlow_CheckBox, InternalFlow_CheckBox, ExternalFlow_CheckBox,
+                PressureSwitch_CheckBox, InputChamberOpen_CheckBox
+            };
+
+            _inputReaction = new[]
+            {
+                StageFlow_comboBox, ChamberFlow_comboBox, MWHeadFlow_comboBox,
+                MWPowerFlow_comboBox, InternalFlow_comboBox, ExternalFlow_comboBox,
+                PressureSwitch_comboBox, ChamberOpen_comboBox
+            };
+
+            foreach (ComboBox combo in _inputReaction)
+                combo.DropDownStyle = ComboBoxStyle.DropDownList;
+        }
+
         /// <summary>
         /// Greys out every group whose values have nowhere to go, and says why in
         /// the group's own caption so it is obvious on screen rather than only in
@@ -67,9 +141,6 @@ namespace ArdisCVDCore
         /// </summary>
         private void DisableGroupsWithNoBackend()
         {
-            MarkNotImplemented(ParametersGroup);
-            MarkNotImplemented(TemperatureGroupBox);
-            MarkNotImplemented(LogicInputGroupBox);
             MarkNotImplemented(groupBox1);
         }
 
@@ -77,6 +148,15 @@ namespace ArdisCVDCore
         {
             box.Enabled = false;
             box.Text = box.Text.TrimEnd() + "  — not implemented yet";
+        }
+
+        private void HideRowsWithNoHardware()
+        {
+            PlasmaDrop_AlarmEnable.Visible = false;
+            PlasmaDrop_AlarmVal.Visible = false;
+            label88.Visible = false;
+            label87.Visible = false;
+            label90.Visible = false;
         }
 
         // --- Chamber PID ------------------------------------------------------
@@ -94,6 +174,106 @@ namespace ArdisCVDCore
             return Math.Max(numeric.Minimum, Math.Min(numeric.Maximum, value));
         }
 
+        // --- Alarm and abort --------------------------------------------------
+        private void LoadAlarms()
+        {
+            for (int i = 0; i < AlarmSettings.ParamCount; i++)
+            {
+                _paramAlarmEnable[i].Checked = AlarmSettings.ParamAlarmEnable[i];
+                _paramAbortEnable[i].Checked = AlarmSettings.ParamAbortEnable[i];
+            }
+
+            for (int i = 0; i < AlarmSettings.ParamPctCount; i++)
+            {
+                _paramAlarmVal[i].Value = Clamp(_paramAlarmVal[i], AlarmSettings.ParamAlarmPct[i]);
+                _paramAbortVal[i].Value = Clamp(_paramAbortVal[i], AlarmSettings.ParamAbortPct[i]);
+            }
+
+            _paramAlarmVal[AlarmSettings.ParamReflected].Value =
+                Clamp(_paramAlarmVal[AlarmSettings.ParamReflected], AlarmSettings.ReflectedAlarmWatt);
+            _paramAbortVal[AlarmSettings.ParamReflected].Value =
+                Clamp(_paramAbortVal[AlarmSettings.ParamReflected], AlarmSettings.ReflectedAbortWatt);
+
+            TCenter_AlarmEnable.Checked = AlarmSettings.SampleAlarmEnable;
+            TSampleCenter.Value = Clamp(TSampleCenter, AlarmSettings.SampleTargetC);
+            TSample_AlarmVal.Value = Clamp(TSample_AlarmVal, AlarmSettings.SampleAlarmPct);
+
+            for (int i = 0; i < AlarmSettings.WaterCount; i++)
+            {
+                _waterAlarmEnable[i].Checked = AlarmSettings.WaterAlarmEnable[i];
+                _waterAbortEnable[i].Checked = AlarmSettings.WaterAbortEnable[i];
+                _waterTarget[i].Value = Clamp(_waterTarget[i], AlarmSettings.WaterTargetC[i]);
+                _waterAlarmVal[i].Value = Clamp(_waterAlarmVal[i], AlarmSettings.WaterAlarmPct[i]);
+                _waterAbortVal[i].Value = Clamp(_waterAbortVal[i], AlarmSettings.WaterAbortPct[i]);
+            }
+
+            for (int i = 0; i < AlarmSettings.InputCount; i++)
+            {
+                _inputEnable[i].Checked = AlarmSettings.InputEnable[i];
+                _inputReaction[i].SelectedIndex = AlarmSettings.InputAborts[i] ? 1 : 0;
+            }
+        }
+
+        private void StoreAlarms()
+        {
+            for (int i = 0; i < AlarmSettings.ParamCount; i++)
+            {
+                AlarmSettings.ParamAlarmEnable[i] = _paramAlarmEnable[i].Checked;
+                AlarmSettings.ParamAbortEnable[i] = _paramAbortEnable[i].Checked;
+            }
+
+            for (int i = 0; i < AlarmSettings.ParamPctCount; i++)
+            {
+                AlarmSettings.ParamAlarmPct[i] = (int)_paramAlarmVal[i].Value;
+                AlarmSettings.ParamAbortPct[i] = (int)_paramAbortVal[i].Value;
+            }
+
+            AlarmSettings.ReflectedAlarmWatt = (int)_paramAlarmVal[AlarmSettings.ParamReflected].Value;
+            AlarmSettings.ReflectedAbortWatt = (int)_paramAbortVal[AlarmSettings.ParamReflected].Value;
+
+            AlarmSettings.SampleAlarmEnable = TCenter_AlarmEnable.Checked;
+            AlarmSettings.SampleTargetC = (int)TSampleCenter.Value;
+            AlarmSettings.SampleAlarmPct = (int)TSample_AlarmVal.Value;
+
+            for (int i = 0; i < AlarmSettings.WaterCount; i++)
+            {
+                AlarmSettings.WaterAlarmEnable[i] = _waterAlarmEnable[i].Checked;
+                AlarmSettings.WaterAbortEnable[i] = _waterAbortEnable[i].Checked;
+                AlarmSettings.WaterTargetC[i] = (int)_waterTarget[i].Value;
+                AlarmSettings.WaterAlarmPct[i] = (int)_waterAlarmVal[i].Value;
+                AlarmSettings.WaterAbortPct[i] = (int)_waterAbortVal[i].Value;
+            }
+
+            for (int i = 0; i < AlarmSettings.InputCount; i++)
+            {
+                AlarmSettings.InputEnable[i] = _inputEnable[i].Checked;
+                AlarmSettings.InputAborts[i] = _inputReaction[i].SelectedIndex == 1;
+            }
+        }
+
+        private bool ConfirmDisarming()
+        {
+            bool wasArmed = AlarmSettings.AnyEnabled();
+
+            StoreAlarms();
+
+            if (!wasArmed || AlarmSettings.AnyEnabled())
+                return true;
+
+            DialogResult answer = MessageBox.Show(this,
+                "This turns off every alarm and abort check. The reactor will not be supervised.\n\nApply anyway?",
+                "Process Parameters",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning,
+                MessageBoxDefaultButton.Button2);
+
+            if (answer == DialogResult.Yes)
+                return true;
+
+            LoadAlarms();
+            return false;
+        }
+
         private void OK_Click(object sender, EventArgs e)
         {
             ChamberPid.Kp = (double)Chamber_pid_P.Value;
@@ -102,6 +282,12 @@ namespace ArdisCVDCore
             ChamberPid.UpperLimit = (double)Chamber_UpperLimit.Value;
             ChamberPid.LowerLimit = (double)Chamber_LowerLimit.Value;
             ChamberPid.Committed = true;
+
+            if (!ConfirmDisarming())
+                return;
+
+            AlarmSettings.Save();
+            PLC210AlarmClient.PushThresholds(AlarmSettings.Pack());
 
             // The button says Apply, so it applies and stays open -- the same as
             // the window it came from, and it lets the operator watch the effect
@@ -120,6 +306,33 @@ namespace ArdisCVDCore
             Chamber_pid_D.Value = Clamp(Chamber_pid_D, (decimal)ChamberPid.DefaultKd);
             Chamber_UpperLimit.Value = Clamp(Chamber_UpperLimit, (decimal)ChamberPid.DefaultUpperLimit);
             Chamber_LowerLimit.Value = Clamp(Chamber_LowerLimit, (decimal)ChamberPid.DefaultLowerLimit);
+
+            for (int i = 0; i < AlarmSettings.ParamCount; i++)
+            {
+                _paramAlarmEnable[i].Checked = false;
+                _paramAbortEnable[i].Checked = false;
+                _paramAlarmVal[i].Value = _paramAlarmVal[i].Minimum;
+                _paramAbortVal[i].Value = _paramAbortVal[i].Minimum;
+            }
+
+            TCenter_AlarmEnable.Checked = false;
+            TSampleCenter.Value = Clamp(TSampleCenter, AlarmSettings.DefaultSampleTargetC);
+            TSample_AlarmVal.Value = TSample_AlarmVal.Minimum;
+
+            for (int i = 0; i < AlarmSettings.WaterCount; i++)
+            {
+                _waterAlarmEnable[i].Checked = false;
+                _waterAbortEnable[i].Checked = false;
+                _waterTarget[i].Value = _waterTarget[i].Minimum;
+                _waterAlarmVal[i].Value = _waterAlarmVal[i].Minimum;
+                _waterAbortVal[i].Value = _waterAbortVal[i].Minimum;
+            }
+
+            for (int i = 0; i < AlarmSettings.InputCount; i++)
+            {
+                _inputEnable[i].Checked = false;
+                _inputReaction[i].SelectedIndex = 0;
+            }
         }
 
         // The design wires these, but in the window it came from they only fed the
@@ -132,7 +345,6 @@ namespace ArdisCVDCore
 
         private void Chamber_pid_D_ValueChanged(object sender, EventArgs e) { }
 
-        // Part of the Inputs group, which is disabled above.
         private void PressureSwitch_comboBox_SelectedIndexChanged(object sender, EventArgs e) { }
     }
 }

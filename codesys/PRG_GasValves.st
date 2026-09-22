@@ -5,7 +5,11 @@ VAR
     i : INT;
 END_VAR
 
-wGpvCommand := awHolding[133];
+IF xAbortActive THEN
+    wGpvCommand := WORD#0;
+ELSE
+    wGpvCommand := awHolding[133] AND (NOT wGpvInhibit);
+END_IF;
 
 FOR i := 1 TO 8 DO
     axGpvOutput[i] := (wGpvCommand AND SHL(WORD#1, i - 1)) <> WORD#0;

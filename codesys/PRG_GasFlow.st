@@ -20,7 +20,7 @@ VAR
     i           : INT;
 END_VAR
 
-xGasSubsystemEnable := (awHolding[0] = WORD#1) AND ((awHolding[1] AND WORD#16#0008) <> WORD#0);
+xGasSubsystemEnable := (awHolding[0] = WORD#1) AND ((awHolding[1] AND WORD#16#0008) <> WORD#0) AND (NOT xAbortActive);
 
 axSlaveError[0] := MFC_H2.xError;
 axSlaveError[1] := MFC_CH4.xError;

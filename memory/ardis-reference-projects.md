@@ -10,8 +10,8 @@ metadata:
 
 ArdisCVDCore is a rewrite that borrows behaviour from two older WinForms apps. Both are outside the working directory and neither is in version control, so read them rather than guess:
 
-- `C:\Users\PAVLOV\Documents\ArdisCVDMaster1\ArdisCVDMaster` — the full old machine app (`ArdisControlForm`, `modules_hw/`, `modules_logic/ErrorDispatcher.cs`, `ProcessParametersForm.cs`). This is the authority on how a feature *used to* work: sensor scaling, alarm maths, stopwatch format, Manual Mode gating. It talks to an ICP DAS PAC and PC-side PID, so its hardware layer never transfers directly — ArdisCVDCore talks only to a PLC210 over Modbus TCP.
-- `C:\Users\PAVLOV\Documents\Plc210PressurePid` — snapshot of ArdisCVDCore itself from just before the redesign (04.08.2026). Useful when a control was dropped in the redesign and its old wiring is needed; the pressure-chart series config and the original PID panel layout came from here.
+- `/Users/sennix/Desktop/ArdisCVDMaster` on the current machine (was `C:\Users\PAVLOV\Documents\ArdisCVDMaster1\ArdisCVDMaster`), sources under `ArdisCVDMaster/` — the full old machine app (`ArdisControlForm`, `modules_hw/`, `modules_logic/ErrorDispatcher.cs`, `ProcessParametersForm.cs`). This is the authority on how a feature *used to* work: sensor scaling, alarm maths, stopwatch format, Manual Mode gating. It talks to an ICP DAS PAC and PC-side PID, so its hardware layer never transfers directly — ArdisCVDCore talks only to a PLC210 over Modbus TCP.
+- `Plc210PressurePid` — **not present on the macOS machine as of 22.09.2026**; was at `C:\Users\PAVLOV\Documents\Plc210PressurePid`. Ask for it if it is needed. It is a snapshot of ArdisCVDCore itself from just before the redesign (04.08.2026). Useful when a control was dropped in the redesign and its old wiring is needed; the pressure-chart series config and the original PID panel layout came from here.
 
 The user supplies new screen designs as bare `*.Designer.cs` files dropped into the project root, in namespace `ArdisCVDMaster` — rename the namespace, keep the class, and check whether a matching `.resx` is needed (usually not).
 

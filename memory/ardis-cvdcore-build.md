@@ -8,14 +8,18 @@ metadata:
   modified: 2026-08-13T07:39:49.014Z
 ---
 
-.NET Framework 4.7.2 WinForms, no solution file, no version control in the working directory — so there is no git history to fall back on and overwriting a file loses it.
+.NET Framework 4.7.2 WinForms, no solution file. **The project is under git since 21.08.2026** — the older note here saying there is no version control is wrong and was written before the first commit.
 
-Build with VS MSBuild, not `dotnet`:
+**The project moved machines.** As of 22.09.2026 it lives on macOS at `/Users/sennix/Desktop/ArdisCVDCore`, not at `c:\Users\PAVLOV\Desktop\ArdisCVDCore`. Every Windows path in these memory files predates the move. The `~/.claude/projects/.../memory` junction described in [[memory-location]] does **not** exist on this machine — that path is an empty real directory, so write memory straight into the repo's `memory/`.
+
+On Windows, build with VS MSBuild, not `dotnet`:
 
 ```
 & 'C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe' `
-    'c:\Users\PAVLOV\Desktop\ArdisCVDCore\ArdisCVDCore.csproj' /t:Rebuild /p:Configuration=Debug
+    'ArdisCVDCore.csproj' /t:Rebuild /p:Configuration=Debug
 ```
+
+On the macOS machine Mono's `msbuild` and `dotnet` are both on PATH, but a .NET Framework WinForms target will not produce a runnable app there — building and smoke testing stay on the Windows side. Do not promise a screenshot from macOS.
 
 **NModbus used to resolve by accident.** The old csproj pointed `HintPath` at a solution-level `..\packages\` folder that does not exist; the build only succeeded because a stale `NModbus.dll` happened to sit in `bin\`. It is now vendored at `lib\NModbus.dll`. If the reference ever breaks again, that is the first thing to check rather than a NuGet restore.
 

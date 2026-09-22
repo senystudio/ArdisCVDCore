@@ -14,8 +14,8 @@ VAR CONSTANT
     C_CMD_STOP : WORD := WORD#16#0003;
 END_VAR
 
-xCommandValid := (awHolding[240] AND WORD#16#8000) <> WORD#0;
-xRunRequest := (awHolding[240] AND WORD#16#0001) <> WORD#0;
+xCommandValid := ((awHolding[240] AND WORD#16#8000) <> WORD#0) OR xAbortActive;
+xRunRequest := ((awHolding[240] AND WORD#16#0001) <> WORD#0) AND (NOT xAbortActive) AND (NOT xTurboInhibit);
 
 IF xRunRequest THEN
     wCommandWanted := C_CMD_RUN;

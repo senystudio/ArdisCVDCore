@@ -48,7 +48,7 @@ namespace ArdisCVDCore
             List<StatusLine> lines = new List<StatusLine>();
 
             AddPlc(lines);
-            AddChamberLid(lines);
+            AddAlarmEngine(lines);
             AddHiVac(lines);
             AddGasFlow(lines);
             AddPyrometers(lines);
@@ -78,30 +78,46 @@ namespace ArdisCVDCore
             }
         }
 
-        /// <summary>
-        /// The chamber lid switch, on one of the controller's own discrete
-        /// inputs. First in the list: an open lid outranks anything else on it.
-        /// </summary>
-        /// <remarks>
-        /// Error rather than Warning, because the switch is wired so that a
-        /// closed lid holds its input on -- which makes "open" also what a cut
-        /// wire, an unmapped channel or a PLC that has not been reflashed looks
-        /// like. That is the right way round for an interlock, and all of those
-        /// are things somebody has to walk over and look at.
-        /// </remarks>
-        private static void AddChamberLid(ICollection<StatusLine> lines)
+        private static void AddAlarmEngine(ICollection<StatusLine> lines)
         {
-            PLC210PidClient.State state = PLC210PidClient.GetState();
+            PLC210AlarmClient.State state = PLC210AlarmClient.GetState();
 
             if (!state.Connected)
             {
-                lines.Add(new StatusLine("Chamber lid", StatusLevel.Error, "Not connected"));
+                lines.Add(new StatusLine("Alarm engine", StatusLevel.Error, "Not connected"));
                 return;
             }
 
-            lines.Add(state.LidClosed
-                ? new StatusLine("Chamber lid", StatusLevel.Ok, "Closed")
-                : new StatusLine("Chamber lid", StatusLevel.Error, "OPEN"));
+            if (!state.ThresholdsAccepted)
+            {
+                lines.Add(new StatusLine("Alarm engine", StatusLevel.Warning,
+                    "The PLC has not taken the thresholds yet"));
+                return;
+            }
+
+            if (state.AbortActive)
+            {
+                lines.Add(new StatusLine("Alarm engine", StatusLevel.Error,
+                    "ABORT latched, see Fault Status"));
+                return;
+            }
+
+            if (state.AnyAlarm)
+            {
+                lines.Add(new StatusLine("Alarm engine", StatusLevel.Warning,
+                    "Alarm active, see Fault Status"));
+                return;
+            }
+
+            if (state.WaitingForFreshPress)
+            {
+                lines.Add(new StatusLine("Alarm engine", StatusLevel.Warning,
+                    "Waiting to be switched on again after an abort"));
+                return;
+            }
+
+            lines.Add(new StatusLine("Alarm engine", StatusLevel.Ok,
+                state.RetainWasBlank ? "Armed, the PLC booted without stored thresholds" : "Armed"));
         }
 
         private static void AddPlc(ICollection<StatusLine> lines)
@@ -270,20 +286,6 @@ namespace ArdisCVDCore
                 return;
             }
 
-            if (state.FaultReportable)
-            {
-                lines.Add(new StatusLine("Microwave Power Supply", StatusLevel.Error,
-                    "Fault — " + FaultReason(state) + ", press RESET"));
-                return;
-            }
-
-            if (state.ChamberPressureLow)
-            {
-                lines.Add(new StatusLine("Microwave Power Supply", StatusLevel.Warning,
-                    "Chamber pressure too low (<9 Torr), Microwave blocked"));
-                return;
-            }
-
             lines.Add(new StatusLine("Microwave Power Supply", StatusLevel.Ok, "Connected"));
         }
 
@@ -359,13 +361,6 @@ namespace ArdisCVDCore
             if (!state.DriveAnswering)
             {
                 lines.Add(new StatusLine("Turbo pump", StatusLevel.Warning, "Drive not answering"));
-                return;
-            }
-
-            if (state.FaultActive)
-            {
-                lines.Add(new StatusLine("Turbo pump", StatusLevel.Error,
-                    "Fault — " + state.FaultText));
                 return;
             }
 

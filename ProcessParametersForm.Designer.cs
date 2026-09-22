@@ -193,11 +193,11 @@
             this.GCFN2 = new System.Windows.Forms.NumericUpDown();
             this.GCFH2 = new System.Windows.Forms.NumericUpDown();
             this.OK = new System.Windows.Forms.Button();
-            this.checkBox1 = new System.Windows.Forms.CheckBox();
+            this.H22_AbortEnable = new System.Windows.Forms.CheckBox();
             this.label21 = new System.Windows.Forms.Label();
-            this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
-            this.numericUpDown2 = new System.Windows.Forms.NumericUpDown();
-            this.checkBox2 = new System.Windows.Forms.CheckBox();
+            this.H22_AbortVal = new System.Windows.Forms.NumericUpDown();
+            this.H22_AlarmVal = new System.Windows.Forms.NumericUpDown();
+            this.H22_AlarmEnable = new System.Windows.Forms.CheckBox();
             this.label23 = new System.Windows.Forms.Label();
             this.label24 = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
@@ -251,18 +251,18 @@
             ((System.ComponentModel.ISupportInitialize)(this.GCFCH4)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.GCFN2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.GCFH2)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.H22_AbortVal)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.H22_AlarmVal)).BeginInit();
             this.SuspendLayout();
             // 
             // ParametersGroup
             // 
             this.ParametersGroup.BackColor = System.Drawing.SystemColors.ButtonFace;
-            this.ParametersGroup.Controls.Add(this.checkBox1);
+            this.ParametersGroup.Controls.Add(this.H22_AbortEnable);
             this.ParametersGroup.Controls.Add(this.label21);
-            this.ParametersGroup.Controls.Add(this.numericUpDown1);
-            this.ParametersGroup.Controls.Add(this.numericUpDown2);
-            this.ParametersGroup.Controls.Add(this.checkBox2);
+            this.ParametersGroup.Controls.Add(this.H22_AbortVal);
+            this.ParametersGroup.Controls.Add(this.H22_AlarmVal);
+            this.ParametersGroup.Controls.Add(this.H22_AlarmEnable);
             this.ParametersGroup.Controls.Add(this.label23);
             this.ParametersGroup.Controls.Add(this.label24);
             this.ParametersGroup.Controls.Add(this.label90);
@@ -2246,14 +2246,14 @@
             this.OK.UseVisualStyleBackColor = false;
             this.OK.Click += new System.EventHandler(this.OK_Click);
             // 
-            // checkBox1
+            // H22_AbortEnable
             // 
-            this.checkBox1.AutoSize = true;
-            this.checkBox1.Location = new System.Drawing.Point(288, 288);
-            this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(15, 14);
-            this.checkBox1.TabIndex = 186;
-            this.checkBox1.UseVisualStyleBackColor = true;
+            this.H22_AbortEnable.AutoSize = true;
+            this.H22_AbortEnable.Location = new System.Drawing.Point(288, 288);
+            this.H22_AbortEnable.Name = "H22_AbortEnable";
+            this.H22_AbortEnable.Size = new System.Drawing.Size(15, 14);
+            this.H22_AbortEnable.TabIndex = 186;
+            this.H22_AbortEnable.UseVisualStyleBackColor = true;
             // 
             // label21
             // 
@@ -2265,32 +2265,32 @@
             this.label21.TabIndex = 185;
             this.label21.Text = "%";
             // 
-            // numericUpDown1
+            // H22_AbortVal
             // 
-            this.numericUpDown1.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.numericUpDown1.Location = new System.Drawing.Point(309, 283);
-            this.numericUpDown1.Name = "numericUpDown1";
-            this.numericUpDown1.Size = new System.Drawing.Size(51, 22);
-            this.numericUpDown1.TabIndex = 182;
-            this.numericUpDown1.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.H22_AbortVal.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.H22_AbortVal.Location = new System.Drawing.Point(309, 283);
+            this.H22_AbortVal.Name = "H22_AbortVal";
+            this.H22_AbortVal.Size = new System.Drawing.Size(51, 22);
+            this.H22_AbortVal.TabIndex = 182;
+            this.H22_AbortVal.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
-            // numericUpDown2
+            // H22_AlarmVal
             // 
-            this.numericUpDown2.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.numericUpDown2.Location = new System.Drawing.Point(228, 283);
-            this.numericUpDown2.Name = "numericUpDown2";
-            this.numericUpDown2.Size = new System.Drawing.Size(51, 22);
-            this.numericUpDown2.TabIndex = 181;
-            this.numericUpDown2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.H22_AlarmVal.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.H22_AlarmVal.Location = new System.Drawing.Point(228, 283);
+            this.H22_AlarmVal.Name = "H22_AlarmVal";
+            this.H22_AlarmVal.Size = new System.Drawing.Size(51, 22);
+            this.H22_AlarmVal.TabIndex = 181;
+            this.H22_AlarmVal.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
-            // checkBox2
+            // H22_AlarmEnable
             // 
-            this.checkBox2.AutoSize = true;
-            this.checkBox2.Location = new System.Drawing.Point(208, 287);
-            this.checkBox2.Name = "checkBox2";
-            this.checkBox2.Size = new System.Drawing.Size(15, 14);
-            this.checkBox2.TabIndex = 180;
-            this.checkBox2.UseVisualStyleBackColor = true;
+            this.H22_AlarmEnable.AutoSize = true;
+            this.H22_AlarmEnable.Location = new System.Drawing.Point(208, 287);
+            this.H22_AlarmEnable.Name = "H22_AlarmEnable";
+            this.H22_AlarmEnable.Size = new System.Drawing.Size(15, 14);
+            this.H22_AlarmEnable.TabIndex = 180;
+            this.H22_AlarmEnable.UseVisualStyleBackColor = true;
             // 
             // label23
             // 
@@ -2396,8 +2396,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.GCFCH4)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.GCFN2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.GCFH2)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.H22_AbortVal)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.H22_AlarmVal)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -2569,11 +2569,11 @@
         private System.Windows.Forms.Label label87;
         private System.Windows.Forms.Label label88;
         private System.Windows.Forms.Label label90;
-        private System.Windows.Forms.CheckBox checkBox1;
+        private System.Windows.Forms.CheckBox H22_AbortEnable;
         private System.Windows.Forms.Label label21;
-        private System.Windows.Forms.NumericUpDown numericUpDown1;
-        private System.Windows.Forms.NumericUpDown numericUpDown2;
-        private System.Windows.Forms.CheckBox checkBox2;
+        private System.Windows.Forms.NumericUpDown H22_AbortVal;
+        private System.Windows.Forms.NumericUpDown H22_AlarmVal;
+        private System.Windows.Forms.CheckBox H22_AlarmEnable;
         private System.Windows.Forms.Label label23;
         private System.Windows.Forms.Label label24;
         private System.Windows.Forms.Button button1;

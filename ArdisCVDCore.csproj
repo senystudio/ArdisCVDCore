@@ -88,6 +88,11 @@
     <Compile Include="modules_hw\PLC210VacuumClient.cs" />
     <Compile Include="modules_hw\PLC210TurboPumpClient.cs" />
     <Compile Include="modules_hw\PLC210CoolingClient.cs" />
+    <Compile Include="modules_hw\PLC210AlarmClient.cs" />
+    <Compile Include="AlarmCatalog.cs" />
+    <Compile Include="AlarmSettings.cs" />
+    <Compile Include="AlarmJournal.cs" />
+    <Compile Include="FaultStatusForm.cs" />
     <Compile Include="GraphScaler.cs">
       <SubType>Form</SubType>
     </Compile>

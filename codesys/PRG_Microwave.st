@@ -38,8 +38,8 @@ VAR
 END_VAR
 
 
-xMwPreheatRequest := (awHolding[192] AND WORD#16#0001) <> WORD#0;
-xMwOnRequest      := (awHolding[192] AND WORD#16#0002) <> WORD#0;
+xMwPreheatRequest := ((awHolding[192] AND WORD#16#0001) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit);
+xMwOnRequest      := ((awHolding[192] AND WORD#16#0002) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit);
 xMwResetRequest   := (awHolding[192] AND WORD#16#0004) <> WORD#0;
 
 

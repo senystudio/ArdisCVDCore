@@ -22,6 +22,15 @@ metadata:
 | 160..191 | PRG_Pyrometers | PLC210PyrometerClient |
 | 192..205 | PRG_Microwave | PLC210MicrowaveClient |
 | 206..239 | PRG_Cooling | PLC210CoolingClient |
+| 240..247 | PRG_TurboPump | PLC210TurboPumpClient |
+| 248..279 | PRG_Alarms reads (HMI writes thresholds) | PLC210AlarmClient |
+| 280..295 | PRG_Alarms publishes alarm state | PLC210AlarmClient |
+
+**awHolding grew to ARRAY[0..295] on 22.09.2026** for the alarm engine. The Modbus server's holding area in the device tree must be grown to 296 words with it, or the HMI gets IllegalDataAddress — the same trap the turbo pump hit.
+
+**awHolding[248] carries 16#A5 in its high byte and that is load-bearing.** PRG_Alarms does not parse 249..279 at all without it. The thresholds live in `GVL_Alarms` as `VAR_GLOBAL RETAIN` so the machine is protected before the HMI connects; awHolding reads zeros after a PLC boot, so parsing it unconditionally would overwrite the surviving RETAIN copy with zeros and disarm every check at exactly the moment RETAIN existed for. The magic word distinguishes "the HMI sent a block with everything off" from "no block has ever arrived". For the same reason the HMI must write 248..279 in ONE FC16 — otherwise the magic can land before the values it commits.
+
+Alarm codes are bit numbers in the 64-bit masks, one byte per subsystem: 0..7 setpoint bands, 8..15 temperatures, 16..23 cooling, 24..31 interlocks, 32..47 microwave generator reasons, 48..63 turbo pump. Full numbering in `codesys/comments.txt`. Link loss and reading validity are deliberately NOT in these masks — they belong to the Connection Status window. See [[alarm-abort-design]] and [[alarm-dead-sensor-open]].
 
 Still free: 148, 149, 158, 159. `PLC210PidClient.OutputRegisterCount` is 40, i.e. it reads 100..139 in one go — that is the cheap place to hang a new HMI-visible flag, no ninth socket.
 

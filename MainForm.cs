@@ -95,6 +95,8 @@ namespace ArdisCVDCore
         private TemperatureTrendForm _temperatureTrendForm;
         private PidViewerForm _pidViewerForm;
         private StatusForm _statusForm;
+        private FaultStatusForm _faultStatusForm;
+        private bool _abortHandled;
         private ProcessParametersForm _processParametersForm;
 
         public MainForm()
@@ -168,6 +170,7 @@ namespace ArdisCVDCore
             PLC210VacuumClient.Stop();
             PLC210CoolingClient.Stop();
             PLC210TurboPumpClient.Stop();
+            PLC210AlarmClient.Stop();
 
             IniWriter.INI.Write("MainForm", "X", Location.X.ToString(CultureInfo.InvariantCulture));
             IniWriter.INI.Write("MainForm", "Y", Location.Y.ToString(CultureInfo.InvariantCulture));
@@ -247,6 +250,11 @@ namespace ArdisCVDCore
             PLC210VacuumClient.Start(host, port);       // 135..138
             PLC210CoolingClient.Start(host, port);      // 206..239, the two МВ210-102 analogue modules
             PLC210TurboPumpClient.Start(host, port);    // 240..247, the KYKY TD turbo pump drive
+            PLC210AlarmClient.Start(host, port);        // 248..295, the alarm thresholds and the alarm state
+
+            AlarmSettings.Load();
+            AlarmSettings.LidInput = PLC210PidClient.LidInputChannel;
+            PLC210AlarmClient.PushThresholds(AlarmSettings.Pack());
 
             // The regulators used to be enabled by opening the Gas Section
             // window. There is no such window now -- the gas controls are always
@@ -282,6 +290,7 @@ namespace ArdisCVDCore
             UpdatePumps();
             UpdateTurboPump();
             UpdateCoolingSection();
+            UpdateAlarms();
             UpdateStatusPlate();
 
             // Nothing is written to the PID until SET has been pressed at least
@@ -919,6 +928,42 @@ namespace ArdisCVDCore
         }
 
         // --- Status plate ---
+        private void UpdateAlarms()
+        {
+            PLC210AlarmClient.State state = PLC210AlarmClient.GetState();
+            AlarmJournal.Poll(state);
+
+            if (!state.Connected)
+                return;
+
+            if (state.AbortActive)
+            {
+                if (!_abortHandled)
+                {
+                    _abortHandled = true;
+                    DropRequestsAfterAbort();
+                }
+            }
+            else
+            {
+                _abortHandled = false;
+            }
+        }
+
+        private void DropRequestsAfterAbort()
+        {
+            PLC210MicrowaveClient.RequestMicrowave(false);
+            PLC210MicrowaveClient.RequestPreheat(false);
+
+            for (int i = 0; i < PLC210GasFlowClient.GasNames.Length; i++)
+                PLC210GasFlowClient.RequestSetpoint(i, 0);
+
+            CloseAllValves_Click(null, EventArgs.Empty);
+
+            PLC210VacuumClient.RequestForeVacPump(false);
+            PLC210TurboPumpClient.RequestRun(false);
+        }
+
         private void UpdateStatusPlate()
         {
             StatusLevel level = SystemStatus.Worst(SystemStatus.Collect());
@@ -956,7 +1001,17 @@ namespace ArdisCVDCore
 
         private void StatusLabel_Click(object sender, EventArgs e)
         {
+            _faultStatusForm = ShowSingleton(_faultStatusForm);
+        }
+
+        private void ConnectionStatusToolMenu_Click(object sender, EventArgs e)
+        {
             _statusForm = ShowSingleton(_statusForm);
+        }
+
+        private void FaultStatusToolMenu_Click(object sender, EventArgs e)
+        {
+            _faultStatusForm = ShowSingleton(_faultStatusForm);
         }
 
         // --- Settings menu ---

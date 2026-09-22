@@ -7,7 +7,11 @@ VAR
     i : INT;
 END_VAR
 
-wVpvCommand := awHolding[135];
+IF xAbortActive THEN
+    wVpvCommand := WORD#0;
+ELSE
+    wVpvCommand := awHolding[135] AND (NOT wVpvInhibit);
+END_IF;
 
 FOR i := 1 TO 8 DO
     axVpvOutput[i] := (wVpvCommand AND SHL(WORD#1, i - 1)) <> WORD#0;
@@ -24,7 +28,7 @@ awHolding[136] := wVpvStatus;
 
 wPumpCommand := awHolding[137];
 xWaterPumpOutput := (wPumpCommand AND WORD#16#0001) <> WORD#0;
-xForeVacPumpOutput := (wPumpCommand AND WORD#16#0002) <> WORD#0;
+xForeVacPumpOutput := ((wPumpCommand AND WORD#16#0002) <> WORD#0) AND (NOT xAbortActive) AND (NOT xForeVacInhibit);
 
 wPumpStatus := WORD#0;
 IF xWaterPumpOutput THEN

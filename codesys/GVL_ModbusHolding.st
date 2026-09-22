@@ -60,7 +60,62 @@
          246       motor temperature, degC   (16#1004, low byte)
          247       bit0 the drive is answering
        That block is in raw device units, not fixed point.
+       248..295 belongs to PRG_Alarms, on MainTask. 248..279 is written by the
+       HMI and holds the alarm thresholds; 280..295 is published by the PLC and
+       holds the alarm state. Everything here is small integers in device units
+       -- percent, degC, Watt -- not fixed point, because none of it needs a
+       fraction and packing two per word keeps the block to one Modbus write.
+       The authoritative copy of the thresholds lives in RETAIN inside
+       GVL_Alarms; this block only carries them across. See comments.txt.
+         248       16#A500 OR version. PRG_Alarms ignores 249..279 entirely
+                   unless the high byte is 16#A5, which is what lets the RETAIN
+                   copy survive a PLC boot with the HMI down: an untouched
+                   block reads 0 and is not mistaken for "all alarms disabled".
+                   The HMI writes 248..279 in ONE FC16 so the magic cannot
+                   arrive before the values it commits.
+         249       alarm-enable bits, group Parameters
+         250       abort-enable bits, same bit order
+                   bit0 chamber pressure, bit1..6 H2 CH4 N2 O2 Ar H2(2),
+                   bit7 reflected MW power
+         251..257  percent band per signal, low byte alarm, high byte abort,
+                   in the bit order above: 251 chamber, 252..257 the six gases
+         258       reflected MW power, alarm, Watt
+         259       reflected MW power, abort, Watt
+         260       temperature enables: bit0 sample alarm,
+                   bit1..4 alarm  for internal, external, stage, chamber H2O,
+                   bit8..11 abort for the same four
+         261       sample target, degC (pyrometer, 0..1500)
+         262       sample percent band, alarm, low byte
+         263       water targets, degC: low byte internal, high byte external
+         264       water targets, degC: low byte stage,    high byte chamber
+         265..268  water percent band, low byte alarm, high byte abort,
+                   in the order internal, external, stage, chamber
+         269       Inputs group, check enabled, bit0..7 in screen order:
+                   stage flow, chamber flow, MW head flow, MW power flow,
+                   internal flow, external flow, water pressure, chamber open
+         270       Inputs group, reaction, same bit order, 0 alarm, 1 abort
+         271       bit0 the HMI reports a run in progress; high byte carries
+                   which of the twelve discrete inputs is the chamber lid
+                   switch, 1..12, because that choice lives in the HMI's
+                   config.ini and PRG_Alarms cannot guess it. Out of range
+                   falls back to 1.
+         272..274  reserved for the gas correction factors, unused
+         275..279  reserved
+         280..283  active alarm mask, 64 bits, code n is bit n
+         284..287  active abort mask, same numbering
+         288..291  abort reason latched at the moment it tripped
+         292       bit0 abort active, bit1 any alarm active,
+                   bit2 thresholds accepted, bit3 RETAIN was blank at boot,
+                   bit4 something is still waiting to be switched on again
+         293       abort counter, increments once per latch
+         294       gas valves waiting for a fresh press, bit0..7 = GPV1..8
+         295       vacuum valves waiting for a fresh press, bit0..7 = VPV1..8
+       The flow thresholds of the Inputs group are NOT here: they are fixed in
+       PRG_Alarms at 1 lpm for stage, chamber, MW head and MW power and 5 lpm
+       for internal and external, and the water pressure limits are fixed at
+       0.7 and 0.5 bar. The screen states them in the caption of each check
+       box, and the operator can only arm a check and pick its reaction.
        All values are signed fixed point x1000, low word first, except where
        a block says otherwise. *)
-    awHolding AT %QW0 : ARRAY[0..247] OF WORD;
+    awHolding AT %QW0 : ARRAY[0..295] OF WORD;
 END_VAR

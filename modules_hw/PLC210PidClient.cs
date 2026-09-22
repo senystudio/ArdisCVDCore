@@ -388,6 +388,16 @@ namespace ArdisCVDCore.modules_hw
             }
         }
 
+        public static void RequestReset()
+        {
+            lock (Sync)
+            {
+                _resetRequested = true;
+                ChamberPreview.Reset();
+                PlenumPreview.Reset();
+            }
+        }
+
         public static State GetState()
         {
             lock (Sync)

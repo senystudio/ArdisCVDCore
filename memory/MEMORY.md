@@ -7,3 +7,6 @@
 - [Pyrometer / MW RS-485 conflict](pyrometer-mw-rs485-conflict.md) — why PYRO_RXT hangs, what was ruled out, and the fix that is still pending
 - [Memory location](memory-location.md) — the files live in the repo now; the ~/.claude path is a junction to them
 - [Microwave water fault](microwave-water-fault-flow.md) — when the no-water error shows, what drops Preheat/MW, what clears it
+- [Alarm/Abort design](alarm-abort-design.md) — решения 22.09.2026: логика в ПЛК, что именно делает Abort, два окна статуса
+- [Gas Correction Factor](gas-correction-factor-open.md) — отложен 22.09.2026; почему выбор семантики неочевиден и что ломается при неверном
+- [Мёртвый датчик и аварии](alarm-dead-sensor-open.md) — не решено: что делать, когда прибор перестал отвечать, а показание замёрзло
