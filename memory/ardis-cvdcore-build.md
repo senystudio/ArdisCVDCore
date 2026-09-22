@@ -8,6 +8,10 @@ metadata:
   modified: 2026-08-13T07:39:49.014Z
 ---
 
+**Standing rule, given 23.09.2026: the build route is chosen by the host OS, without asking.** On macOS, build inside the Parallels VM with `prlctl` as described below. On Windows, build the old way — VS MSBuild directly on the project. The user stated it plainly: «если мы работаем в mac os, то будем работать так, через parallels будешь собирать. а если в винде над проектом работаем, то по старинке».
+
+This says *how* to build, not *when*. The rule in [[ardis-cvdcore-working-style]] still holds: do not build until the user asks.
+
 .NET Framework 4.7.2 WinForms, no solution file. **The project is under git since 21.08.2026** — the older note here saying there is no version control is wrong and was written before the first commit.
 
 **The project moved machines.** As of 22.09.2026 it lives on macOS at `/Users/sennix/Desktop/ArdisCVDCore`, not at `c:\Users\PAVLOV\Desktop\ArdisCVDCore`. Every Windows path in these memory files predates the move. The `~/.claude/projects/.../memory` junction described in [[memory-location]] does **not** exist on this machine — that path is an empty real directory, so write memory straight into the repo's `memory/`.
@@ -29,6 +33,19 @@ prlctl capture "Windows 11" --file <mac path>.png    # full guest screen as PNG
 ```
 
 The guest has VS 18 Community with MSBuild at the exact path this file already lists, the v4.7.2 reference assemblies, git, VS Code and CODESYS 3.5.17.30. So MSBuild plus a screenshot can both be driven from macOS; the old line here saying they cannot was written before the VM was checked.
+
+**`prlctl exec` runs in session 0, the desktop is session 1** — verified 23.09.2026 with `query session` (`services` = 0, `console` = `sennix` = 1, Active). So a GUI app started straight from `prlctl exec` runs invisibly: the process lives, `MainWindowHandle` is 0, and a screen capture shows only the desktop. `Start-Process explorer.exe -ArgumentList <exe>` does not fix it either — the process dies immediately. What works is a scheduled task marked interactive:
+
+```
+schtasks /create /tn ArdisRun /tr "C:\ArdisRun\ArdisCVDCore.exe" /sc once /st 23:59 /f /ru sennix /it
+schtasks /run /tn ArdisRun
+```
+
+`/it` is the load-bearing switch; no password is needed with it. The same trick drives the UI: a task running a PowerShell script that does `AppActivate` plus `[System.Windows.Forms.SendKeys]::SendWait(...)`. Each such run re-activates the window, which closes any open menu, so a whole key sequence must go in ONE run (`%v` then `{RIGHT}` then `{ENTER}`, not three calls).
+
+**Quoting through `prlctl exec` eats quotes and backslashes.** `-Command "... '\\Mac\...' ..."` loses a backslash to bash, and doubled quotes are stripped before PowerShell sees them, so `C:\Program Files\...` splits at the space. Do not fight it: write a `.ps1` into a shared folder and run it with `powershell.exe -NoProfile -ExecutionPolicy Bypass -File \\Mac\<share>\script.ps1`. Sharing Claude's own scratch directory as a second shared folder (`--shf-host-add ClaudeScratch --path <scratch>`) is the clean way to hand scripts across.
+
+**Building straight from the share works and is preferable** — `MSBuild \\Mac\ArdisCVDCore\ArdisCVDCore.csproj /t:Rebuild /p:Configuration=Debug` succeeds and writes `bin\Debug\ArdisCVDCore.exe` back into the Mac repo, so there is no second copy to drift. **Running** from the share is a different matter: copy `bin\Debug\*` to a local guest folder (`C:\ArdisRun`) and launch from there.
 
 Two traps. **Mac folders are not shared into the VM** — `Host Shared Folders: (-)`, and `\\Mac\Home` resolves but lists nothing, so the repo at `/Users/sennix/Desktop/ArdisCVDCore` is invisible to MSBuild until sharing is turned on (`prlctl set "Windows 11" --shf-host-add ArdisCVDCore --path /Users/sennix/Desktop/ArdisCVDCore`). **The guest holds a separate, unversioned copy** at `C:\Users\sennix\Desktop\ArdisCVDCore\ArdisCVDCore` (note the doubled folder) with no `.git`, whose files are the Mac's with CRLF line endings; it drifts from the repo and must not be treated as the same tree. Escaping note: `&`-chained commands inside `prlctl exec cmd.exe /c "..."` mangle easily — one command per call, or PowerShell with `;`.
 
