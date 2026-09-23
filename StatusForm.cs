@@ -23,7 +23,7 @@ namespace ArdisCVDCore
 
         public StatusForm()
         {
-            Text = "System Status";
+            Text = "Connection Status";
             ClientSize = new Size(680, 260);
             StartPosition = FormStartPosition.Manual;
             MinimumSize = new Size(420, 200);
@@ -47,7 +47,7 @@ namespace ArdisCVDCore
             _timer = new Timer { Interval = 1000 };
             _timer.Tick += Timer_Tick;
 
-            Refresh(SystemStatus.Collect());
+            Refresh(SystemStatus.CollectConnections());
         }
 
         protected override void OnLoad(EventArgs e)
@@ -85,7 +85,7 @@ namespace ArdisCVDCore
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            Refresh(SystemStatus.Collect());
+            Refresh(SystemStatus.CollectConnections());
         }
 
         // Rows are rewritten in place rather than cleared and rebuilt: a full

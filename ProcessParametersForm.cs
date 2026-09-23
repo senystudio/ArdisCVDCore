@@ -29,12 +29,22 @@ namespace ArdisCVDCore
         private CheckBox[] _inputEnable;
         private ComboBox[] _inputReaction;
 
+        private const int ApplyBlinkIntervalMs = 250;
+        private const int ApplyBlinkToggles = 8;
+
+        private readonly Timer _applyBlinkTimer = new Timer();
+        private int _applyBlinkLeft;
+
         public ProcessParametersForm()
         {
             InitializeComponent();
             Icon = Res.AppIcon;
             StartPosition = FormStartPosition.Manual;
             BindAlarmControls();
+
+            _applyBlinkTimer.Interval = ApplyBlinkIntervalMs;
+            _applyBlinkTimer.Tick += ApplyBlinkTimer_Tick;
+            Disposed += (s, e) => _applyBlinkTimer.Dispose();
         }
 
         private void ProcessParametersForm_Load(object sender, EventArgs e)
@@ -264,9 +274,31 @@ namespace ArdisCVDCore
             AlarmSettings.Save();
             PLC210AlarmClient.PushThresholds(AlarmSettings.Pack());
 
+            StartApplyBlink();
+
             // The button says Apply, so it applies and stays open -- the same as
             // the window it came from, and it lets the operator watch the effect
             // in PID Viewer before closing.
+        }
+
+        private void StartApplyBlink()
+        {
+            _applyBlinkLeft = ApplyBlinkToggles;
+            OK.BackColor = Color.LightGreen;
+            _applyBlinkTimer.Stop();
+            _applyBlinkTimer.Start();
+        }
+
+        private void ApplyBlinkTimer_Tick(object sender, EventArgs e)
+        {
+            _applyBlinkLeft--;
+            if (_applyBlinkLeft <= 0)
+            {
+                _applyBlinkTimer.Stop();
+                OK.BackColor = SystemColors.Window;
+                return;
+            }
+            OK.BackColor = _applyBlinkLeft % 2 == 0 ? Color.LightGreen : SystemColors.Window;
         }
 
         /// <summary>

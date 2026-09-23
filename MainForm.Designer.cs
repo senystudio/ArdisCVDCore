@@ -80,6 +80,10 @@
             this.label23 = new System.Windows.Forms.Label();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.ConnectToolMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.DisconnectToolMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.ConnectExitSeparator = new System.Windows.Forms.ToolStripSeparator();
+            this.ExitToolMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ProcessParametersToolMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.viewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -88,7 +92,6 @@
             this.MWPowerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.temperatureTrendToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.PIDToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.StatusToolMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.ConnectionStatusToolMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.FaultStatusToolMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.StatusTrendSeparator = new System.Windows.Forms.ToolStripSeparator();
@@ -1053,10 +1056,42 @@
             // 
             // fileToolStripMenuItem
             // 
+            this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.ConnectToolMenu,
+            this.DisconnectToolMenu,
+            this.ConnectExitSeparator,
+            this.ExitToolMenu});
             this.fileToolStripMenuItem.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(45, 23);
             this.fileToolStripMenuItem.Text = "File";
+            //
+            // ConnectToolMenu
+            //
+            this.ConnectToolMenu.Enabled = false;
+            this.ConnectToolMenu.Name = "ConnectToolMenu";
+            this.ConnectToolMenu.Size = new System.Drawing.Size(215, 24);
+            this.ConnectToolMenu.Text = "Connect";
+            this.ConnectToolMenu.Click += new System.EventHandler(this.ConnectToolMenu_Click);
+            //
+            // DisconnectToolMenu
+            //
+            this.DisconnectToolMenu.Name = "DisconnectToolMenu";
+            this.DisconnectToolMenu.Size = new System.Drawing.Size(215, 24);
+            this.DisconnectToolMenu.Text = "Disconnect";
+            this.DisconnectToolMenu.Click += new System.EventHandler(this.DisconnectToolMenu_Click);
+            //
+            // ConnectExitSeparator
+            //
+            this.ConnectExitSeparator.Name = "ConnectExitSeparator";
+            this.ConnectExitSeparator.Size = new System.Drawing.Size(212, 6);
+            //
+            // ExitToolMenu
+            //
+            this.ExitToolMenu.Name = "ExitToolMenu";
+            this.ExitToolMenu.Size = new System.Drawing.Size(215, 24);
+            this.ExitToolMenu.Text = "Exit";
+            this.ExitToolMenu.Click += new System.EventHandler(this.ExitToolMenu_Click);
             // 
             // settingsToolStripMenuItem
             // 
@@ -1077,7 +1112,8 @@
             // viewToolStripMenuItem
             // 
             this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.StatusToolMenu,
+            this.FaultStatusToolMenu,
+            this.ConnectionStatusToolMenu,
             this.StatusTrendSeparator,
             this.GasTrendToolMenu,
             this.PressureTrendToolMenu,
@@ -1088,15 +1124,6 @@
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
             this.viewToolStripMenuItem.Size = new System.Drawing.Size(55, 23);
             this.viewToolStripMenuItem.Text = "View";
-            //
-            // StatusToolMenu
-            //
-            this.StatusToolMenu.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.FaultStatusToolMenu,
-            this.ConnectionStatusToolMenu});
-            this.StatusToolMenu.Name = "StatusToolMenu";
-            this.StatusToolMenu.Size = new System.Drawing.Size(216, 24);
-            this.StatusToolMenu.Text = "Status";
             //
             // FaultStatusToolMenu
             //
@@ -3630,6 +3657,10 @@
         private System.Windows.Forms.Label TurboTempValue;
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem ConnectToolMenu;
+        private System.Windows.Forms.ToolStripMenuItem DisconnectToolMenu;
+        private System.Windows.Forms.ToolStripSeparator ConnectExitSeparator;
+        private System.Windows.Forms.ToolStripMenuItem ExitToolMenu;
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem ProcessParametersToolMenu;
         private System.Windows.Forms.ToolStripMenuItem viewToolStripMenuItem;
@@ -3765,7 +3796,6 @@
         private System.Windows.Forms.Label label20;
         private System.Windows.Forms.PictureBox pictureBox34;
         private System.Windows.Forms.ToolStripMenuItem PIDToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem StatusToolMenu;
         private System.Windows.Forms.ToolStripMenuItem ConnectionStatusToolMenu;
         private System.Windows.Forms.ToolStripMenuItem FaultStatusToolMenu;
         private System.Windows.Forms.ToolStripSeparator StatusTrendSeparator;

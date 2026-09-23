@@ -121,6 +121,18 @@ namespace ArdisCVDCore.modules_hw
                 worker.Join(1200);
 
             Disconnect();
+
+            lock (Sync)
+            {
+                _state = new State
+                {
+                    Connected = false,
+                    StatusText = "PLC210 pyrometers disconnected",
+                    UpdatedAt = DateTime.Now,
+                    Rxt = new PyrometerReading(),
+                    Smart = new PyrometerReading()
+                };
+            }
         }
 
         public static State GetState()

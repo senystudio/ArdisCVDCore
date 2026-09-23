@@ -143,6 +143,17 @@ namespace ArdisCVDCore.modules_hw
                 worker.Join(1200);
 
             Disconnect();
+
+            lock (Sync)
+            {
+                _state = new State
+                {
+                    Connected = false,
+                    StatusText = "PLC210 gas regulators disconnected",
+                    UpdatedAt = DateTime.Now,
+                    Channels = _state.Channels
+                };
+            }
         }
 
         public static State GetState()

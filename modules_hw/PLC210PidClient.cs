@@ -26,7 +26,8 @@ namespace ArdisCVDCore.modules_hw
         Off = 0,
         Green,
         Yellow,
-        Red
+        Red,
+        GreenYellow
     }
 
     public static class PLC210PidClient
@@ -370,6 +371,19 @@ namespace ArdisCVDCore.modules_hw
                 worker.Join(1200);
 
             Disconnect();
+
+            lock (Sync)
+            {
+                _state = new State
+                {
+                    Connected = false,
+                    UsingLocalPreview = true,
+                    StatusText = "PLC210 PID disconnected",
+                    UpdatedAt = DateTime.Now,
+                    Chamber = _state.Chamber,
+                    Plenum = _state.Plenum
+                };
+            }
         }
 
         public static void SetChannels(Channel chamber, Channel plenum, bool reset)
@@ -642,6 +656,7 @@ namespace ArdisCVDCore.modules_hw
                 case TrafficLight.Green: flags |= 0x0010; break;
                 case TrafficLight.Yellow: flags |= 0x0020; break;
                 case TrafficLight.Red: flags |= 0x0040; break;
+                case TrafficLight.GreenYellow: flags |= 0x0030; break;
             }
 
             return flags;

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ArdisCVDCore
@@ -161,16 +162,7 @@ namespace ArdisCVDCore
 
             SuperCycle.Stop();
 
-            PLC210PidClient.Stop();
-            PLC210ThyracontClient.Stop();
-            PLC210GasFlowClient.Stop();
-            PLC210PyrometerClient.Stop();
-            PLC210MicrowaveClient.Stop();
-            PLC210GasValveClient.Stop();
-            PLC210VacuumClient.Stop();
-            PLC210CoolingClient.Stop();
-            PLC210TurboPumpClient.Stop();
-            PLC210AlarmClient.Stop();
+            StopPlcClients();
 
             IniWriter.INI.Write("MainForm", "X", Location.X.ToString(CultureInfo.InvariantCulture));
             IniWriter.INI.Write("MainForm", "Y", Location.Y.ToString(CultureInfo.InvariantCulture));
@@ -260,6 +252,27 @@ namespace ArdisCVDCore
             // window. There is no such window now -- the gas controls are always
             // on screen, so the subsystem comes up with the application.
             PLC210PidClient.SetGasSubsystemEnabled(true);
+        }
+
+        private static void StopPlcClients()
+        {
+            Parallel.Invoke(
+                PLC210PidClient.Stop,
+                PLC210ThyracontClient.Stop,
+                PLC210GasFlowClient.Stop,
+                PLC210PyrometerClient.Stop,
+                PLC210MicrowaveClient.Stop,
+                PLC210GasValveClient.Stop,
+                PLC210VacuumClient.Stop,
+                PLC210CoolingClient.Stop,
+                PLC210TurboPumpClient.Stop,
+                PLC210AlarmClient.Stop);
+        }
+
+        private void SetPlcLinkMenu(bool connected)
+        {
+            ConnectToolMenu.Enabled = !connected;
+            DisconnectToolMenu.Enabled = connected;
         }
 
         private static string ReadIniString(string section, string key, string defaultValue)
@@ -738,8 +751,16 @@ namespace ArdisCVDCore
             // Same rule as the other pumps: nothing to toggle until the drive
             // has confirmed a state, and nothing starts outside a session.
             TurboVacPump.Enabled = live && _manualRunActive;
-            TurboVacPump.Text = state.Working ? "TURBO PUMP ON" : "TURBO PUMP OFF";
-            TurboVacPump.BackColor = TurboButtonColor(state);
+            if (live)
+            {
+                TurboVacPump.Text = state.Working ? "TURBO PUMP ON" : "TURBO PUMP OFF";
+                TurboVacPump.BackColor = TurboButtonColor(state);
+            }
+            else
+            {
+                TurboVacPump.Text = "NOT CONNECTED";
+                TurboVacPump.BackColor = Color.LightGray;
+            }
 
             TurboSpeedValue.Text = live
                 ? state.SpeedHz.ToString(CultureInfo.InvariantCulture)
@@ -966,28 +987,35 @@ namespace ArdisCVDCore
 
         private void UpdateStatusPlate()
         {
-            StatusLevel level = SystemStatus.Worst(SystemStatus.Collect());
+            List<StatusLine> lines = SystemStatus.Collect();
 
-            StatusLabel.Text = SystemStatus.Describe(level);
-            StatusLabel.BackColor = PlateColor(level);
-            // The design leaves ForeColor transparent, which is unreadable on
-            // the red and green plates.
-            StatusLabel.ForeColor = Color.Black;
+            if (!_statusPlateLeft.HasValue)
+                _statusPlateLeft = StatusLabel.Left;
+
+            if (SystemStatus.PlcConnected())
+            {
+                StatusLabel.Left = _statusPlateLeft.Value;
+                StatusLevel alarmLevel = SystemStatus.AlarmLevel();
+                StatusLabel.Text = SystemStatus.Describe(alarmLevel);
+                StatusLabel.BackColor = PlateColor(alarmLevel);
+                StatusLabel.ForeColor = SystemStatus.AnyModuleLost(lines)
+                    ? (alarmLevel == StatusLevel.Warning ? Color.Orange : Color.Yellow)
+                    : Color.Black;
+            }
+            else
+            {
+                StatusLabel.Text = "Not connected";
+                StatusLabel.BackColor = Color.Transparent;
+                StatusLabel.ForeColor = Color.Red;
+                StatusLabel.Left = ManualMode_groupBox.Left + (ManualMode_groupBox.Width - StatusLabel.Width) / 2;
+            }
 
             // The signal tower on the panel shows the same verdict, so someone
             // standing at the reactor sees it without looking at the screen.
-            PLC210PidClient.SetTrafficLight(TowerLamp(level));
+            PLC210PidClient.SetTrafficLight(SystemStatus.TowerLamp(lines));
         }
 
-        private static TrafficLight TowerLamp(StatusLevel level)
-        {
-            switch (level)
-            {
-                case StatusLevel.Error: return TrafficLight.Red;
-                case StatusLevel.Warning: return TrafficLight.Yellow;
-                default: return TrafficLight.Green;
-            }
-        }
+        private int? _statusPlateLeft;
 
         private static Color PlateColor(StatusLevel level)
         {
@@ -1012,6 +1040,31 @@ namespace ArdisCVDCore
         private void FaultStatusToolMenu_Click(object sender, EventArgs e)
         {
             _faultStatusForm = ShowSingleton(_faultStatusForm);
+        }
+
+        private void ConnectToolMenu_Click(object sender, EventArgs e)
+        {
+            StartPlcClients();
+            SetPlcLinkMenu(true);
+        }
+
+        private void DisconnectToolMenu_Click(object sender, EventArgs e)
+        {
+            Cursor = Cursors.WaitCursor;
+            try
+            {
+                StopPlcClients();
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
+            SetPlcLinkMenu(false);
+        }
+
+        private void ExitToolMenu_Click(object sender, EventArgs e)
+        {
+            Close();
         }
 
         // --- Settings menu ---

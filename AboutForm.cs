@@ -13,7 +13,7 @@ namespace ArdisCVDCore
         // they are here rather than read out of the assembly, where a stale
         // AssemblyVersion would quietly disagree with what is on screen.
         private const string Version = "21";
-        private const string ReleaseDate = "15.08.2026";
+        private const string ReleaseDate = "22.09.2026";
 
         private const string Authors = "Sizov Y. E., Chernyavskiy S. V., Pavlov A. Y.";
 

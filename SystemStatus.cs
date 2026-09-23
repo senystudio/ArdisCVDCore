@@ -17,6 +17,8 @@ namespace ArdisCVDCore
         public string Section;
         public string Text;
         public StatusLevel Level;
+        public bool ModuleLost;
+        public bool IgnoredByTower;
 
         public StatusLine(string section, StatusLevel level, string text)
         {
@@ -45,10 +47,16 @@ namespace ArdisCVDCore
     {
         public static List<StatusLine> Collect()
         {
+            List<StatusLine> lines = CollectConnections();
+            AddAlarmEngine(lines);
+            return lines;
+        }
+
+        public static List<StatusLine> CollectConnections()
+        {
             List<StatusLine> lines = new List<StatusLine>();
 
             AddPlc(lines);
-            AddAlarmEngine(lines);
             AddHiVac(lines);
             AddGasFlow(lines);
             AddPyrometers(lines);
@@ -68,6 +76,46 @@ namespace ArdisCVDCore
             return worst;
         }
 
+        public static StatusLevel AlarmLevel()
+        {
+            List<StatusLine> lines = new List<StatusLine>();
+            AddAlarmEngine(lines);
+            return Worst(lines);
+        }
+
+        public static bool AnyModuleLost(IEnumerable<StatusLine> lines)
+        {
+            foreach (StatusLine line in lines)
+                if (line.ModuleLost)
+                    return true;
+            return false;
+        }
+
+        public static TrafficLight TowerLamp(IEnumerable<StatusLine> lines)
+        {
+            StatusLevel worst = StatusLevel.Ok;
+            bool moduleLost = false;
+            foreach (StatusLine line in lines)
+            {
+                if (line.IgnoredByTower)
+                    continue;
+                if (line.ModuleLost)
+                {
+                    moduleLost = true;
+                    continue;
+                }
+                if (line.Level > worst)
+                    worst = line.Level;
+            }
+
+            switch (worst)
+            {
+                case StatusLevel.Error: return TrafficLight.Red;
+                case StatusLevel.Warning: return TrafficLight.Yellow;
+                default: return moduleLost ? TrafficLight.GreenYellow : TrafficLight.Green;
+            }
+        }
+
         public static string Describe(StatusLevel level)
         {
             switch (level)
@@ -83,10 +131,7 @@ namespace ArdisCVDCore
             PLC210AlarmClient.State state = PLC210AlarmClient.GetState();
 
             if (!state.Connected)
-            {
-                lines.Add(new StatusLine("Alarm engine", StatusLevel.Error, "Not connected"));
                 return;
-            }
 
             if (!state.ThresholdsAccepted)
             {
@@ -120,13 +165,20 @@ namespace ArdisCVDCore
                 state.RetainWasBlank ? "Armed, the PLC booted without stored thresholds" : "Armed"));
         }
 
+        public static bool PlcConnected()
+        {
+            PLC210PidClient.State pid = PLC210PidClient.GetState();
+            return pid.Connected && !pid.UsingLocalPreview
+                && PLC210GasValveClient.GetState().Connected
+                && PLC210VacuumClient.GetState().Connected
+                && PLC210AlarmClient.GetState().Connected;
+        }
+
         private static void AddPlc(ICollection<StatusLine> lines)
         {
             PLC210PidClient.State pid = PLC210PidClient.GetState();
-            PLC210GasValveClient.State valves = PLC210GasValveClient.GetState();
-            PLC210VacuumClient.State vacuum = PLC210VacuumClient.GetState();
 
-            if (!pid.Connected || pid.UsingLocalPreview || !valves.Connected || !vacuum.Connected)
+            if (!PlcConnected())
             {
                 lines.Add(new StatusLine("PLC", StatusLevel.Error, "Not connected"));
                 return;
@@ -163,7 +215,7 @@ namespace ArdisCVDCore
 
             if (!state.Connected)
             {
-                lines.Add(new StatusLine("Hi-Vac gauge", StatusLevel.Error, "Not connected"));
+                lines.Add(new StatusLine("Hi-Vac gauge", StatusLevel.Error, "Not connected") { ModuleLost = true });
                 return;
             }
 
@@ -172,7 +224,7 @@ namespace ArdisCVDCore
                 lines.Add(new StatusLine("Hi-Vac gauge", StatusLevel.Warning,
                     state.PlcErrorCode != 0
                         ? "No valid reading, gauge error code " + state.PlcErrorCode.ToString(CultureInfo.InvariantCulture)
-                        : "No valid reading"));
+                        : "No valid reading") { ModuleLost = true });
                 return;
             }
 
@@ -185,13 +237,13 @@ namespace ArdisCVDCore
 
             if (!state.Connected)
             {
-                lines.Add(new StatusLine("Gas regulators", StatusLevel.Error, "Not connected"));
+                lines.Add(new StatusLine("Gas regulators", StatusLevel.Error, "Not connected") { ModuleLost = true });
                 return;
             }
 
             if (state.AllFault)
             {
-                lines.Add(new StatusLine("Gas regulators", StatusLevel.Error, "All gas channels faulted"));
+                lines.Add(new StatusLine("Gas regulators", StatusLevel.Error, "All gas channels faulted") { ModuleLost = true });
                 return;
             }
 
@@ -204,7 +256,7 @@ namespace ArdisCVDCore
                 {
                     lines.Add(new StatusLine("Gas " + channel.GasName, StatusLevel.Warning,
                         (channel.CloseConfirmed ? "Fault — closed (" : "Fault — closing… (")
-                        + FaultCodeText(channel.FaultCode) + ")"));
+                        + FaultCodeText(channel.FaultCode) + ")") { ModuleLost = true });
                 }
                 else if (channel.ClosedByDisable)
                 {
@@ -239,7 +291,7 @@ namespace ArdisCVDCore
 
             if (!state.Connected)
             {
-                lines.Add(new StatusLine("Pyrometer", StatusLevel.Error, "Not connected"));
+                lines.Add(new StatusLine("Pyrometer", StatusLevel.Error, "Not connected") { ModuleLost = true });
                 return;
             }
 
@@ -247,7 +299,7 @@ namespace ArdisCVDCore
             if (active == null)
             {
                 lines.Add(new StatusLine("Pyrometer", StatusLevel.Warning,
-                    "Neither pyrometer is returning a valid reading"));
+                    "Neither pyrometer is returning a valid reading") { ModuleLost = true });
                 return;
             }
 
@@ -306,7 +358,7 @@ namespace ArdisCVDCore
 
             if (!state.Connected)
             {
-                lines.Add(new StatusLine("Cooling System", StatusLevel.Error, "Not connected"));
+                lines.Add(new StatusLine("Cooling System", StatusLevel.Error, "Not connected") { ModuleLost = true });
                 return;
             }
 
@@ -329,7 +381,7 @@ namespace ArdisCVDCore
             if (dead.Count > 0)
             {
                 lines.Add(new StatusLine("Cooling System", StatusLevel.Warning,
-                    "No valid reading: " + string.Join(", ", dead.ToArray())));
+                    "No valid reading: " + string.Join(", ", dead.ToArray())) { ModuleLost = true });
                 return;
             }
 
@@ -354,13 +406,13 @@ namespace ArdisCVDCore
 
             if (!state.Connected)
             {
-                lines.Add(new StatusLine("Turbo pump", StatusLevel.Error, "Not connected"));
+                lines.Add(new StatusLine("Turbo pump", StatusLevel.Error, "Not connected") { IgnoredByTower = true });
                 return;
             }
 
             if (!state.DriveAnswering)
             {
-                lines.Add(new StatusLine("Turbo pump", StatusLevel.Warning, "Drive not answering"));
+                lines.Add(new StatusLine("Turbo pump", StatusLevel.Warning, "Drive not answering") { IgnoredByTower = true });
                 return;
             }
 

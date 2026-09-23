@@ -97,6 +97,18 @@ namespace ArdisCVDCore.modules_hw
                 worker.Join(1200);
 
             Disconnect();
+
+            lock (Sync)
+            {
+                _state = new State
+                {
+                    Enabled = false,
+                    Connected = false,
+                    HasValidValue = false,
+                    StatusText = "PLC210 Thyracont disabled",
+                    UpdatedAt = DateTime.Now
+                };
+            }
         }
 
         public static State GetState()

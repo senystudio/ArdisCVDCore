@@ -226,19 +226,7 @@ namespace ArdisCVDCore
                 _current.Items.Clear();
 
                 if (!state.Connected)
-                {
-                    ListViewItem offline = new ListViewItem(new[]
-                    {
-                        DateTime.Now.ToString("g", CultureInfo.CurrentCulture),
-                        string.Empty,
-                        state.StatusText,
-                        "The alarm engine runs in the PLC, so nothing is being supervised from here"
-                    });
-                    offline.BackColor = AbortBack;
-                    offline.ForeColor = Color.White;
-                    _current.Items.Add(offline);
                     return;
-                }
 
                 AddCurrentRows(state.AbortMask, AlarmLevel.Abort);
                 AddCurrentRows(state.AlarmMask & ~state.AbortMask, AlarmLevel.Alarm);

@@ -162,6 +162,16 @@ namespace ArdisCVDCore.modules_hw
                 worker.Join(1200);
 
             Disconnect();
+
+            lock (Sync)
+            {
+                _state = new State
+                {
+                    Connected = false,
+                    StatusText = "PLC210 microwave generator disconnected",
+                    UpdatedAt = DateTime.Now
+                };
+            }
         }
 
         public static State GetState()
