@@ -60,6 +60,9 @@
     <Reference Include="NModbus">
       <HintPath>lib\NModbus.dll</HintPath>
     </Reference>
+    <Reference Include="NLog">
+      <HintPath>lib\NLog.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -79,6 +82,8 @@
     <Compile Include="Res.cs" />
     <Compile Include="SystemStatus.cs" />
     <Compile Include="data\IniWriter.cs" />
+    <Compile Include="data\Logger.cs" />
+    <Compile Include="data\ProcessLogger.cs" />
     <Compile Include="modules_hw\PLC210PidClient.cs" />
     <Compile Include="modules_hw\PLC210ThyracontClient.cs" />
     <Compile Include="modules_hw\PLC210GasFlowClient.cs" />
@@ -154,6 +159,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="configs\config.ini">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="NLog.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

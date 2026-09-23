@@ -99,6 +99,8 @@ namespace ArdisCVDCore.modules_hw
         private static string _host = "192.168.1.10";
         private static int _port = 502;
         private static bool _running;
+        private static int _errConnCount;
+        private static bool[] _regulatorAnswered;
         private static bool _forceReconnect;
         private static Thread _worker;
         private static TcpClient _tcpClient;
@@ -168,6 +170,27 @@ namespace ArdisCVDCore.modules_hw
                 _pendingSetpoint[channelIndex] = Clamp(sccm, 0, FullScaleSccm[channelIndex]);
         }
 
+        private static void LogDeviceFaults(State plcState)
+        {
+            if (plcState.Channels == null)
+                return;
+
+            if (_regulatorAnswered == null || _regulatorAnswered.Length != plcState.Channels.Length)
+            {
+                _regulatorAnswered = new bool[plcState.Channels.Length];
+                for (int i = 0; i < _regulatorAnswered.Length; i++)
+                    _regulatorAnswered[i] = true;
+            }
+
+            for (int i = 0; i < plcState.Channels.Length; i++)
+            {
+                bool answering = !plcState.Channels[i].SlaveError;
+                if (_regulatorAnswered[i] && !answering)
+                    Logger.WriteError(new Exception("MFC " + plcState.Channels[i].GasName + ": connection fault!"));
+                _regulatorAnswered[i] = answering;
+            }
+        }
+
         private static void WorkerLoop()
         {
             while (true)
@@ -216,9 +239,16 @@ namespace ArdisCVDCore.modules_hw
 
                     lock (Sync)
                         _state = plcState;
+
+                    LogDeviceFaults(plcState);
+                    _errConnCount = 0;
                 }
                 catch (Exception ex)
                 {
+                    _errConnCount++;
+                    if (_errConnCount < 2)
+                        Logger.WriteError(new Exception("Gas regulators: " + ex.Message));
+
                     // Re-queue only the writes that didn't make it out this cycle, so a
                     // transient TCP hiccup doesn't silently drop an operator's SET click.
                     if (pending != null)

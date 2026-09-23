@@ -103,6 +103,8 @@ namespace ArdisCVDCore.modules_hw
         private static string _host = "192.168.1.10";
         private static int _port = 502;
         private static bool _running;
+        private static int _errConnCount;
+        private static bool _driveAnswered = true;
         private static bool _forceReconnect;
         private static Thread _worker;
         private static TcpClient _tcpClient;
@@ -178,6 +180,13 @@ namespace ArdisCVDCore.modules_hw
                 _requestedRun = on;
         }
 
+        private static void LogDeviceFaults(State plcState)
+        {
+            if (_driveAnswered && !plcState.DriveAnswering)
+                Logger.WriteError(new Exception("Turbo pump: connection fault!"));
+            _driveAnswered = plcState.DriveAnswering;
+        }
+
         private static void WorkerLoop()
         {
             while (true)
@@ -231,9 +240,16 @@ namespace ArdisCVDCore.modules_hw
                         if (!_requestedRun.HasValue && plcState.DriveAnswering)
                             _requestedRun = plcState.Working;
                     }
+
+                    LogDeviceFaults(plcState);
+                    _errConnCount = 0;
                 }
                 catch (Exception ex)
                 {
+                    _errConnCount++;
+                    if (_errConnCount < 2)
+                        Logger.WriteError(new Exception("Turbo pump: " + ex.Message));
+
                     Disconnect();
                     lock (Sync)
                     {

@@ -29,6 +29,10 @@ namespace ArdisCVDCore
                     Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
                     Application.Run(new MainForm());
                 }
+                catch (Exception ex)
+                {
+                    Logger.WriteError(new Exception("Crash! Reason: " + ex.Message));
+                }
                 finally
                 {
                     mutex.ReleaseMutex();

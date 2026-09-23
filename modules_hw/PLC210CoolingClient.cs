@@ -1,5 +1,6 @@
 ﻿using NModbus;
 using System;
+using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
 
@@ -98,6 +99,11 @@ namespace ArdisCVDCore.modules_hw
         private static string _host = "192.168.1.10";
         private static int _port = 502;
         private static bool _running;
+        private static int _errConnCount;
+        private static bool[] _tempAnswered;
+        private static bool[] _flowAnswered;
+        private static bool _waterPressureAnswered = true;
+        private static bool _cdaPressureAnswered = true;
         private static bool _forceReconnect;
         private static Thread _worker;
         private static TcpClient _tcpClient;
@@ -159,6 +165,42 @@ namespace ArdisCVDCore.modules_hw
                 return _state.Clone();
         }
 
+        private static void LogDeviceFaults(State plcState)
+        {
+            List<string> lost = new List<string>();
+
+            if (_tempAnswered == null)
+            {
+                _tempAnswered = new bool[CircuitCount];
+                _flowAnswered = new bool[CircuitCount];
+                for (int i = 0; i < CircuitCount; i++)
+                {
+                    _tempAnswered[i] = true;
+                    _flowAnswered[i] = true;
+                }
+            }
+
+            for (int i = 0; i < CircuitCount; i++)
+            {
+                if (_tempAnswered[i] && !plcState.TempValid[i])
+                    lost.Add(CircuitNames[i] + " temp");
+                if (_flowAnswered[i] && !plcState.FlowValid[i])
+                    lost.Add(CircuitNames[i] + " flow");
+                _tempAnswered[i] = plcState.TempValid[i];
+                _flowAnswered[i] = plcState.FlowValid[i];
+            }
+
+            if (_waterPressureAnswered && !plcState.WaterPressureValid)
+                lost.Add("water pressure");
+            if (_cdaPressureAnswered && !plcState.CdaPressureValid)
+                lost.Add("CDA pressure");
+            _waterPressureAnswered = plcState.WaterPressureValid;
+            _cdaPressureAnswered = plcState.CdaPressureValid;
+
+            if (lost.Count > 0)
+                Logger.WriteError(new Exception("Cooling: no valid reading: " + string.Join(", ", lost.ToArray())));
+        }
+
         private static void WorkerLoop()
         {
             while (true)
@@ -211,9 +253,16 @@ namespace ArdisCVDCore.modules_hw
 
                     lock (Sync)
                         _state = plcState;
+
+                    LogDeviceFaults(plcState);
+                    _errConnCount = 0;
                 }
                 catch (Exception ex)
                 {
+                    _errConnCount++;
+                    if (_errConnCount < 2)
+                        Logger.WriteError(new Exception("Cooling: " + ex.Message));
+
                     Disconnect();
                     lock (Sync)
                     {

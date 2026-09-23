@@ -40,6 +40,7 @@ namespace ArdisCVDCore.modules_hw
         private static string _host = "192.168.1.10";
         private static int _port = 502;
         private static bool _running;
+        private static int _errConnCount;
         private static bool _forceReconnect;
         private static Thread _worker;
         private static TcpClient _tcpClient;
@@ -182,9 +183,15 @@ namespace ArdisCVDCore.modules_hw
 
                     lock (Sync)
                         _state = plcState;
+
+                    _errConnCount = 0;
                 }
                 catch (Exception ex)
                 {
+                    _errConnCount++;
+                    if (_errConnCount < 2)
+                        Logger.WriteError(new Exception("Vacuum outputs: " + ex.Message));
+
                     Disconnect();
                     lock (Sync)
                     {

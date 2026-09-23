@@ -104,6 +104,8 @@ namespace ArdisCVDCore
         {
             InitializeComponent();
             BindChannels();
+            BindMenuIcons();
+            ProcessLogger.Init();
         }
 
         private void BindChannels()
@@ -139,6 +141,30 @@ namespace ArdisCVDCore
             ApplyManualRunGate();
         }
 
+        private void BindMenuIcons()
+        {
+            const int size = 20;
+            fileToolStripMenuItem.DropDown.ImageScalingSize = new Size(size, size);
+
+            ConnectToolMenu.Image = Res.Glyph('\uE839', SystemColors.ControlText, size);
+            DisconnectToolMenu.Image = Res.Glyph('\uEB55', SystemColors.ControlText, size);
+            StartLoggingToolMenu.Image = Res.Glyph('\uE7C8', Color.Red, size);
+            StopLoggingToolMenu.Image = Res.Glyph('\uE71A', SystemColors.ControlText, size);
+            ExitToolMenu.Image = Res.Glyph('\uF3B1', SystemColors.ControlText, size);
+
+            settingsToolStripMenuItem.DropDown.ImageScalingSize = new Size(size, size);
+            ProcessParametersToolMenu.Image = Res.Glyph('\uE9E9', SystemColors.ControlText, size);
+
+            viewToolStripMenuItem.DropDown.ImageScalingSize = new Size(size, size);
+            FaultStatusToolMenu.Image = Res.Glyph('\uE7BA', SystemColors.ControlText, size);
+            ConnectionStatusToolMenu.Image = Res.Glyph('\uE968', SystemColors.ControlText, size);
+            GasTrendToolMenu.Image = Res.Glyph('\uE9D2', SystemColors.ControlText, size);
+            PressureTrendToolMenu.Image = Res.Glyph('\uEC4A', SystemColors.ControlText, size);
+            MWPowerToolStripMenuItem.Image = Res.Glyph('\uE945', SystemColors.ControlText, size);
+            temperatureTrendToolStripMenuItem.Image = Res.Glyph('\uE9CA', SystemColors.ControlText, size);
+            PIDToolStripMenuItem.Image = Res.Glyph('\uE9D9', SystemColors.ControlText, size);
+        }
+
         private void MainForm_Load(object sender, EventArgs e)
         {
             RestoreWindowPlacement();
@@ -161,6 +187,12 @@ namespace ArdisCVDCore
             }
 
             SuperCycle.Stop();
+
+            ProcessLogger.OpTimeLogging(false, "MWPower");
+            ProcessLogger.LogBinary();
+            Task write = ProcessLogger.CreateLogFileEnded();
+            if (write != null)
+                write.Wait(5000);
 
             StopPlcClients();
 
@@ -312,6 +344,9 @@ namespace ArdisCVDCore
             // the PLC's output to its lower limit.
             if (ChamberPid.Committed)
                 PushChamberChannel();
+
+            if (_manualRunActive && Logger.Enabled)
+                ProcessLogger.Record(ProcessSample.Capture(DateTime.Now));
         }
 
         private void PushChamberChannel()
@@ -605,6 +640,7 @@ namespace ArdisCVDCore
                 _waterFaultWarned = true;
                 PLC210MicrowaveClient.LatchWaterFault();
                 PLC210MicrowaveClient.RequestMicrowave(false);
+                ProcessLogger.OpTimeLogging(false, "MWPower");
                 PLC210MicrowaveClient.RequestPreheat(false);
 
                 BeginInvoke(new MethodInvoker(delegate
@@ -640,6 +676,7 @@ namespace ArdisCVDCore
                 return;
 
             PLC210MicrowaveClient.RequestMicrowave(turnOn);
+            ProcessLogger.OpTimeLogging(turnOn, "MWPower");
         }
 
         private bool ConfirmSwitchOff(string equipment)
@@ -662,6 +699,7 @@ namespace ArdisCVDCore
         private void StopMW_Click(object sender, EventArgs e)
         {
             PLC210MicrowaveClient.RequestMicrowave(false);
+            ProcessLogger.OpTimeLogging(false, "MWPower");
             PLC210MicrowaveClient.RequestPreheat(false);
         }
 
@@ -911,6 +949,7 @@ namespace ArdisCVDCore
                 return;
 
             PLC210MicrowaveClient.RequestMicrowave(false);
+            ProcessLogger.OpTimeLogging(false, "MWPower");
             PLC210MicrowaveClient.RequestReset();
         }
 
@@ -974,6 +1013,7 @@ namespace ArdisCVDCore
         private void DropRequestsAfterAbort()
         {
             PLC210MicrowaveClient.RequestMicrowave(false);
+            ProcessLogger.OpTimeLogging(false, "MWPower");
             PLC210MicrowaveClient.RequestPreheat(false);
 
             for (int i = 0; i < PLC210GasFlowClient.GasNames.Length; i++)
@@ -1062,6 +1102,27 @@ namespace ArdisCVDCore
             SetPlcLinkMenu(false);
         }
 
+        private void StartLoggingToolMenu_Click(object sender, EventArgs e)
+        {
+            Logger.Enabled = true;
+            if (_manualRunActive)
+                ProcessLogger.BeginSession();
+            SetLoggingMenu(true);
+        }
+
+        private void StopLoggingToolMenu_Click(object sender, EventArgs e)
+        {
+            ProcessLogger.CreateLogFileEnded();
+            Logger.Enabled = false;
+            SetLoggingMenu(false);
+        }
+
+        private void SetLoggingMenu(bool logging)
+        {
+            StartLoggingToolMenu.Enabled = !logging;
+            StopLoggingToolMenu.Enabled = logging;
+        }
+
         private void ExitToolMenu_Click(object sender, EventArgs e)
         {
             Close();
@@ -1142,6 +1203,7 @@ namespace ArdisCVDCore
         {
             _manualRunActive = true;
             _manualRunStart = DateTime.Now;
+            ProcessLogger.BeginSession();
 
             StartTimeValue.Text = _manualRunStart.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
             DurationValue.Text = IdleDuration;
@@ -1165,6 +1227,7 @@ namespace ArdisCVDCore
             }
 
             _manualRunActive = false;
+            ProcessLogger.CreateLogFileEnded();
 
             StartTimeValue.Text = IdleTime;
             DurationValue.Text = IdleDuration;

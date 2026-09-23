@@ -83,6 +83,9 @@
             this.ConnectToolMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.DisconnectToolMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.ConnectExitSeparator = new System.Windows.Forms.ToolStripSeparator();
+            this.StartLoggingToolMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.StopLoggingToolMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.LoggingExitSeparator = new System.Windows.Forms.ToolStripSeparator();
             this.ExitToolMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.ProcessParametersToolMenu = new System.Windows.Forms.ToolStripMenuItem();
@@ -1060,6 +1063,9 @@
             this.ConnectToolMenu,
             this.DisconnectToolMenu,
             this.ConnectExitSeparator,
+            this.StartLoggingToolMenu,
+            this.StopLoggingToolMenu,
+            this.LoggingExitSeparator,
             this.ExitToolMenu});
             this.fileToolStripMenuItem.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
@@ -1085,6 +1091,26 @@
             //
             this.ConnectExitSeparator.Name = "ConnectExitSeparator";
             this.ConnectExitSeparator.Size = new System.Drawing.Size(212, 6);
+            //
+            // StartLoggingToolMenu
+            //
+            this.StartLoggingToolMenu.Name = "StartLoggingToolMenu";
+            this.StartLoggingToolMenu.Size = new System.Drawing.Size(215, 24);
+            this.StartLoggingToolMenu.Text = "Start logging";
+            this.StartLoggingToolMenu.Click += new System.EventHandler(this.StartLoggingToolMenu_Click);
+            //
+            // StopLoggingToolMenu
+            //
+            this.StopLoggingToolMenu.Enabled = false;
+            this.StopLoggingToolMenu.Name = "StopLoggingToolMenu";
+            this.StopLoggingToolMenu.Size = new System.Drawing.Size(215, 24);
+            this.StopLoggingToolMenu.Text = "Stop logging";
+            this.StopLoggingToolMenu.Click += new System.EventHandler(this.StopLoggingToolMenu_Click);
+            //
+            // LoggingExitSeparator
+            //
+            this.LoggingExitSeparator.Name = "LoggingExitSeparator";
+            this.LoggingExitSeparator.Size = new System.Drawing.Size(212, 6);
             //
             // ExitToolMenu
             //
@@ -3660,6 +3686,9 @@
         private System.Windows.Forms.ToolStripMenuItem ConnectToolMenu;
         private System.Windows.Forms.ToolStripMenuItem DisconnectToolMenu;
         private System.Windows.Forms.ToolStripSeparator ConnectExitSeparator;
+        private System.Windows.Forms.ToolStripMenuItem StartLoggingToolMenu;
+        private System.Windows.Forms.ToolStripMenuItem StopLoggingToolMenu;
+        private System.Windows.Forms.ToolStripSeparator LoggingExitSeparator;
         private System.Windows.Forms.ToolStripMenuItem ExitToolMenu;
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem ProcessParametersToolMenu;

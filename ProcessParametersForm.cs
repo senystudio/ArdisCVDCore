@@ -42,6 +42,9 @@ namespace ArdisCVDCore
             StartPosition = FormStartPosition.Manual;
             BindAlarmControls();
 
+            fileToolStripMenuItem.DropDown.ImageScalingSize = new Size(20, 20);
+            ResetValuesToolMenu.Image = Res.Glyph('', SystemColors.ControlText, 20);
+
             _applyBlinkTimer.Interval = ApplyBlinkIntervalMs;
             _applyBlinkTimer.Tick += ApplyBlinkTimer_Tick;
             Disposed += (s, e) => _applyBlinkTimer.Dispose();

@@ -114,6 +114,9 @@ namespace ArdisCVDCore.modules_hw
         private static string _host = "192.168.1.10";
         private static int _port = 502;
         private static bool _running;
+        private static int _errConnCount;
+        private static bool _generatorAnswered = true;
+        private static bool _internalErrorLogged;
         private static bool _forceReconnect;
         private static bool _preheatRequested;
         private static bool _microwaveRequested;
@@ -226,6 +229,19 @@ namespace ArdisCVDCore.modules_hw
             }
         }
 
+        private static void LogDeviceFaults(State plcState)
+        {
+            bool answering = !plcState.CommError;
+            if (_generatorAnswered && !answering)
+                Logger.WriteError(new Exception("MWPower: connection fault!"));
+            _generatorAnswered = answering;
+
+            bool internalError = answering && plcState.FaultReportable;
+            if (internalError && !_internalErrorLogged)
+                Logger.WriteError(new Exception("MWPower internal error: " + SystemStatus.FaultReason(plcState)));
+            _internalErrorLogged = internalError;
+        }
+
         private static void WorkerLoop()
         {
             while (true)
@@ -284,9 +300,16 @@ namespace ArdisCVDCore.modules_hw
                         plcState.WaterFaultLatched = _waterFaultLatched;
                         _state = plcState;
                     }
+
+                    LogDeviceFaults(plcState);
+                    _errConnCount = 0;
                 }
                 catch (Exception ex)
                 {
+                    _errConnCount++;
+                    if (_errConnCount < 2)
+                        Logger.WriteError(new Exception("MWPower: " + ex.Message));
+
                     if (resetPulse)
                     {
                         lock (Sync)

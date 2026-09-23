@@ -10,3 +10,4 @@
 - [Alarm/Abort design](alarm-abort-design.md) — решения 22.09.2026: логика в ПЛК, что именно делает Abort, два окна статуса
 - [Gas Correction Factor](gas-correction-factor-open.md) — отложен 22.09.2026; почему выбор семантики неочевиден и что ломается при неверном
 - [Мёртвый датчик и аварии](alarm-dead-sensor-open.md) — не решено: что делать, когда прибор перестал отвечать, а показание замёрзло
+- [Логирование](logging.md) — копия механики ArdisCVDMaster: NLog-журнал ошибок, ProcessLogs/*.dat, configBackup.bin; отличия и колонки

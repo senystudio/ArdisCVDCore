@@ -41,6 +41,8 @@ namespace ArdisCVDCore.modules_hw
         private static string _host = "192.168.1.10";
         private static int _port = 502;
         private static bool _running;
+        private static int _errConnCount;
+        private static bool _gaugeAnswered = true;
         private static bool _forceReconnect;
         private static Thread _worker;
         private static TcpClient _tcpClient;
@@ -117,6 +119,14 @@ namespace ArdisCVDCore.modules_hw
                 return _state.Clone();
         }
 
+        private static void LogDeviceFaults(State plcState)
+        {
+            if (_gaugeAnswered && !plcState.HasValidValue)
+                Logger.WriteError(new Exception("ThyracontVac: connection fault!"
+                    + (plcState.PlcErrorCode != 0 ? " Error code " + plcState.PlcErrorCode : "")));
+            _gaugeAnswered = plcState.HasValidValue;
+        }
+
         private static void WorkerLoop()
         {
             while (true)
@@ -153,9 +163,16 @@ namespace ArdisCVDCore.modules_hw
 
                     lock (Sync)
                         _state = plcState;
+
+                    LogDeviceFaults(plcState);
+                    _errConnCount = 0;
                 }
                 catch (Exception ex)
                 {
+                    _errConnCount++;
+                    if (_errConnCount < 2)
+                        Logger.WriteError(new Exception("Thyracont: " + ex.Message));
+
                     Disconnect();
                     lock (Sync)
                     {

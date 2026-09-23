@@ -76,6 +76,9 @@ namespace ArdisCVDCore.modules_hw
         private static string _host = "192.168.1.10";
         private static int _port = 502;
         private static bool _running;
+        private static int _errConnCount;
+        private static bool _rxtAnswered = true;
+        private static bool _smartAnswered = true;
         private static bool _forceReconnect;
         private static Thread _worker;
         private static TcpClient _tcpClient;
@@ -141,6 +144,19 @@ namespace ArdisCVDCore.modules_hw
                 return _state.Clone();
         }
 
+        private static void LogDeviceFaults(State plcState)
+        {
+            bool rxt = plcState.Rxt != null && plcState.Rxt.Valid;
+            if (_rxtAnswered && !rxt)
+                Logger.WriteError(new Exception("Pyrometer RXT: connection fault!"));
+            _rxtAnswered = rxt;
+
+            bool smart = plcState.Smart != null && plcState.Smart.Valid;
+            if (_smartAnswered && !smart)
+                Logger.WriteError(new Exception("Pyrometer Smart: connection fault!"));
+            _smartAnswered = smart;
+        }
+
         private static void WorkerLoop()
         {
             while (true)
@@ -174,9 +190,16 @@ namespace ArdisCVDCore.modules_hw
 
                     lock (Sync)
                         _state = plcState;
+
+                    LogDeviceFaults(plcState);
+                    _errConnCount = 0;
                 }
                 catch (Exception ex)
                 {
+                    _errConnCount++;
+                    if (_errConnCount < 2)
+                        Logger.WriteError(new Exception("Pyrometers: " + ex.Message));
+
                     Disconnect();
                     lock (Sync)
                     {

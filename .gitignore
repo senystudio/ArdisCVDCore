@@ -6,3 +6,6 @@
 *.bootinfo_guids
 *.compileinfo
 *.precompilecache
+/bin/Debug/Logs/
+/bin/Debug/ProcessLogs/
+/bin/Debug/configBackup.bin
