@@ -1619,7 +1619,7 @@
             this.TemperatureGroupBox.Size = new System.Drawing.Size(442, 288);
             this.TemperatureGroupBox.TabIndex = 4;
             this.TemperatureGroupBox.TabStop = false;
-            this.TemperatureGroupBox.Text = "Alarm/Abort Temperature Parameters";
+            this.TemperatureGroupBox.Text = "Temperature";
             // 
             // SampleBlock
             // 
@@ -2749,7 +2749,7 @@
             // 
             this.ResetValuesToolMenu.Name = "ResetValuesToolMenu";
             this.ResetValuesToolMenu.Size = new System.Drawing.Size(216, 24);
-            this.ResetValuesToolMenu.Text = "Reset Values";
+            this.ResetValuesToolMenu.Text = "Factory Reset";
             this.ResetValuesToolMenu.Click += new System.EventHandler(this.Reset_Click);
             // 
             // ProcessParametersForm

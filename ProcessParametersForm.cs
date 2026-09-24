@@ -29,6 +29,10 @@ namespace ArdisCVDCore
         private CheckBox[] _inputEnable;
         private ComboBox[] _inputReaction;
 
+        private const string GcfIniSection = "GasCorrectionFactor";
+        private static readonly string[] GcfKeys = { "H2", "CH4", "N2", "O2", "Ar" };
+        private NumericUpDown[] _gcf;
+
         private const int ApplyBlinkIntervalMs = 250;
         private const int ApplyBlinkToggles = 8;
 
@@ -41,6 +45,7 @@ namespace ArdisCVDCore
             Icon = Res.AppIcon;
             StartPosition = FormStartPosition.Manual;
             BindAlarmControls();
+            _gcf = new[] { GCFH2, GCFCH4, GCFN2, GCFO2, GCFAR };
 
             fileToolStripMenuItem.DropDown.ImageScalingSize = new Size(20, 20);
             ResetValuesToolMenu.Image = Res.Glyph('', SystemColors.ControlText, 20);
@@ -53,10 +58,10 @@ namespace ArdisCVDCore
         private void ProcessParametersForm_Load(object sender, EventArgs e)
         {
             RestoreWindowPlacement();
-            DisableGroupsWithNoBackend();
             HideRowsWithNoHardware();
             LoadChamberPid();
             LoadAlarms();
+            LoadGasCorrection();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -147,22 +152,6 @@ namespace ArdisCVDCore
                 combo.DropDownStyle = ComboBoxStyle.DropDownList;
         }
 
-        /// <summary>
-        /// Greys out every group whose values have nowhere to go, and says why in
-        /// the group's own caption so it is obvious on screen rather than only in
-        /// this file.
-        /// </summary>
-        private void DisableGroupsWithNoBackend()
-        {
-            MarkNotImplemented(groupBox1);
-        }
-
-        private static void MarkNotImplemented(GroupBox box)
-        {
-            box.Enabled = false;
-            box.Text = box.Text.TrimEnd() + "  — not implemented yet";
-        }
-
         private void HideRowsWithNoHardware()
         {
             PlasmaDrop_AlarmEnable.Visible = false;
@@ -180,6 +169,28 @@ namespace ArdisCVDCore
             Chamber_pid_D.Value = Clamp(Chamber_pid_D, (decimal)ChamberPid.Kd);
             Chamber_UpperLimit.Value = Clamp(Chamber_UpperLimit, (decimal)ChamberPid.UpperLimit);
             Chamber_LowerLimit.Value = Clamp(Chamber_LowerLimit, (decimal)ChamberPid.LowerLimit);
+        }
+
+        private void LoadGasCorrection()
+        {
+            for (int i = 0; i < _gcf.Length; i++)
+            {
+                decimal value = 1.00m;
+                decimal stored;
+                if (IniWriter.INI.KeyExists(GcfKeys[i], GcfIniSection)
+                    && decimal.TryParse(IniWriter.INI.ReadINI(GcfIniSection, GcfKeys[i]).Trim(),
+                        NumberStyles.Float, CultureInfo.InvariantCulture, out stored))
+                    value = stored;
+
+                _gcf[i].Value = Clamp(_gcf[i], value);
+            }
+        }
+
+        private void StoreGasCorrection()
+        {
+            for (int i = 0; i < _gcf.Length; i++)
+                IniWriter.INI.Write(GcfIniSection, GcfKeys[i],
+                    _gcf[i].Value.ToString("0.00", CultureInfo.InvariantCulture));
         }
 
         private static decimal Clamp(NumericUpDown numeric, decimal value)
@@ -277,6 +288,8 @@ namespace ArdisCVDCore
             AlarmSettings.Save();
             PLC210AlarmClient.PushThresholds(AlarmSettings.Pack());
 
+            StoreGasCorrection();
+
             StartApplyBlink();
 
             // The button says Apply, so it applies and stays open -- the same as
@@ -312,7 +325,7 @@ namespace ArdisCVDCore
         private void Reset_Click(object sender, EventArgs e)
         {
             DialogResult answer = MessageBox.Show(this,
-                "This puts every field on this screen back to its default and clears every alarm and abort check.\n\n"
+                "This puts every field on this screen back to its factory default.\n\n"
                 + "Nothing reaches the PLC until Apply is pressed.\n\nReset the values?",
                 "Process Parameters",
                 MessageBoxButtons.YesNo,
@@ -332,28 +345,40 @@ namespace ArdisCVDCore
             {
                 _paramAlarmEnable[i].Checked = false;
                 _paramAbortEnable[i].Checked = false;
-                _paramAlarmVal[i].Value = _paramAlarmVal[i].Minimum;
-                _paramAbortVal[i].Value = _paramAbortVal[i].Minimum;
             }
+
+            for (int i = 0; i < AlarmSettings.ParamPctCount; i++)
+            {
+                _paramAlarmVal[i].Value = Clamp(_paramAlarmVal[i], AlarmSettings.DefaultParamAlarmPct(i));
+                _paramAbortVal[i].Value = Clamp(_paramAbortVal[i], AlarmSettings.DefaultParamAbortPct(i));
+            }
+
+            _paramAlarmVal[AlarmSettings.ParamReflected].Value =
+                Clamp(_paramAlarmVal[AlarmSettings.ParamReflected], AlarmSettings.DefaultReflectedAlarmWatt);
+            _paramAbortVal[AlarmSettings.ParamReflected].Value =
+                Clamp(_paramAbortVal[AlarmSettings.ParamReflected], AlarmSettings.DefaultReflectedAbortWatt);
 
             TCenter_AlarmEnable.Checked = false;
             TSampleCenter.Value = Clamp(TSampleCenter, AlarmSettings.DefaultSampleTargetC);
-            TSample_AlarmVal.Value = TSample_AlarmVal.Minimum;
+            TSample_AlarmVal.Value = Clamp(TSample_AlarmVal, AlarmSettings.DefaultSampleAlarmPct);
 
             for (int i = 0; i < AlarmSettings.WaterCount; i++)
             {
                 _waterAlarmEnable[i].Checked = false;
                 _waterAbortEnable[i].Checked = false;
-                _waterTarget[i].Value = _waterTarget[i].Minimum;
-                _waterAlarmVal[i].Value = _waterAlarmVal[i].Minimum;
-                _waterAbortVal[i].Value = _waterAbortVal[i].Minimum;
+                _waterTarget[i].Value = Clamp(_waterTarget[i], AlarmSettings.DefaultWaterTargetC);
+                _waterAlarmVal[i].Value = Clamp(_waterAlarmVal[i], AlarmSettings.DefaultWaterAlarmPct);
+                _waterAbortVal[i].Value = Clamp(_waterAbortVal[i], AlarmSettings.DefaultWaterAbortPct);
             }
 
             for (int i = 0; i < AlarmSettings.InputCount; i++)
             {
-                _inputEnable[i].Checked = false;
+                _inputEnable[i].Checked = AlarmSettings.DefaultInputEnable;
                 _inputReaction[i].SelectedIndex = 0;
             }
+
+            foreach (NumericUpDown gcf in _gcf)
+                gcf.Value = Clamp(gcf, 1.00m);
         }
 
         // The design wires these, but in the window it came from they only fed the

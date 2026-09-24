@@ -121,6 +121,7 @@ namespace ArdisCVDCore.modules_hw
         private static bool _preheatRequested;
         private static bool _microwaveRequested;
         private static bool _resetPending;
+        private static bool _generatorReconnectPending;
         private static bool _waterFaultLatched;
         private static double _setpointKw = MinSetpointKw;
         private static Thread _worker;
@@ -211,6 +212,12 @@ namespace ArdisCVDCore.modules_hw
             }
         }
 
+        public static void RequestGeneratorReconnect()
+        {
+            lock (Sync)
+                _generatorReconnectPending = true;
+        }
+
         public static void LatchWaterFault()
         {
             lock (Sync)
@@ -252,6 +259,7 @@ namespace ArdisCVDCore.modules_hw
                 bool preheatRequested;
                 bool microwaveRequested;
                 bool resetPulse;
+                bool generatorReconnectPulse;
                 double setpointKw;
 
                 lock (Sync)
@@ -268,6 +276,8 @@ namespace ArdisCVDCore.modules_hw
                     setpointKw = _setpointKw;
                     resetPulse = _resetPending;
                     _resetPending = false;
+                    generatorReconnectPulse = _generatorReconnectPending;
+                    _generatorReconnectPending = false;
                 }
 
                 try
@@ -284,6 +294,8 @@ namespace ArdisCVDCore.modules_hw
                         command |= 0x0002;
                     if (resetPulse)
                         command |= 0x0004;
+                    if (generatorReconnectPulse)
+                        command |= 0x0008;
 
                     ushort[] setpointWords = ToFixedWords(setpointKw);
                     ushort[] writeRegisters = { command, setpointWords[0], setpointWords[1] };
@@ -314,6 +326,12 @@ namespace ArdisCVDCore.modules_hw
                     {
                         lock (Sync)
                             _resetPending = true;
+                    }
+
+                    if (generatorReconnectPulse)
+                    {
+                        lock (Sync)
+                            _generatorReconnectPending = true;
                     }
 
                     Disconnect();

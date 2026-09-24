@@ -115,7 +115,7 @@
             this.Microwave_groupBox = new System.Windows.Forms.GroupBox();
             this.StartMW = new System.Windows.Forms.Button();
             this.MicrowaveIncident_groupBox = new System.Windows.Forms.GroupBox();
-            this.PreheatProgress = new System.Windows.Forms.ProgressBar();
+            this.PreheatBar = new System.Windows.Forms.PictureBox();
             this.MWPowerSetPoint = new ArdisCVDCore.CustomNumericUpDown();
             this.MWPowerSet = new System.Windows.Forms.Button();
             this.ReflMWPower = new System.Windows.Forms.TextBox();
@@ -123,9 +123,7 @@
             this.MWIncLabel = new System.Windows.Forms.Label();
             this.MWReflLabel = new System.Windows.Forms.Label();
             this.MWSetPointLabel = new System.Windows.Forms.Label();
-            this.label30 = new System.Windows.Forms.Label();
-            this.TimeToStart = new System.Windows.Forms.Label();
-            this.MWNotConnected = new System.Windows.Forms.Label();
+            this.MWReconnect = new System.Windows.Forms.Button();
             this.SuperCycle = new System.Windows.Forms.Timer(this.components);
             this.ManualRun = new System.Windows.Forms.Button();
             this.Water_Btn = new System.Windows.Forms.Button();
@@ -288,6 +286,7 @@
             this.pictureBox3 = new System.Windows.Forms.PictureBox();
             this.Vacuum_groupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.TurboSpeedBar)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.PreheatBar)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox34)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.Valve_21)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox22)).BeginInit();
@@ -1385,15 +1384,13 @@
             // Microwave_groupBox
             // 
             this.Microwave_groupBox.BackColor = System.Drawing.SystemColors.GradientActiveCaption;
-            this.Microwave_groupBox.Controls.Add(this.PreheatProgress);
+            this.Microwave_groupBox.Controls.Add(this.PreheatBar);
             this.Microwave_groupBox.Controls.Add(this.button9);
             this.Microwave_groupBox.Controls.Add(this.button2);
             this.Microwave_groupBox.Controls.Add(this.button1);
             this.Microwave_groupBox.Controls.Add(this.StartMW);
             this.Microwave_groupBox.Controls.Add(this.MicrowaveIncident_groupBox);
-            this.Microwave_groupBox.Controls.Add(this.label30);
-            this.Microwave_groupBox.Controls.Add(this.MWNotConnected);
-            this.Microwave_groupBox.Controls.Add(this.TimeToStart);
+            this.Microwave_groupBox.Controls.Add(this.MWReconnect);
             this.Microwave_groupBox.Location = new System.Drawing.Point(755, 33);
             this.Microwave_groupBox.Margin = new System.Windows.Forms.Padding(2);
             this.Microwave_groupBox.Name = "Microwave_groupBox";
@@ -1416,15 +1413,17 @@
             this.StartMW.UseVisualStyleBackColor = false;
             this.StartMW.Click += new System.EventHandler(this.StartMW_Click);
             // 
-            // PreheatProgress
+            // PreheatBar
             //
-            this.PreheatProgress.Location = new System.Drawing.Point(64, 157);
-            this.PreheatProgress.Maximum = 150;
-            this.PreheatProgress.Name = "PreheatProgress";
-            this.PreheatProgress.Size = new System.Drawing.Size(262, 14);
-            this.PreheatProgress.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
-            this.PreheatProgress.TabIndex = 505;
-            this.PreheatProgress.Visible = false;
+            this.PreheatBar.BackColor = System.Drawing.SystemColors.Control;
+            this.PreheatBar.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.PreheatBar.Location = new System.Drawing.Point(8, 153);
+            this.PreheatBar.Name = "PreheatBar";
+            this.PreheatBar.Size = new System.Drawing.Size(365, 22);
+            this.PreheatBar.TabIndex = 505;
+            this.PreheatBar.TabStop = false;
+            this.PreheatBar.Visible = false;
+            this.PreheatBar.Paint += new System.Windows.Forms.PaintEventHandler(this.PreheatBar_Paint);
             //
             // MicrowaveIncident_groupBox
             //
@@ -1550,41 +1549,18 @@
             this.MWSetPointLabel.Text = "Set Point";
             this.MWSetPointLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // label30
-            // 
-            this.label30.AutoSize = false;
-            this.label30.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.label30.Location = new System.Drawing.Point(8, 154);
-            this.label30.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.label30.Name = "label30";
-            this.label30.Size = new System.Drawing.Size(56, 20);
-            this.label30.TabIndex = 392;
-            this.label30.Text = "Preheat";
-            // 
-            // TimeToStart
-            // 
-            this.TimeToStart.AutoSize = false;
-            this.TimeToStart.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.TimeToStart.Location = new System.Drawing.Point(330, 154);
-            this.TimeToStart.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.TimeToStart.Name = "TimeToStart";
-            this.TimeToStart.Size = new System.Drawing.Size(43, 20);
-            this.TimeToStart.TabIndex = 393;
-            this.TimeToStart.Text = "150s";
-            this.TimeToStart.Click += new System.EventHandler(this.TimeToStart_Click);
-            // 
-            // MWNotConnected
-            // 
-            this.MWNotConnected.AutoSize = false;
-            this.MWNotConnected.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.MWNotConnected.ForeColor = System.Drawing.Color.DarkGray;
-            this.MWNotConnected.Location = new System.Drawing.Point(64, 154);
-            this.MWNotConnected.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.MWNotConnected.Name = "MWNotConnected";
-            this.MWNotConnected.Size = new System.Drawing.Size(262, 20);
-            this.MWNotConnected.TabIndex = 506;
-            this.MWNotConnected.Text = "Not connected";
-            this.MWNotConnected.Visible = false;
+            // MWReconnect
+            //
+            this.MWReconnect.BackColor = System.Drawing.SystemColors.Control;
+            this.MWReconnect.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.MWReconnect.Location = new System.Drawing.Point(130, 153);
+            this.MWReconnect.Name = "MWReconnect";
+            this.MWReconnect.Size = new System.Drawing.Size(120, 22);
+            this.MWReconnect.TabIndex = 506;
+            this.MWReconnect.Text = "RECONNECT";
+            this.MWReconnect.UseVisualStyleBackColor = false;
+            this.MWReconnect.Visible = false;
+            this.MWReconnect.Click += new System.EventHandler(this.MWReconnect_Click);
             // 
             // SuperCycle
             // 
@@ -3536,6 +3512,7 @@
             this.Vacuum_groupBox.ResumeLayout(false);
             this.Vacuum_groupBox.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.TurboSpeedBar)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.PreheatBar)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox34)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.Valve_21)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox22)).EndInit();
@@ -3719,8 +3696,8 @@
         public System.Windows.Forms.GroupBox Microwave_groupBox;
         private System.Windows.Forms.TextBox ReflMWPower;
         public System.Windows.Forms.GroupBox MicrowaveIncident_groupBox;
-        private System.Windows.Forms.ProgressBar PreheatProgress;
-        private System.Windows.Forms.Label MWNotConnected;
+        private System.Windows.Forms.PictureBox PreheatBar;
+        private System.Windows.Forms.Button MWReconnect;
         private System.Windows.Forms.Button MWPowerSet;
         private System.Windows.Forms.TextBox IncMWPower;
         private System.Windows.Forms.Label MWIncLabel;
@@ -3785,8 +3762,6 @@
         private System.Windows.Forms.PictureBox pictureBox99;
         private System.Windows.Forms.PictureBox pictureBox23;
         private System.Windows.Forms.PictureBox pictureBox30;
-        private System.Windows.Forms.Label TimeToStart;
-        private System.Windows.Forms.Label label30;
         private System.Windows.Forms.Timer timerUi;
         private System.Windows.Forms.PictureBox pictureBox7;
         private System.Windows.Forms.PictureBox pictureBox21;

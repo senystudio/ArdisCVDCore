@@ -8,7 +8,7 @@
 - [Memory location](memory-location.md) — the files live in the repo now; the ~/.claude path is a junction to them
 - [Microwave water fault](microwave-water-fault-flow.md) — when the no-water error shows, what drops Preheat/MW, what clears it
 - [Alarm/Abort design](alarm-abort-design.md) — решения 22.09.2026: логика в ПЛК, что именно делает Abort, два окна статуса
-- [Gas Correction Factor](gas-correction-factor-open.md) — отложен 22.09.2026; почему выбор семантики неочевиден и что ломается при неверном
+- [Gas Correction Factor](gas-correction-factor-open.md) — с 24.09.2026 включён как в референсе: хранится в config.ini, ни на что не влияет; семантика применения всё ещё открыта
 - [Мёртвый датчик и аварии](alarm-dead-sensor-open.md) — не решено: что делать, когда прибор перестал отвечать, а показание замёрзло
 - [Логирование](logging.md) — копия механики ArdisCVDMaster: NLog-журнал ошибок, ProcessLogs/*.dat, configBackup.bin; отличия и колонки
 - [Светофор](signal-tower-rule.md) — аварии и связь горят независимо (зелёная+жёлтая), МВ и турбонасос не влияют; что считается «проблемой связи»

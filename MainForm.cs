@@ -90,6 +90,10 @@ namespace ArdisCVDCore
         private int _turboBarSpeedHz;
         private bool _turboBarAtSpeed;
 
+        private static readonly Font PreheatBarFont = new Font("Microsoft Sans Serif", 9F, FontStyle.Regular, GraphicsUnit.Point, 204);
+        private int _preheatBarShownSeconds = PreheatSeconds;
+        private int _preheatBarFilledSeconds;
+
         private GasTrendForm _gasTrendForm;
         private PressureTrendForm _pressureTrendForm;
         private MWPowerTrendForm _mwPowerTrendForm;
@@ -105,6 +109,7 @@ namespace ArdisCVDCore
             InitializeComponent();
             BindChannels();
             BindMenuIcons();
+            SetLoggingMenu(Logger.Enabled);
             ProcessLogger.Init();
         }
 
@@ -635,11 +640,7 @@ namespace ArdisCVDCore
                 ? state.ReflectedKw.ToString("F2", CultureInfo.InvariantCulture)
                 : "---";
 
-            // The Status plate deliberately says nothing about a generator that
-            // is merely switched off (see SystemStatus.AddMicrowave), so this is
-            // the only place the operator is told -- quietly, in grey, next to
-            // the countdown it explains the absence of.
-            MWNotConnected.Visible = !generatorAlive;
+            MWReconnect.Visible = !generatorAlive;
 
             StartMW.BackColor = generatorAlive && state.PreheatOn ? Res.OnGreen : SystemColors.Control;
             button1.BackColor = generatorAlive && state.MicrowaveOn ? Res.OnGreen : SystemColors.Control;
@@ -656,26 +657,33 @@ namespace ArdisCVDCore
             bool preheating = generatorAlive && state.PreheatOn && !state.FilamentPreheatDone;
             int remaining = Math.Max(0, PreheatSeconds - state.PreheatElapsedSeconds);
 
+            int shownSeconds;
+            int filledSeconds;
             if (preheating)
-                TimeToStart.Text = remaining.ToString(CultureInfo.InvariantCulture) + "s";
+            {
+                shownSeconds = remaining;
+                filledSeconds = Math.Max(0, Math.Min(state.PreheatElapsedSeconds, PreheatSeconds));
+            }
             else if (generatorAlive && state.FilamentPreheatDone)
-                TimeToStart.Text = "0s";
+            {
+                shownSeconds = 0;
+                filledSeconds = PreheatSeconds;
+            }
             else
+            {
                 // Nothing is preheating, so the whole nominal run is still ahead;
                 // "0s" here used to read as "ready to fire" on a cold filament.
-                TimeToStart.Text = PreheatSeconds.ToString(CultureInfo.InvariantCulture) + "s";
+                shownSeconds = PreheatSeconds;
+                filledSeconds = 0;
+            }
 
-            PreheatProgress.Visible = generatorAlive;
-            // Capped, so a preheat that runs longer than nominal shows a full bar
-            // instead of throwing on an out-of-range Value. Reset while idle so a
-            // counter the PLC kept running with the generator off cannot make the
-            // next preheat start from a full bar.
-            if (preheating)
-                PreheatProgress.Value = Math.Max(0, Math.Min(state.PreheatElapsedSeconds, PreheatSeconds));
-            else if (generatorAlive && state.FilamentPreheatDone)
-                PreheatProgress.Value = PreheatSeconds;
-            else
-                PreheatProgress.Value = 0;
+            PreheatBar.Visible = generatorAlive;
+            if (shownSeconds != _preheatBarShownSeconds || filledSeconds != _preheatBarFilledSeconds)
+            {
+                _preheatBarShownSeconds = shownSeconds;
+                _preheatBarFilledSeconds = filledSeconds;
+                PreheatBar.Invalidate();
+            }
 
             CheckMicrowaveWater(state);
         }
@@ -746,6 +754,11 @@ namespace ArdisCVDCore
         private void ResetMW_Click(object sender, EventArgs e)
         {
             PLC210MicrowaveClient.RequestReset();
+        }
+
+        private void MWReconnect_Click(object sender, EventArgs e)
+        {
+            PLC210MicrowaveClient.RequestGeneratorReconnect();
         }
 
         // No state check, no toggle -- always forces both outputs off.
@@ -881,6 +894,26 @@ namespace ArdisCVDCore
             // Spin-up takes minutes, and a green button for all of it would say
             // the pump is ready when it is nowhere near.
             return state.AtNormalSpeed ? Res.OnGreen : Color.YellowGreen;
+        }
+
+        private void PreheatBar_Paint(object sender, PaintEventArgs e)
+        {
+            Rectangle area = PreheatBar.ClientRectangle;
+            e.Graphics.Clear(PreheatBar.BackColor);
+
+            int filled = area.Width * _preheatBarFilledSeconds / PreheatSeconds;
+            if (filled > 0)
+            {
+                using (SolidBrush brush = new SolidBrush(Res.OnGreen))
+                    e.Graphics.FillRectangle(brush, 0, 0, filled, area.Height);
+            }
+
+            Rectangle text = Rectangle.Inflate(area, -6, 0);
+            TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding;
+            TextRenderer.DrawText(e.Graphics, "Preheat Status", PreheatBarFont, text,
+                SystemColors.ControlText, flags | TextFormatFlags.Left);
+            TextRenderer.DrawText(e.Graphics, _preheatBarShownSeconds.ToString(CultureInfo.InvariantCulture) + "s",
+                PreheatBarFont, text, SystemColors.ControlText, flags | TextFormatFlags.Right);
         }
 
         private void TurboSpeedBar_Paint(object sender, PaintEventArgs e)
@@ -1428,7 +1461,6 @@ namespace ArdisCVDCore
 
         private void RecipeOpen_Click(object sender, EventArgs e) { }
 
-        private void TimeToStart_Click(object sender, EventArgs e) { }
 
         private void TempLoopDelayTimer_Tick(object sender, EventArgs e) { }
 

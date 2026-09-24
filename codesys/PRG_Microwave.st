@@ -9,6 +9,7 @@ VAR
     xMwPreheatRequest : BOOL;
     xMwOnRequest      : BOOL;
     xMwResetRequest   : BOOL;
+    xMwReconnectRequest : BOOL;
 
     xMwWorking      : BOOL;
     xMwFailure      : BOOL;
@@ -36,7 +37,7 @@ VAR
 
     fbPreheatTimer : TON;
     fbCommOk       : TON;
-    fbConfirmTick  : TON;
+    fbConfirmPulse : TP;
     xMwLinkWasOk   : BOOL;
 END_VAR
 
@@ -45,6 +46,7 @@ fbCommOk(IN := NOT MW_GEN.xError, PT := T#4S);
 xMwPreheatRequest := ((awHolding[192] AND WORD#16#0001) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit);
 xMwOnRequest      := ((awHolding[192] AND WORD#16#0002) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit);
 xMwResetRequest   := (awHolding[192] AND WORD#16#0004) <> WORD#0;
+xMwReconnectRequest := (awHolding[192] AND WORD#16#0008) <> WORD#0;
 
 
 xMwWorking     := axMwStatusBlock1[0];
@@ -170,5 +172,5 @@ awHolding[203] := awMwPowerRaw[1];
 awHolding[204] := stMw.wFaultReason;
 awHolding[205] := DWORD_TO_WORD(TIME_TO_DWORD(fbPreheatTimer.ET) / DWORD#1000);
 
-fbConfirmTick(IN := MW_GEN.xError AND (NOT fbConfirmTick.Q), PT := T#4S);
-MW_GEN.xConfirmError := fbConfirmTick.Q;
+fbConfirmPulse(IN := xMwReconnectRequest, PT := T#500MS);
+MW_GEN.xConfirmError := fbConfirmPulse.Q;

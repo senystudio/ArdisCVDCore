@@ -21,6 +21,16 @@ namespace ArdisCVDCore
         public const int DefaultSampleTargetC = 400;
         public const int DefaultLidInput = 1;
 
+        public const int DefaultGasAlarmPct = 10;
+        public const int DefaultGasAbortPct = 30;
+        public const int DefaultReflectedAlarmWatt = 15;
+        public const int DefaultReflectedAbortWatt = 25;
+        public const int DefaultSampleAlarmPct = 20;
+        public const int DefaultWaterTargetC = 22;
+        public const int DefaultWaterAlarmPct = 15;
+        public const int DefaultWaterAbortPct = 30;
+        public const bool DefaultInputEnable = true;
+
         private const string IniSection = "Alarms";
 
         public static readonly bool[] ParamAlarmEnable = new bool[ParamCount];
@@ -47,6 +57,16 @@ namespace ArdisCVDCore
         public static int LidInput = DefaultLidInput;
         public static bool RunActive;
 
+        public static int DefaultParamAlarmPct(int index)
+        {
+            return index >= ParamGasFirst ? DefaultGasAlarmPct : 0;
+        }
+
+        public static int DefaultParamAbortPct(int index)
+        {
+            return index >= ParamGasFirst ? DefaultGasAbortPct : 0;
+        }
+
         public static void ResetToDefaults()
         {
             for (int i = 0; i < ParamCount; i++)
@@ -57,29 +77,29 @@ namespace ArdisCVDCore
 
             for (int i = 0; i < ParamPctCount; i++)
             {
-                ParamAlarmPct[i] = 0;
-                ParamAbortPct[i] = 0;
+                ParamAlarmPct[i] = DefaultParamAlarmPct(i);
+                ParamAbortPct[i] = DefaultParamAbortPct(i);
             }
 
-            ReflectedAlarmWatt = 0;
-            ReflectedAbortWatt = 0;
+            ReflectedAlarmWatt = DefaultReflectedAlarmWatt;
+            ReflectedAbortWatt = DefaultReflectedAbortWatt;
 
             SampleAlarmEnable = false;
             SampleTargetC = DefaultSampleTargetC;
-            SampleAlarmPct = 0;
+            SampleAlarmPct = DefaultSampleAlarmPct;
 
             for (int i = 0; i < WaterCount; i++)
             {
                 WaterAlarmEnable[i] = false;
                 WaterAbortEnable[i] = false;
-                WaterTargetC[i] = 0;
-                WaterAlarmPct[i] = 0;
-                WaterAbortPct[i] = 0;
+                WaterTargetC[i] = DefaultWaterTargetC;
+                WaterAlarmPct[i] = DefaultWaterAlarmPct;
+                WaterAbortPct[i] = DefaultWaterAbortPct;
             }
 
             for (int i = 0; i < InputCount; i++)
             {
-                InputEnable[i] = false;
+                InputEnable[i] = DefaultInputEnable;
                 InputAborts[i] = false;
             }
         }
@@ -162,29 +182,29 @@ namespace ArdisCVDCore
 
             for (int i = 0; i < ParamPctCount; i++)
             {
-                ParamAlarmPct[i] = ReadInt("ParamAlarmPct" + i, 0, 0, 100);
-                ParamAbortPct[i] = ReadInt("ParamAbortPct" + i, 0, 0, 100);
+                ParamAlarmPct[i] = ReadInt("ParamAlarmPct" + i, DefaultParamAlarmPct(i), 0, 100);
+                ParamAbortPct[i] = ReadInt("ParamAbortPct" + i, DefaultParamAbortPct(i), 0, 100);
             }
 
-            ReflectedAlarmWatt = ReadInt("ReflectedAlarmWatt", 0, 0, 2000);
-            ReflectedAbortWatt = ReadInt("ReflectedAbortWatt", 0, 0, 2000);
+            ReflectedAlarmWatt = ReadInt("ReflectedAlarmWatt", DefaultReflectedAlarmWatt, 0, 2000);
+            ReflectedAbortWatt = ReadInt("ReflectedAbortWatt", DefaultReflectedAbortWatt, 0, 2000);
 
             SampleAlarmEnable = ReadBool("SampleAlarmEnable", false);
             SampleTargetC = ReadInt("SampleTargetC", DefaultSampleTargetC, 0, 1500);
-            SampleAlarmPct = ReadInt("SampleAlarmPct", 0, 0, 100);
+            SampleAlarmPct = ReadInt("SampleAlarmPct", DefaultSampleAlarmPct, 0, 100);
 
             for (int i = 0; i < WaterCount; i++)
             {
                 WaterAlarmEnable[i] = ReadBool("WaterAlarmEnable" + i, false);
                 WaterAbortEnable[i] = ReadBool("WaterAbortEnable" + i, false);
-                WaterTargetC[i] = ReadInt("WaterTargetC" + i, 0, 0, 100);
-                WaterAlarmPct[i] = ReadInt("WaterAlarmPct" + i, 0, 0, 100);
-                WaterAbortPct[i] = ReadInt("WaterAbortPct" + i, 0, 0, 100);
+                WaterTargetC[i] = ReadInt("WaterTargetC" + i, DefaultWaterTargetC, 0, 100);
+                WaterAlarmPct[i] = ReadInt("WaterAlarmPct" + i, DefaultWaterAlarmPct, 0, 100);
+                WaterAbortPct[i] = ReadInt("WaterAbortPct" + i, DefaultWaterAbortPct, 0, 100);
             }
 
             for (int i = 0; i < InputCount; i++)
             {
-                InputEnable[i] = ReadBool("InputEnable" + i, false);
+                InputEnable[i] = ReadBool("InputEnable" + i, DefaultInputEnable);
                 InputAborts[i] = ReadBool("InputAborts" + i, false);
             }
 

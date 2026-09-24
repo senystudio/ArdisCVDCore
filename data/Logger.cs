@@ -6,7 +6,7 @@ namespace ArdisCVDCore
     {
         private static readonly NLog.Logger nlogger = NLog.LogManager.GetCurrentClassLogger();
 
-        public static volatile bool Enabled;
+        public static volatile bool Enabled = true;
 
         public static void WriteError(Exception e)
         {
