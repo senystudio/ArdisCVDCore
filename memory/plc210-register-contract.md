@@ -26,6 +26,8 @@ metadata:
 | 248..279 | PRG_Alarms reads (HMI writes thresholds) | PLC210AlarmClient |
 | 280..295 | PRG_Alarms publishes alarm state | PLC210AlarmClient |
 
+**Исключение из x1000: awHolding[140..143] — сырой IEEE REAL, младшее слово первым (24.09.2026).** Давление Hi-Vac (Torr в 140/141, mbar в 142/143) шло через `F_ToFixed`, и всё ниже ~5E-4 Torr приходило нулём — а экран выводит его как в ArdisCVDMaster, `0.###E-0`, где важен порядок. Теперь `PRG_Thyracont` пишет `uValue : U_DWORD_REAL`, а `PLC210ThyracontClient.ReadFloat` собирает float. ПЛК и HMI обновлять вместе: старый ПЛК с новым HMI даст мусор порядка 1E-42. Копия `PRG_Thyracont.st` в репозитории не совпадает с ПЛК (там `xEnable := FALSE` и порт 5, а датчик живой на другом порту) — в CODESYS переносить только строки 140..143 и VAR, не весь файл.
+
 **awHolding grew to ARRAY[0..295] on 22.09.2026** for the alarm engine. The Modbus server's holding area in the device tree must be grown to 296 words with it, or the HMI gets IllegalDataAddress — the same trap the turbo pump hit.
 
 **awHolding[248] carries 16#A5 in its high byte and that is load-bearing.** PRG_Alarms does not parse 249..279 at all without it. The thresholds live in `GVL_Alarms` as `VAR_GLOBAL RETAIN` so the machine is protected before the HMI connects; awHolding reads zeros after a PLC boot, so parsing it unconditionally would overwrite the surviving RETAIN copy with zeros and disarm every check at exactly the moment RETAIN existed for. The magic word distinguishes "the HMI sent a block with everything off" from "no block has ever arrived". For the same reason the HMI must write 248..279 in ONE FC16 — otherwise the magic can land before the values it commits.

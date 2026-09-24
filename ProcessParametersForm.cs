@@ -287,7 +287,7 @@ namespace ArdisCVDCore
         private void StartApplyBlink()
         {
             _applyBlinkLeft = ApplyBlinkToggles;
-            OK.BackColor = Color.LightGreen;
+            OK.BackColor = Res.OnGreen;
             _applyBlinkTimer.Stop();
             _applyBlinkTimer.Start();
         }
@@ -301,7 +301,7 @@ namespace ArdisCVDCore
                 OK.BackColor = SystemColors.Window;
                 return;
             }
-            OK.BackColor = _applyBlinkLeft % 2 == 0 ? Color.LightGreen : SystemColors.Window;
+            OK.BackColor = _applyBlinkLeft % 2 == 0 ? Res.OnGreen : SystemColors.Window;
         }
 
         /// <summary>

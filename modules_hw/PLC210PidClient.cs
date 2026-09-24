@@ -27,7 +27,8 @@ namespace ArdisCVDCore.modules_hw
         Green,
         Yellow,
         Red,
-        GreenYellow
+        GreenYellow,
+        RedYellow
     }
 
     public static class PLC210PidClient
@@ -664,6 +665,7 @@ namespace ArdisCVDCore.modules_hw
                 case TrafficLight.Yellow: flags |= 0x0020; break;
                 case TrafficLight.Red: flags |= 0x0040; break;
                 case TrafficLight.GreenYellow: flags |= 0x0030; break;
+                case TrafficLight.RedYellow: flags |= 0x0060; break;
             }
 
             return flags;

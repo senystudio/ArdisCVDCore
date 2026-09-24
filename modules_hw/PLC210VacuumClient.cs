@@ -108,6 +108,12 @@ namespace ArdisCVDCore.modules_hw
                 _requestedValve[index] = on;
         }
 
+        public static bool IsValveRequested(int index)
+        {
+            lock (Sync)
+                return _requestedValve[index];
+        }
+
         public static void RequestWaterPump(bool on)
         {
             lock (Sync)

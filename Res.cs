@@ -24,6 +24,7 @@ namespace ArdisCVDCore
 
         private static readonly Image _valveClosed = LoadImage("Valve_red.png");
         private static readonly Image _valveOpen = LoadImage("Valve_green.png");
+        private static readonly Color _onGreen = Color.FromArgb(0, 145, 14);
         private static readonly Image _logo = LoadImage("logo.png");
         private static readonly Image _qr = LoadImage("QR.png");
         private static readonly Icon _appIcon = LoadIcon("ardis.ico");
@@ -34,6 +35,8 @@ namespace ArdisCVDCore
 
         /// <summary>Green valve body -- the PLC has confirmed the valve is open.</summary>
         public static Image ValveOpen { get { return _valveOpen; } }
+
+        public static Color OnGreen { get { return _onGreen; } }
 
         public static Image Logo { get { return _logo; } }
 

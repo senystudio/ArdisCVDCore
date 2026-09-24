@@ -42,8 +42,8 @@ namespace ArdisCVDCore
             if (state == null || !state.Connected)
                 return;
 
-            ulong alarm = state.AlarmMask & ~state.AbortMask;
-            ulong abort = state.AbortMask;
+            ulong abort = state.AbortOrLatched;
+            ulong alarm = state.AlarmMask & ~abort;
 
             lock (Sync)
             {

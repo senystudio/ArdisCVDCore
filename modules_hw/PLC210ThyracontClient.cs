@@ -34,7 +34,6 @@ namespace ArdisCVDCore.modules_hw
         private const byte UnitId = 1;
         private const ushort RegisterStart = 140;
         private const ushort RegisterCount = 8;
-        private const double Scale = 1000.0;
 
         private static readonly object Sync = new object();
 
@@ -199,8 +198,8 @@ namespace ArdisCVDCore.modules_hw
             ushort flags = registers[4];
             return new State
             {
-                PressureTorr = ReadFixed(registers, 0),
-                PressureMbar = ReadFixed(registers, 2),
+                PressureTorr = ReadFloat(registers, 0),
+                PressureMbar = ReadFloat(registers, 2),
                 PlcStatusFlags = flags,
                 PlcErrorCode = registers[5],
                 HasValidValue = (flags & 0x0001) != 0,
@@ -261,13 +260,10 @@ namespace ArdisCVDCore.modules_hw
             _tcpClient = null;
         }
 
-        private static double ReadFixed(ushort[] registers, int index)
+        private static double ReadFloat(ushort[] registers, int index)
         {
-            unchecked
-            {
-                uint value = registers[index] | ((uint)registers[index + 1] << 16);
-                return (int)value / Scale;
-            }
+            uint value = registers[index] | ((uint)registers[index + 1] << 16);
+            return BitConverter.ToSingle(BitConverter.GetBytes(value), 0);
         }
 
         private static string ShortMessage(Exception ex)

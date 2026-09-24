@@ -42,6 +42,11 @@ namespace ArdisCVDCore.modules_hw
                 return code >= 0 && code < 64 && (AbortMask & (1UL << code)) != 0;
             }
 
+            public ulong AbortOrLatched
+            {
+                get { return AbortMask | AbortLatched; }
+            }
+
             public bool WasAbortCause(int code)
             {
                 return code >= 0 && code < 64 && (AbortLatched & (1UL << code)) != 0;

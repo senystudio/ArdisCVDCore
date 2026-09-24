@@ -18,7 +18,6 @@ namespace ArdisCVDCore
         public string Text;
         public StatusLevel Level;
         public bool ModuleLost;
-        public bool IgnoredByTower;
 
         public StatusLine(string section, StatusLevel level, string text)
         {
@@ -93,24 +92,13 @@ namespace ArdisCVDCore
 
         public static TrafficLight TowerLamp(IEnumerable<StatusLine> lines)
         {
-            StatusLevel worst = StatusLevel.Ok;
-            bool moduleLost = false;
-            foreach (StatusLine line in lines)
-            {
-                if (line.IgnoredByTower)
-                    continue;
-                if (line.ModuleLost)
-                {
-                    moduleLost = true;
-                    continue;
-                }
-                if (line.Level > worst)
-                    worst = line.Level;
-            }
+            if (!PLC210AlarmClient.GetState().Connected)
+                return TrafficLight.Yellow;
 
-            switch (worst)
+            bool moduleLost = AnyModuleLost(lines);
+            switch (AlarmLevel())
             {
-                case StatusLevel.Error: return TrafficLight.Red;
+                case StatusLevel.Error: return moduleLost ? TrafficLight.RedYellow : TrafficLight.Red;
                 case StatusLevel.Warning: return TrafficLight.Yellow;
                 default: return moduleLost ? TrafficLight.GreenYellow : TrafficLight.Green;
             }
@@ -180,14 +168,14 @@ namespace ArdisCVDCore
 
             if (!PlcConnected())
             {
-                lines.Add(new StatusLine("PLC", StatusLevel.Error, "Not connected"));
+                lines.Add(new StatusLine("PLC", StatusLevel.Error, "Not connected") { ModuleLost = true });
                 return;
             }
 
             if (!pid.PlcPressureAvailable)
             {
                 lines.Add(new StatusLine("PLC", StatusLevel.Warning,
-                    "No chamber pressure reading from the PLC"));
+                    "No chamber pressure reading from the PLC") { ModuleLost = true });
                 return;
             }
 
@@ -196,7 +184,7 @@ namespace ArdisCVDCore
                 lines.Add(new StatusLine("PLC", StatusLevel.Warning,
                     string.IsNullOrWhiteSpace(pid.PlcPressureStatusText)
                         ? "Chamber pressure reading not valid"
-                        : pid.PlcPressureStatusText));
+                        : pid.PlcPressureStatusText) { ModuleLost = true });
                 return;
             }
 
@@ -406,13 +394,13 @@ namespace ArdisCVDCore
 
             if (!state.Connected)
             {
-                lines.Add(new StatusLine("Turbo pump", StatusLevel.Error, "Not connected") { IgnoredByTower = true });
+                lines.Add(new StatusLine("Turbo pump", StatusLevel.Error, "Not connected"));
                 return;
             }
 
             if (!state.DriveAnswering)
             {
-                lines.Add(new StatusLine("Turbo pump", StatusLevel.Warning, "Drive not answering") { IgnoredByTower = true });
+                lines.Add(new StatusLine("Turbo pump", StatusLevel.Warning, "Drive not answering"));
                 return;
             }
 

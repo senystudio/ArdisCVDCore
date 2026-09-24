@@ -72,7 +72,7 @@ namespace ArdisCVDCore
                 "Microwave stopped. Retune before restarting");
 
             Add(map, SampleTemperature, "Pyrometer", "Sample temperature is outside the alarm window",
-                "Check the microwave power and the gas mixture", null);
+                string.Empty, null);
 
             AddWaterTemp(map, WaterTempFirst + 0, "Internal");
             AddWaterTemp(map, WaterTempFirst + 1, "External");

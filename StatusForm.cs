@@ -132,7 +132,7 @@ namespace ArdisCVDCore
                 // Not Color.Yellow: unreadable on the default white list
                 // background. Same hue, dark enough to read.
                 case StatusLevel.Warning: return Color.DarkGoldenrod;
-                default: return Color.Green;
+                default: return Res.OnGreen;
             }
         }
     }

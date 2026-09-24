@@ -102,7 +102,7 @@ namespace ArdisCVDCore
 
             PLC210AlarmClient.State alarms = PLC210AlarmClient.GetState();
             s.WarningsInput = BitConverter.GetBytes(alarms.AlarmMask);
-            s.ErrorsInput = BitConverter.GetBytes(alarms.AbortMask);
+            s.ErrorsInput = BitConverter.GetBytes(alarms.AbortOrLatched);
 
             return s;
         }

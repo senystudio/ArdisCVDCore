@@ -440,8 +440,57 @@ namespace ArdisCVDCore
             }
 
             index = Array.IndexOf(_vacuumValveBox, box);
-            if (index >= 0)
-                PLC210VacuumClient.RequestValve(index, wanted);
+            if (index < 0)
+                return;
+
+            if (wanted)
+            {
+                string blocker = DescribeVacuumValveBlocker(index);
+                if (blocker != null)
+                {
+                    MessageBox.Show(
+                        this,
+                        blocker,
+                        "Vacuum valves",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+            }
+
+            PLC210VacuumClient.RequestValve(index, wanted);
+        }
+
+        private const int Vpv4Index = 3;
+        private const int Vpv5Index = 4;
+
+        private string DescribeVacuumValveBlocker(int index)
+        {
+            int other;
+            if (index == Vpv4Index)
+                other = Vpv5Index;
+            else if (index == Vpv5Index)
+                other = Vpv4Index;
+            else
+                return null;
+
+            string name = VacuumValveName(index);
+            string otherName = VacuumValveName(other);
+
+            if (IsShownOpen(_vacuumValveBox[other]))
+                return name + " cannot be opened while " + otherName + " is open.\r\n\r\n"
+                    + "Close " + otherName + " first.";
+
+            if (PLC210VacuumClient.IsValveRequested(other))
+                return name + " cannot be opened while " + otherName + " is opening.\r\n\r\n"
+                    + "The PLC has not confirmed " + otherName + " yet. If it stays closed, press Close All Valves.";
+
+            return null;
+        }
+
+        private static string VacuumValveName(int index)
+        {
+            return "VPV" + (index + 1).ToString(CultureInfo.InvariantCulture);
         }
 
         private void CloseAllValves_Click(object sender, EventArgs e)
@@ -493,15 +542,12 @@ namespace ArdisCVDCore
             // Both units -- the gauge is specified in mbar but the rest of this
             // screen works in Torr, so neither one alone is enough -- in two
             // boxes of their own, in the order the caption names them.
-            //
-            // G3, not a fixed number of decimals: the VSM79 spans 1000..5e-9
-            // mbar, and "0.0" would be its reading over most of that range.
             PLC210ThyracontClient.State hiVac = PLC210ThyracontClient.GetState();
             HiVacPressure.Text = hiVac.HasValidValue
-                ? hiVac.PressureTorr.ToString("G3", CultureInfo.InvariantCulture)
+                ? hiVac.PressureTorr.ToString("0.###E-0", CultureInfo.InvariantCulture)
                 : "---";
             HiVacPressureMbar.Text = hiVac.HasValidValue
-                ? hiVac.PressureMbar.ToString("G3", CultureInfo.InvariantCulture)
+                ? hiVac.PressureMbar.ToString("0.###E-0", CultureInfo.InvariantCulture)
                 : "---";
 
             UpdatePyrometers();
@@ -595,8 +641,8 @@ namespace ArdisCVDCore
             // the countdown it explains the absence of.
             MWNotConnected.Visible = !generatorAlive;
 
-            StartMW.BackColor = generatorAlive && state.PreheatOn ? Color.LightGreen : SystemColors.Control;
-            button1.BackColor = generatorAlive && state.MicrowaveOn ? Color.LightGreen : SystemColors.Control;
+            StartMW.BackColor = generatorAlive && state.PreheatOn ? Res.OnGreen : SystemColors.Control;
+            button1.BackColor = generatorAlive && state.MicrowaveOn ? Res.OnGreen : SystemColors.Control;
 
             // Matches the generator's own touch screen, where Microwave greys out
             // while Fault is lit -- RESET (or STOP) is the way forward from
@@ -604,7 +650,8 @@ namespace ArdisCVDCore
             // write regardless, and a button that visibly does nothing is worse
             // than a disabled one.
             StartMW.Enabled = generatorAlive;
-            button1.Enabled = generatorAlive && !state.FaultReportable && !state.ChamberPressureLow;
+            button1.Enabled = generatorAlive && !state.FaultReportable && !state.ChamberPressureLow
+                && (state.FilamentPreheatDone || state.MicrowaveOn);
 
             bool preheating = generatorAlive && state.PreheatOn && !state.FilamentPreheatDone;
             int remaining = Math.Max(0, PreheatSeconds - state.PreheatElapsedSeconds);
@@ -618,14 +665,17 @@ namespace ArdisCVDCore
                 // "0s" here used to read as "ready to fire" on a cold filament.
                 TimeToStart.Text = PreheatSeconds.ToString(CultureInfo.InvariantCulture) + "s";
 
-            PreheatProgress.Visible = preheating;
+            PreheatProgress.Visible = generatorAlive;
             // Capped, so a preheat that runs longer than nominal shows a full bar
             // instead of throwing on an out-of-range Value. Reset while idle so a
             // counter the PLC kept running with the generator off cannot make the
             // next preheat start from a full bar.
-            PreheatProgress.Value = preheating
-                ? Math.Max(0, Math.Min(state.PreheatElapsedSeconds, PreheatSeconds))
-                : 0;
+            if (preheating)
+                PreheatProgress.Value = Math.Max(0, Math.Min(state.PreheatElapsedSeconds, PreheatSeconds));
+            else if (generatorAlive && state.FilamentPreheatDone)
+                PreheatProgress.Value = PreheatSeconds;
+            else
+                PreheatProgress.Value = 0;
 
             CheckMicrowaveWater(state);
         }
@@ -672,6 +722,9 @@ namespace ArdisCVDCore
         private void button1_Click_1(object sender, EventArgs e)
         {
             bool turnOn = !_microwaveState.MicrowaveOn;
+            if (turnOn && !_microwaveState.FilamentPreheatDone)
+                return;
+
             if (!turnOn && !ConfirmSwitchOff("Microwave"))
                 return;
 
@@ -731,7 +784,7 @@ namespace ArdisCVDCore
             // toggle off, and outside a session nothing should start at all.
             button.Enabled = operable;
             button.Text = running ? "PUMP ON" : "PUMP OFF";
-            button.BackColor = running ? Color.LightGreen : Color.LightSalmon;
+            button.BackColor = running ? Res.OnGreen : Color.LightSalmon;
         }
 
         private void ForeVacPump_Click(object sender, EventArgs e)
@@ -827,7 +880,7 @@ namespace ArdisCVDCore
 
             // Spin-up takes minutes, and a green button for all of it would say
             // the pump is ready when it is nowhere near.
-            return state.AtNormalSpeed ? Color.LightGreen : Color.YellowGreen;
+            return state.AtNormalSpeed ? Res.OnGreen : Color.YellowGreen;
         }
 
         private void TurboSpeedBar_Paint(object sender, PaintEventArgs e)
@@ -840,7 +893,7 @@ namespace ArdisCVDCore
             double fraction = Math.Min(
                 1.0, (double)_turboBarSpeedHz / PLC210TurboPumpClient.RatedSpeedHz);
 
-            using (SolidBrush brush = new SolidBrush(_turboBarAtSpeed ? Color.Green : Color.GreenYellow))
+            using (SolidBrush brush = new SolidBrush(_turboBarAtSpeed ? Res.OnGreen : Color.GreenYellow))
                 e.Graphics.FillRectangle(
                     brush,
                     0,
@@ -1063,7 +1116,7 @@ namespace ArdisCVDCore
             {
                 case StatusLevel.Error: return Color.Red;
                 case StatusLevel.Warning: return Color.Gold;
-                default: return Color.Green;
+                default: return Res.OnGreen;
             }
         }
 

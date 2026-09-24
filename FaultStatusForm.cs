@@ -203,7 +203,7 @@ namespace ArdisCVDCore
         private void Refresh(PLC210AlarmClient.State state)
         {
             _alarmDump.Text = "Alarm  " + FormatMask(state.AlarmMask);
-            _abortDump.Text = "Abort  " + FormatMask(state.AbortMask);
+            _abortDump.Text = "Abort  " + FormatMask(state.AbortOrLatched);
 
             _reset.Enabled = state.Connected && state.AbortActive;
 
@@ -213,11 +213,12 @@ namespace ArdisCVDCore
 
         private void RefreshCurrent(PLC210AlarmClient.State state)
         {
-            if (_currentEverDrawn && state.AlarmMask == _shownAlarm && state.AbortMask == _shownAbort)
+            ulong abort = state.AbortOrLatched;
+            if (_currentEverDrawn && state.AlarmMask == _shownAlarm && abort == _shownAbort)
                 return;
 
             _shownAlarm = state.AlarmMask;
-            _shownAbort = state.AbortMask;
+            _shownAbort = abort;
             _currentEverDrawn = true;
 
             _current.BeginUpdate();
@@ -228,8 +229,8 @@ namespace ArdisCVDCore
                 if (!state.Connected)
                     return;
 
-                AddCurrentRows(state.AbortMask, AlarmLevel.Abort);
-                AddCurrentRows(state.AlarmMask & ~state.AbortMask, AlarmLevel.Alarm);
+                AddCurrentRows(abort, AlarmLevel.Abort);
+                AddCurrentRows(state.AlarmMask & ~abort, AlarmLevel.Alarm);
             }
             finally
             {

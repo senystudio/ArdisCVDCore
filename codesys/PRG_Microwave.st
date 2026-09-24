@@ -35,8 +35,12 @@ VAR
     wStatus      : WORD;
 
     fbPreheatTimer : TON;
+    fbCommOk       : TON;
+    fbConfirmTick  : TON;
+    xMwLinkWasOk   : BOOL;
 END_VAR
 
+fbCommOk(IN := NOT MW_GEN.xError, PT := T#4S);
 
 xMwPreheatRequest := ((awHolding[192] AND WORD#16#0001) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit);
 xMwOnRequest      := ((awHolding[192] AND WORD#16#0002) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit);
@@ -48,7 +52,7 @@ xMwFailure     := axMwStatusBlock1[1];
 
 xMwReflective  := axMwStatusBlock2[5];
 xMwPreheatDone := axMwStatusBlock2[0];
-xMwCommError   := MW_GEN.xError;
+xMwCommError   := NOT fbCommOk.Q;
 
 xMwFilamentFlowFault  := axMwStatusBlock3[7];
 xMwFilamentUnderflow  := axMwStatusBlock3[6];
@@ -119,6 +123,11 @@ ELSIF rSetpointKw > C_MAX_SETPOINT_KW THEN
 END_IF;
 iRawSetpoint := REAL_TO_INT(rSetpointKw * 100.0 + 0.5);
 
+IF fbCommOk.Q AND (NOT xMwLinkWasOk) THEN
+    stMw.iLastSetpointRaw := -1;
+END_IF;
+xMwLinkWasOk := fbCommOk.Q;
+
 IF iRawSetpoint <> stMw.iLastSetpointRaw THEN
     wMwSetpointRaw := INT_TO_WORD(iRawSetpoint);
     xMwSetpointTrigger := TRUE;
@@ -160,3 +169,6 @@ awHolding[202] := awMwPowerRaw[0];
 awHolding[203] := awMwPowerRaw[1];
 awHolding[204] := stMw.wFaultReason;
 awHolding[205] := DWORD_TO_WORD(TIME_TO_DWORD(fbPreheatTimer.ET) / DWORD#1000);
+
+fbConfirmTick(IN := MW_GEN.xError AND (NOT fbConfirmTick.Q), PT := T#4S);
+MW_GEN.xConfirmError := fbConfirmTick.Q;
