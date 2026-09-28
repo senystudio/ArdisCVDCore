@@ -45,6 +45,8 @@ namespace ArdisCVDCore.modules_hw
             public double UpperLimit;
             public bool DirectMode;
             public double DirectValue;
+            public bool SmartMode;
+            public double SmartKp;
             public double FlowCorrection;
             public double PressureCorrection;
             public double TotalGasFlow;
@@ -703,6 +705,8 @@ namespace ArdisCVDCore.modules_hw
             SetFixed(registers, start + 17, channel.FlowCorrection);
             SetFixed(registers, start + 19, channel.PressureCorrection);
             SetFixed(registers, start + 21, channel.TotalGasFlow);
+            SetFixed(registers, start + 23, channel.SmartKp);
+            registers[start + 25] = channel.SmartMode ? (ushort)1 : (ushort)0;
         }
 
         private static State ParseOutputRegisters(ushort[] registers)

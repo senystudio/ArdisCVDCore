@@ -169,6 +169,13 @@ namespace ArdisCVDCore
             Chamber_pid_D.Value = Clamp(Chamber_pid_D, (decimal)ChamberPid.Kd);
             Chamber_UpperLimit.Value = Clamp(Chamber_UpperLimit, (decimal)ChamberPid.UpperLimit);
             Chamber_LowerLimit.Value = Clamp(Chamber_LowerLimit, (decimal)ChamberPid.LowerLimit);
+            Chamber_SmartMode.Checked = ChamberPid.SmartMode;
+            Chamber_pid_SmartP.Value = Clamp(Chamber_pid_SmartP, (decimal)ChamberPid.SmartKp);
+        }
+
+        private void Chamber_SmartMode_CheckedChanged(object sender, EventArgs e)
+        {
+            Chamber_pid_SmartP.Enabled = Chamber_SmartMode.Checked;
         }
 
         private void LoadGasCorrection()
@@ -282,6 +289,8 @@ namespace ArdisCVDCore
             ChamberPid.Kd = (double)Chamber_pid_D.Value;
             ChamberPid.UpperLimit = (double)Chamber_UpperLimit.Value;
             ChamberPid.LowerLimit = (double)Chamber_LowerLimit.Value;
+            ChamberPid.SmartMode = Chamber_SmartMode.Checked;
+            ChamberPid.SmartKp = (double)Chamber_pid_SmartP.Value;
             ChamberPid.Committed = true;
 
             StoreAlarms();
@@ -340,6 +349,8 @@ namespace ArdisCVDCore
             Chamber_pid_D.Value = Clamp(Chamber_pid_D, (decimal)ChamberPid.DefaultKd);
             Chamber_UpperLimit.Value = Clamp(Chamber_UpperLimit, (decimal)ChamberPid.DefaultUpperLimit);
             Chamber_LowerLimit.Value = Clamp(Chamber_LowerLimit, (decimal)ChamberPid.DefaultLowerLimit);
+            Chamber_SmartMode.Checked = false;
+            Chamber_pid_SmartP.Value = Clamp(Chamber_pid_SmartP, (decimal)ChamberPid.DefaultKp);
 
             for (int i = 0; i < AlarmSettings.ParamCount; i++)
             {

@@ -367,6 +367,8 @@ namespace ArdisCVDCore
                 Kp = ChamberPid.Kp,
                 Ki = ChamberPid.Ki,
                 Kd = ChamberPid.Kd,
+                SmartMode = ChamberPid.SmartMode,
+                SmartKp = ChamberPid.SmartKp,
                 // Direct drive bypasses the controller, so the operator's own
                 // clamp must not also apply -- open the limits to the full range.
                 LowerLimit = ChamberPid.DirectMode ? 0 : ChamberPid.LowerLimit,

@@ -110,6 +110,8 @@
             this.Chamber_pid_D = new System.Windows.Forms.NumericUpDown();
             this.Chamber_pid_I = new System.Windows.Forms.NumericUpDown();
             this.Chamber_pid_P = new System.Windows.Forms.NumericUpDown();
+            this.Chamber_SmartMode = new System.Windows.Forms.CheckBox();
+            this.Chamber_pid_SmartP = new System.Windows.Forms.NumericUpDown();
             this.LogicInputGroupBox = new System.Windows.Forms.GroupBox();
             this.ExternalFlow_comboBox = new System.Windows.Forms.ComboBox();
             this.InternalFlow_comboBox = new System.Windows.Forms.ComboBox();
@@ -270,6 +272,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.Chamber_pid_D)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.Chamber_pid_I)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.Chamber_pid_P)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.Chamber_pid_SmartP)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.TStageH2O)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.TChamberH2O)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.TExternalH2O)).BeginInit();
@@ -1436,12 +1439,14 @@
             this.ChamberPIDParametersGroupBox.Controls.Add(this.Chamber_UpperLimit);
             this.ChamberPIDParametersGroupBox.Controls.Add(this.label80);
             this.ChamberPIDParametersGroupBox.Controls.Add(this.Chamber_LowerLimit);
+            this.ChamberPIDParametersGroupBox.Controls.Add(this.Chamber_SmartMode);
+            this.ChamberPIDParametersGroupBox.Controls.Add(this.Chamber_pid_SmartP);
             this.ChamberPIDParametersGroupBox.Location = new System.Drawing.Point(454, 30);
             this.ChamberPIDParametersGroupBox.Name = "ChamberPIDParametersGroupBox";
-            this.ChamberPIDParametersGroupBox.Size = new System.Drawing.Size(442, 72);
+            this.ChamberPIDParametersGroupBox.Size = new System.Drawing.Size(442, 102);
             this.ChamberPIDParametersGroupBox.TabIndex = 3;
             this.ChamberPIDParametersGroupBox.TabStop = false;
-            this.ChamberPIDParametersGroupBox.Text = "Chamber PID Parameters";
+            this.ChamberPIDParametersGroupBox.Text = "Chamber PID";
             // 
             // label51
             // 
@@ -1609,12 +1614,46 @@
             this.Chamber_LowerLimit.TabIndex = 9;
             this.Chamber_LowerLimit.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
+            // Chamber_SmartMode
+            // 
+            this.Chamber_SmartMode.AutoSize = true;
+            this.Chamber_SmartMode.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.Chamber_SmartMode.Location = new System.Drawing.Point(18, 69);
+            this.Chamber_SmartMode.Name = "Chamber_SmartMode";
+            this.Chamber_SmartMode.Size = new System.Drawing.Size(96, 20);
+            this.Chamber_SmartMode.TabIndex = 10;
+            this.Chamber_SmartMode.Text = "Smart Mode";
+            this.Chamber_SmartMode.UseVisualStyleBackColor = true;
+            this.Chamber_SmartMode.CheckedChanged += new System.EventHandler(this.Chamber_SmartMode_CheckedChanged);
+            // 
+            // Chamber_pid_SmartP
+            // 
+            this.Chamber_pid_SmartP.DecimalPlaces = 3;
+            this.Chamber_pid_SmartP.Enabled = false;
+            this.Chamber_pid_SmartP.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.Chamber_pid_SmartP.ImeMode = System.Windows.Forms.ImeMode.On;
+            this.Chamber_pid_SmartP.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            196608});
+            this.Chamber_pid_SmartP.Location = new System.Drawing.Point(120, 68);
+            this.Chamber_pid_SmartP.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.Chamber_pid_SmartP.Name = "Chamber_pid_SmartP";
+            this.Chamber_pid_SmartP.Size = new System.Drawing.Size(70, 22);
+            this.Chamber_pid_SmartP.TabIndex = 11;
+            this.Chamber_pid_SmartP.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            // 
             // TemperatureGroupBox
             // 
             this.TemperatureGroupBox.BackColor = System.Drawing.SystemColors.ButtonFace;
             this.TemperatureGroupBox.Controls.Add(this.SampleBlock);
             this.TemperatureGroupBox.Controls.Add(this.CoolingWaterBlock);
-            this.TemperatureGroupBox.Location = new System.Drawing.Point(454, 108);
+            this.TemperatureGroupBox.Location = new System.Drawing.Point(454, 138);
             this.TemperatureGroupBox.Name = "TemperatureGroupBox";
             this.TemperatureGroupBox.Size = new System.Drawing.Size(442, 288);
             this.TemperatureGroupBox.TabIndex = 4;
@@ -2206,7 +2245,7 @@
             this.LogicInputGroupBox.Controls.Add(this.PressureSwitch_comboBox);
             this.LogicInputGroupBox.Controls.Add(this.InputChamberOpen_CheckBox);
             this.LogicInputGroupBox.Controls.Add(this.ChamberOpen_comboBox);
-            this.LogicInputGroupBox.Location = new System.Drawing.Point(454, 402);
+            this.LogicInputGroupBox.Location = new System.Drawing.Point(454, 432);
             this.LogicInputGroupBox.Name = "LogicInputGroupBox";
             this.LogicInputGroupBox.Size = new System.Drawing.Size(442, 252);
             this.LogicInputGroupBox.TabIndex = 5;
@@ -2716,7 +2755,7 @@
             this.OK.BackColor = System.Drawing.SystemColors.Window;
             this.OK.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.OK.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.OK.Location = new System.Drawing.Point(454, 660);
+            this.OK.Location = new System.Drawing.Point(454, 690);
             this.OK.Name = "OK";
             this.OK.Size = new System.Drawing.Size(442, 40);
             this.OK.TabIndex = 7;
@@ -2756,7 +2795,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(902, 706);
+            this.ClientSize = new System.Drawing.Size(902, 736);
             this.Controls.Add(this.menuStrip1);
             this.Controls.Add(this.OK);
             this.Controls.Add(this.groupBox1);
@@ -2824,6 +2863,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.Chamber_pid_D)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.Chamber_pid_I)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.Chamber_pid_P)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.Chamber_pid_SmartP)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.TStageH2O)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.TChamberH2O)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.TExternalH2O)).EndInit();
@@ -2923,6 +2963,8 @@
         private System.Windows.Forms.NumericUpDown Chamber_pid_D;
         private System.Windows.Forms.NumericUpDown Chamber_pid_I;
         private System.Windows.Forms.NumericUpDown Chamber_pid_P;
+        private System.Windows.Forms.CheckBox Chamber_SmartMode;
+        private System.Windows.Forms.NumericUpDown Chamber_pid_SmartP;
         private System.Windows.Forms.GroupBox LogicInputGroupBox;
         private System.Windows.Forms.ComboBox ExternalFlow_comboBox;
         private System.Windows.Forms.ComboBox InternalFlow_comboBox;

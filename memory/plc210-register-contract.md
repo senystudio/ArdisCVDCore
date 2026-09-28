@@ -34,6 +34,8 @@ metadata:
 
 Alarm codes are bit numbers in the 64-bit masks, one byte per subsystem: 0..7 setpoint bands, 8..15 temperatures, 16..23 cooling, 24..31 interlocks, 32..47 microwave generator reasons, 48..63 turbo pump. Full numbering in `codesys/comments.txt`. Link loss and reading validity are deliberately NOT in these masks — they belong to the Connection Status window. See [[alarm-abort-design]] and [[alarm-dead-sensor-open]].
 
+**awHolding[27..29], добавлены 28.09.2026:** Smart Kp (27/28, x1000) и флаг Smart Mode (29) для PID камеры, см. [[chamber-pid-smart-mode]]. Во входном блоке 0..63 теперь свободны 53..63 (53..55 HMI пишет нулями как хвост канала плёнума).
+
 Still free: 148, 149, 158, 159. `PLC210PidClient.OutputRegisterCount` is 40, i.e. it reads 100..139 in one go — that is the cheap place to hang a new HMI-visible flag, no ninth socket.
 
 **awHolding[139], added 25.08.2026:** bit 0..7 = FDI1..FDI8, bit 8..11 = DI9..DI12, 1 = contact closed. The chamber lid switch is one of those bits; which one is chosen HMI-side from `config.ini` `[PLC210] LidInput` (default 1 = FDI1, never confirmed on the machine). The PLC's own I/O node also offers the whole group as one `Bit mask inputs` DWORD channel at `%ID51` — same bit order, provable from the addresses (`%ID51` = bytes 204..207, `Fast input 1` = `%IX204.0`, `Input 9` = `%IX205.0`). Either mapping works; the project currently uses twelve BOOLs in `GVL_PlcIO.st`.

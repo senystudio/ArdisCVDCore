@@ -8,6 +8,8 @@ VAR_INPUT
     rKp           : REAL;
     rKi           : REAL;
     rKd           : REAL;
+    xSmartMode    : BOOL;
+    rSmartKp      : REAL;
     rLowerLimit   : REAL;
     rUpperLimit   : REAL;
     rDirectValue  : REAL;
@@ -30,6 +32,7 @@ VAR
     rErrAverageFirst   : REAL;
     rErrAverageLast    : REAL;
     rErrAverageIntegral : REAL;
+    rKpActive           : REAL;
 END_VAR
 
 IF rLowerLimit <= rUpperLimit THEN
@@ -63,8 +66,6 @@ IF xReset OR NOT xInitialized THEN
     xInitialized := TRUE;
 END_IF;
 
-rP := rKp * rError;
-
 IF rCycleSeconds > 0.001 THEN
     FOR i := 0 TO 98 DO
         arErrorBuffer[i] := arErrorBuffer[i + 1];
@@ -96,6 +97,14 @@ ELSE
     rD := 0.0;
     rI := 0.0;
 END_IF;
+
+IF xSmartMode AND rError > 0.0 AND rD <= 0.0 THEN
+    rKpActive := rSmartKp;
+ELSE
+    rKpActive := rKp;
+END_IF;
+
+rP := rKpActive * rError;
 
 rPreviousError := rError;
 

@@ -41,6 +41,8 @@ VAR
     rChLower    : REAL;
     rChUpper    : REAL;
     rChDirect   : REAL;
+    rChSmartKp  : REAL;
+    xChSmartMode : BOOL;
     rPlSetpoint : REAL;
     rPlMeasured : REAL;
     rPlKp       : REAL;
@@ -140,6 +142,8 @@ rChKd := F_ReadFixed(awHolding[12], awHolding[13]);
 rChLower := F_ReadFixed(awHolding[14], awHolding[15]);
 rChUpper := F_ReadFixed(awHolding[16], awHolding[17]);
 rChDirect := F_ReadFixed(awHolding[18], awHolding[19]);
+rChSmartKp := F_ReadFixed(awHolding[27], awHolding[28]);
+xChSmartMode := awHolding[29] <> WORD#0;
 
 rPlSetpoint := F_ReadFixed(awHolding[30], awHolding[31]);
 rPlMeasured := F_ReadFixed(awHolding[32], awHolding[33]);
@@ -159,6 +163,8 @@ fbChamber(
     rKp := rChKp,
     rKi := rChKi,
     rKd := rChKd,
+    xSmartMode := xChSmartMode,
+    rSmartKp := rChSmartKp,
     rLowerLimit := rChLower,
     rUpperLimit := rChUpper,
     rDirectValue := rChDirect,

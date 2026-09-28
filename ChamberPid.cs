@@ -43,6 +43,9 @@ namespace ArdisCVDCore
         public static double UpperLimit = DefaultUpperLimit;
         public static double LowerLimit = DefaultLowerLimit;
 
+        public static bool SmartMode;
+        public static double SmartKp = DefaultKp;
+
         public static bool DirectMode;
         public static double DirectValue;
     }
