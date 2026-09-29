@@ -158,8 +158,9 @@ namespace ArdisCVDCore
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             _timer.Stop();
-            IniWriter.INI.Write(IniSection, "X", Location.X.ToString(CultureInfo.InvariantCulture));
-            IniWriter.INI.Write(IniSection, "Y", Location.Y.ToString(CultureInfo.InvariantCulture));
+            Rectangle bounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
+            IniWriter.INI.Write(IniSection, "X", bounds.X.ToString(CultureInfo.InvariantCulture));
+            IniWriter.INI.Write(IniSection, "Y", bounds.Y.ToString(CultureInfo.InvariantCulture));
             base.OnFormClosing(e);
         }
 

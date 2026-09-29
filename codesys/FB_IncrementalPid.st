@@ -98,7 +98,7 @@ ELSE
     rI := 0.0;
 END_IF;
 
-IF xSmartMode AND rError > 0.0 AND rD <= 0.0 THEN
+IF xSmartMode AND rError > 0.0 AND rD > 0.0 THEN
     rKpActive := rSmartKp;
 ELSE
     rKpActive := rKp;

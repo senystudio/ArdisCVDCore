@@ -191,6 +191,8 @@ namespace ArdisCVDCore
                 return;
             }
 
+            CloseOtherWindows();
+
             SuperCycle.Stop();
 
             ProcessLogger.OpTimeLogging(false, "MWPower");
@@ -201,8 +203,21 @@ namespace ArdisCVDCore
 
             StopPlcClients();
 
-            IniWriter.INI.Write("MainForm", "X", Location.X.ToString(CultureInfo.InvariantCulture));
-            IniWriter.INI.Write("MainForm", "Y", Location.Y.ToString(CultureInfo.InvariantCulture));
+            Rectangle bounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
+            IniWriter.INI.Write("MainForm", "X", bounds.X.ToString(CultureInfo.InvariantCulture));
+            IniWriter.INI.Write("MainForm", "Y", bounds.Y.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private void CloseOtherWindows()
+        {
+            List<Form> open = new List<Form>();
+            foreach (Form form in Application.OpenForms)
+                if (form != this)
+                    open.Add(form);
+
+            foreach (Form form in open)
+                if (!form.IsDisposed)
+                    form.Close();
         }
 
         /// <summary>

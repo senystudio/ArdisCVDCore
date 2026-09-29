@@ -151,10 +151,11 @@ namespace ArdisCVDCore.trends
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             _timer.Stop();
-            IniWriter.INI.Write(_iniSection, "X", Location.X.ToString(CultureInfo.InvariantCulture));
-            IniWriter.INI.Write(_iniSection, "Y", Location.Y.ToString(CultureInfo.InvariantCulture));
-            IniWriter.INI.Write(_iniSection, "Width", Width.ToString(CultureInfo.InvariantCulture));
-            IniWriter.INI.Write(_iniSection, "Height", Height.ToString(CultureInfo.InvariantCulture));
+            Rectangle bounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
+            IniWriter.INI.Write(_iniSection, "X", bounds.X.ToString(CultureInfo.InvariantCulture));
+            IniWriter.INI.Write(_iniSection, "Y", bounds.Y.ToString(CultureInfo.InvariantCulture));
+            IniWriter.INI.Write(_iniSection, "Width", bounds.Width.ToString(CultureInfo.InvariantCulture));
+            IniWriter.INI.Write(_iniSection, "Height", bounds.Height.ToString(CultureInfo.InvariantCulture));
             base.OnFormClosing(e);
         }
 
