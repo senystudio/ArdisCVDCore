@@ -6,21 +6,6 @@ using System.Threading;
 
 namespace ArdisCVDCore.modules_hw
 {
-    /// <summary>
-    /// Modbus TCP exchange for the PLC210 PID task.
-    /// The HMI sends setpoints/parameters and receives calculated diagnostics;
-    /// the PLC project decides which physical outputs are mapped.
-    /// </summary>
-    /// <summary>
-    /// Which lamp of the panel signal tower is lit. One at a time -- the three
-    /// relays are independent, but the tower is read at a glance and two lamps
-    /// at once say nothing useful.
-    ///
-    /// There is one combination this enum deliberately cannot express: all
-    /// three at once, which PLC_PRG.st lights by itself when the HMI stops
-    /// writing. Keeping it out of reach here is what makes it unambiguous on
-    /// the panel -- if the whole tower is lit, nobody asked for it.
-    /// </summary>
     public enum TrafficLight
     {
         Off = 0,
@@ -85,21 +70,8 @@ namespace ArdisCVDCore.modules_hw
             public string PlcPressureSource;
             public string PlcPressureStatusText;
 
-            // awHolding[139]: all twelve of the controller's own discrete
-            // inputs, bit 0..7 = FDI1..FDI8, bit 8..11 = DI9..DI12, 1 = contact
-            // closed. Published by PLC_PRG.st; the chamber lid switch is one of
-            // these bits, see LidInputChannel.
             public ushort DiscreteInputs;
 
-            /// <summary>
-            /// The chamber lid switch reads closed.
-            /// </summary>
-            /// <remarks>
-            /// False on a lost link, an unmapped channel or a cut wire as well
-            /// as on a genuinely open lid. That is the right way round for an
-            /// interlock: the alarm is on the open state, so every failure of
-            /// the chain errs towards "go and look".
-            /// </remarks>
             public bool LidClosed
             {
                 get { return IsDiscreteInputOn(DiscreteInputs, LidInputChannel); }
@@ -127,13 +99,6 @@ namespace ArdisCVDCore.modules_hw
 
         private sealed class PreviewController
         {
-            // Moving-window integral, offline-preview-only (see the note on Step's
-            // "output" below for why this doesn't try to track the PLC exactly):
-            // I sums only the last IntegralWindowSize error samples instead of
-            // accumulating forever, so old samples age out and the integral
-            // self-limits without a separate anti-windup clamp. The real
-            // FB_IncrementalPid.st instead accumulates rIntegral without a
-            // window, clamped to +-1,000,000.
             private const int IntegralWindowSize = 20;
 
             private readonly double[] _errorHistory = new double[IntegralWindowSize];
@@ -167,12 +132,6 @@ namespace ArdisCVDCore.modules_hw
                 double p = channel.Kp * error;
                 double i = channel.Ki * _integral;
 
-                // Only recompute D -- against the real elapsed time -- when the
-                // error actually changed. Setpoint/Measured only change once a
-                // second (pushed by SuperCycle) while this worker loop polls
-                // roughly every 200 ms, so recomputing every tick against an
-                // unchanged error (divided by a too-short dt) produced a
-                // spike-then-zero flicker; hold the last D value in between.
                 _timeSinceDChange += dt;
                 if (error != _previousError)
                 {
@@ -185,15 +144,6 @@ namespace ArdisCVDCore.modules_hw
 
                 double d = _d;
 
-                // Positional form (output = P+I+D of the current error) -- this is
-                // a deliberate, SAFE approximation for the offline preview only.
-                // The real FB_IncrementalPid.st on the PLC accumulates the full
-                // P+I+D onto its running output every scan (matches the original
-                // ArdisCVDMaster ChamberPIDCalc: CalcResult += P_Calc + ...), which
-                // is fine there because it's driven by real closed-loop feedback.
-                // Doing the same here, with no real feedback while disconnected,
-                // would let the preview drift away indefinitely, so it stays
-                // positional on purpose -- this does NOT need to track the PLC.
                 double output = channel.DirectMode
                     ? channel.DirectValue
                     : Clamp(p + i + d, channel.LowerLimit, channel.UpperLimit);
@@ -224,36 +174,19 @@ namespace ArdisCVDCore.modules_hw
         private const ushort InputRegisterCount = 64;
         private const ushort OutputRegisterStart = 100;
 
-        // 40, not 38: two words past the PID block to reach awHolding[139], the
-        // controller's own discrete inputs. 138 comes along for the ride and is
-        // ignored -- it is the vacuum pump status word, which PLC210VacuumClient
-        // reads on its own connection.
         private const ushort OutputRegisterCount = 40;
 
-        // Chamber pressure (rChMeasuredMv from MV210) and its status word,
-        // published by PLC_PRG at awHolding[130..132] -- free registers inside
-        // the 100..137 block already read every cycle below, so no extra
-        // Modbus round trip. NOT awHolding[140..147]: that block is the
-        // Thyracont vacuum gauge (fbThyracont), a different sensor entirely.
         private const int ChamberPressureOffset = 30;
         private const int ChamberPressureStatusOffset = 32;
 
         private const double Scale = 1000.0;
 
-        // awHolding[139], same free-word-in-a-block-we-already-read argument.
         private const int DiscreteInputsOffset = 39;
 
         public const int DiscreteInputCount = 12;
 
-        // Which discrete input the chamber lid switch is wired to: 1..8 =
-        // FDI1..FDI8, 9..12 = DI9..DI12. Which terminal it lands on is a fact
-        // about the panel, not about either program, so PLC_PRG.st publishes all
-        // twelve bits and the choice is made here from config.ini ([PLC210]
-        // LidInput) -- a switch that moves does not need either side rebuilt.
         public const int DefaultLidInputChannel = 1;
 
-        // Set once from the config before the worker thread starts and never
-        // written again, so it needs no lock of its own.
         private static int _lidInputChannel = DefaultLidInputChannel;
 
         public static int LidInputChannel
@@ -275,11 +208,6 @@ namespace ArdisCVDCore.modules_hw
                 && (mask & (1 << (channel - 1))) != 0;
         }
 
-        /// <summary>
-        /// A discrete input under the name printed on the front of the
-        /// controller, so the Status window names the terminal an electrician
-        /// would look for.
-        /// </summary>
         public static string DiscreteInputName(int channel)
         {
             if (channel < 1 || channel > DiscreteInputCount)
@@ -295,20 +223,10 @@ namespace ArdisCVDCore.modules_hw
         private static Channel _chamber = new Channel();
         private static Channel _plenum = new Channel();
 
-        // False until the first SetChannels call. Guards against writing the
-        // Channel class defaults (zero gains, zero Upper/LowerLimit) the moment
-        // the worker thread connects -- that would clamp the PLC's output to 0
-        // immediately, before the application has ever sent a real value.
         private static bool _channelsReady;
 
-        // Defaults to false (not disabled=true) so the gas regulators stay
-        // fail-closed on the PLC (awHolding[1] bit3 clear) until an operator
-        // deliberately enables them from the Gas Section window each session.
         private static bool _gasSubsystemEnabled;
 
-        // Traffic light lamps, awHolding[1] bits 4..6 (PLC_PRG.st decodes them
-        // into xTrafficLightGreen/Yellow/Red and reassembles them as the
-        // MU210-402's output bitmask: DO1 green, DO2 yellow, DO3 red).
         private static TrafficLight _trafficLight = TrafficLight.Off;
 
         private static State _state = new State
@@ -422,31 +340,12 @@ namespace ArdisCVDCore.modules_hw
                 return _state.Clone();
         }
 
-        /// <summary>
-        /// The chamber channel settings currently being pushed to the PLC, or
-        /// null while SET has never been pressed.
-        /// </summary>
-        /// <remarks>
-        /// The setpoint and the gains are owned by whoever last called
-        /// <see cref="SetChannels"/>, but the Pressure Trend and PID Viewer
-        /// windows need to read them too, and they are separate windows now.
-        /// Reading them back off the client keeps that from turning into
-        /// MainForm handing its private fields around.
-        /// </remarks>
         public static Channel GetChamberChannel()
         {
             lock (Sync)
                 return _channelsReady ? _chamber.Clone() : null;
         }
 
-        /// <summary>
-        /// Lights one lamp of the panel signal tower, or none.
-        /// </summary>
-        /// <remarks>
-        /// Goes out in the flags word, which is written every cycle whether or
-        /// not SET has ever been pressed, so the tower follows the system status
-        /// from the moment the application connects.
-        /// </remarks>
         public static void SetTrafficLight(TrafficLight lamp)
         {
             lock (Sync)
@@ -486,13 +385,6 @@ namespace ArdisCVDCore.modules_hw
                 {
                     stopping = !_running;
 
-                    // On the way out, run one more full cycle with every lamp
-                    // cleared instead of leaving immediately: the PLC holds the
-                    // last flags word it was given, so a tower left lit would go
-                    // on asserting a verdict nobody is producing any more.
-                    // Skipped when there is no live socket -- there is nothing to
-                    // turn off, and reconnecting purely to do it would add the
-                    // connect timeout to every shutdown.
                     if (stopping && !IsConnected())
                         break;
 
@@ -523,23 +415,9 @@ namespace ArdisCVDCore.modules_hw
 
                     EnsureConnected(host, port);
 
-                    // Protocol version + flags (registers 0-1, including the gas
-                    // subsystem enable bit) reach the PLC every cycle regardless of
-                    // channelsReady -- unlike the PID channel registers below, this
-                    // 2-word block can't clamp anything to zero, so gating it behind
-                    // "has SET been pressed on the Chamber panel" only meant the gas
-                    // enable checkbox (and the protocol handshake itself) silently
-                    // had no effect until an unrelated button on a different panel
-                    // was clicked once.
                     ushort[] flagsRegisters = { 1, ComputeFlags(chamber, plenum, reset, gasSubsystemEnabled, trafficLight) };
                     _master.WriteMultipleRegisters(UnitId, InputRegisterStart, flagsRegisters);
 
-                    // Skip writing the channel value registers until the application
-                    // has committed real values via SetChannels -- otherwise the very
-                    // first cycle after connecting would write the Channel class
-                    // defaults (zero gains, zero Upper/LowerLimit) and clamp the
-                    // PLC's output to 0. Reading still proceeds so the UI can show
-                    // connection status and live pressure before that.
                     if (channelsReady)
                     {
                         ushort[] writeRegisters = BuildInputRegisters(chamber, plenum, reset, gasSubsystemEnabled, trafficLight);
@@ -677,10 +555,7 @@ namespace ArdisCVDCore.modules_hw
             bool gasSubsystemEnabled, TrafficLight trafficLight)
         {
             ushort[] registers = new ushort[InputRegisterCount];
-            registers[0] = 1; // Protocol version.
-            // Same word as the flags-only write above, and it lands on top of it
-            // in the same cycle -- so the lamp bits have to be here too, or the
-            // tower would go dark again the moment SET has been pressed once.
+            registers[0] = 1;
             registers[1] = ComputeFlags(chamber, plenum, reset, gasSubsystemEnabled, trafficLight);
 
             _heartbeat++;
@@ -717,9 +592,6 @@ namespace ArdisCVDCore.modules_hw
             if (registers[0] != 1)
                 throw new InvalidOperationException("incompatible PLC project version");
 
-            // wMvAi1Status == 0 means PLC_PRG's xMvAi1Ok was true when it
-            // captured this reading (see PLC_PRG.st: xMvAi1Ok := wMvAi1Status
-            // = WORD#16#0000).
             ushort mvStatus = registers[ChamberPressureStatusOffset];
 
             return new State

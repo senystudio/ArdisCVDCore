@@ -6,38 +6,8 @@ using System.Threading;
 
 namespace ArdisCVDCore.modules_hw
 {
-    /// <summary>
-    /// Modbus TCP reader for the cooling loop: seven water temperatures, seven
-    /// water flows and the water / CDA pressures.
-    /// </summary>
-    /// <remarks>
-    /// Eighth parallel connection to the same PLC210, registers 206..239 --
-    /// outside every block the other clients read, same reasoning as the
-    /// Thyracont and gas-flow clients: one client per register block keeps the
-    /// slowest sensor from setting the update rate for all of them.
-    ///
-    /// The sensors themselves hang off two МВ210-102 modules, which the PLC
-    /// polls; PRG_Cooling converts their volts to degC / l/min / bar and
-    /// publishes engineering units here, so this class only unpacks fixed point.
-    /// If a module is absent or a channel faults, the PLC still answers and the
-    /// matching validity bit goes clear -- so a missing МВ210 shows up as blank
-    /// readings, not as a lost connection.
-    ///
-    /// Which physical channel feeds which circuit is entirely PRG_Cooling's
-    /// business: the circuits use combined flow+temperature sensors and
-    /// therefore sit two-channels-per-circuit across the two modules, and the
-    /// HMI order is not the wiring order. All this file needs is that the block
-    /// is seven temperatures, then seven flows, then the two pressures.
-    ///
-    /// Grew from six circuits to seven when the second module turned out to
-    /// carry three combined sensors rather than two: its AI5/AI6 took the Tuner
-    /// circuit and the two pressure transmitters moved down to AI7/AI8. That
-    /// pushed every offset below and moved the pressures' validity bits off
-    /// bits 6/7, which the seventh circuit now occupies, up to bits 8/9.
-    /// </remarks>
     public static class PLC210CoolingClient
     {
-        /// <summary>Cooling circuits, in register order.</summary>
         public const int CircuitCount = 7;
 
         public static readonly string[] CircuitNames =
@@ -45,12 +15,8 @@ namespace ArdisCVDCore.modules_hw
             "Stage", "Chamber", "MW Head", "MW Power", "Tuner", "Internal", "External"
         };
 
-        // Index of the circuit every other circuit's heat load is measured
-        // against -- the water comes in at Internal and leaves warmer.
         public const int InternalCircuit = 5;
 
-        // ArdisCVDMaster used this circuit's dT as a stand-in for "microwave
-        // power is on", and gated the whole heat-load column on it.
         public const int StageCircuit = 0;
 
         public sealed class State
@@ -85,12 +51,12 @@ namespace ArdisCVDCore.modules_hw
         private const ushort BlockStart = 206;
         private const ushort BlockCount = 34;
 
-        private const int TempOffset = 0;         // 206..219
-        private const int FlowOffset = 14;        // 220..233
-        private const int WaterOffset = 28;       // 234/235
-        private const int CdaOffset = 30;         // 236/237
-        private const int TempMaskOffset = 32;    // 238
-        private const int FlowMaskOffset = 33;    // 239, bits 0..6 circuits, 8 CDA, 9 water
+        private const int TempOffset = 0;
+        private const int FlowOffset = 14;
+        private const int WaterOffset = 28;
+        private const int CdaOffset = 30;
+        private const int TempMaskOffset = 32;
+        private const int FlowMaskOffset = 33;
 
         private const double Scale = 1000.0;
 
@@ -275,22 +241,10 @@ namespace ArdisCVDCore.modules_hw
                     }
                 }
 
-                // Once a second, matching the HMI's own redraw tick -- water
-                // temperatures move on a scale of minutes, so anything faster is
-                // Modbus traffic for readings nobody sees.
                 Thread.Sleep(1000);
             }
         }
 
-        /// <summary>
-        /// Heat carried away by a circuit, in watts: c * flow * dT against the
-        /// incoming (Internal) water.
-        /// </summary>
-        /// <remarks>
-        /// Same arithmetic ArdisCVDMaster used -- 1.17 Wh per litre per degree,
-        /// flow converted from l/min to l/h by the 60. Returns 0 when either
-        /// reading is invalid, so a dead sensor cannot show up as a heat load.
-        /// </remarks>
         public static double CircuitPowerWatt(State state, int circuit)
         {
             if (state == null || circuit < 0 || circuit >= CircuitCount)

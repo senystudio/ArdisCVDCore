@@ -6,14 +6,6 @@ using System.Windows.Forms;
 
 namespace ArdisCVDCore
 {
-    /// <summary>
-    /// The per-section fault text behind the Status plate on the main window.
-    /// </summary>
-    /// <remarks>
-    /// The section windows used to print these next to their own controls. The
-    /// controls are all on one screen now, so the detail moved here and the main
-    /// window only carries the OK / Warning / Error verdict.
-    /// </remarks>
     public class StatusForm : Form
     {
         private const string IniSection = "StatusWindow";
@@ -89,9 +81,6 @@ namespace ArdisCVDCore
             Refresh(SystemStatus.CollectConnections());
         }
 
-        // Rows are rewritten in place rather than cleared and rebuilt: a full
-        // rebuild once a second makes the list flicker and drops the scroll
-        // position while the operator is reading it.
         private void Refresh(List<StatusLine> lines)
         {
             _list.BeginUpdate();
@@ -130,8 +119,6 @@ namespace ArdisCVDCore
             switch (level)
             {
                 case StatusLevel.Error: return Color.Red;
-                // Not Color.Yellow: unreadable on the default white list
-                // background. Same hue, dark enough to read.
                 case StatusLevel.Warning: return Color.DarkGoldenrod;
                 default: return Res.OnGreen;
             }

@@ -7,11 +7,6 @@ namespace ArdisCVDCore
     {
         public decimal WheelIncrement { get; set; } = 5;
 
-        /// <summary>
-        /// Raised after the wheel has changed <see cref="NumericUpDown.Value"/>,
-        /// so a caller can react to a wheel scroll specifically rather than to
-        /// every ValueChanged (which also fires while the operator is typing).
-        /// </summary>
         public event EventHandler CustomMouseWheel;
 
         protected override void OnMouseWheel(MouseEventArgs e)

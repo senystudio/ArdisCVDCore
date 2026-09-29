@@ -3,15 +3,8 @@ using System.Windows.Forms;
 
 namespace ArdisCVDCore
 {
-    /// <summary>
-    /// Help -&gt; About: product line, authors, release date, the QR code and the
-    /// ОптоСистемы logo.
-    /// </summary>
     public class AboutForm : Form
     {
-        // Hand-maintained, both of them: nothing in the build produces either, so
-        // they are here rather than read out of the assembly, where a stale
-        // AssemblyVersion would quietly disagree with what is on screen.
         private const string Version = "21";
         private const string ReleaseDate = "22.09.2026";
 
@@ -66,7 +59,6 @@ namespace ArdisCVDCore
             });
         }
 
-        // Esc closes it; there is no OK button on this dialog.
         protected override bool ProcessDialogKey(Keys keyData)
         {
             if (keyData == Keys.Escape)

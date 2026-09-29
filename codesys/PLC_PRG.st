@@ -60,10 +60,6 @@ VAR
     awMvAi1Raw : ARRAY[0..1] OF WORD;
 END_VAR
 VAR CONSTANT
-    (* MainTask cycles, not seconds: 15 x 200 ms = 3 s of silence before the
-       link counts as lost, against an HMI that writes every ~200 ms. This is
-       hostage to the task period -- at a 20 ms MainTask it would fire after
-       300 ms -- so if MainTask is ever retimed, retime this with it. *)
     HMI_STALE_CYCLES  : UDINT := UDINT#15;
 END_VAR
 
@@ -84,20 +80,10 @@ ELSIF udiHmiStaleCycles < HMI_STALE_CYCLES THEN
     udiHmiStaleCycles := udiHmiStaleCycles + UDINT#1;
 END_IF;
 
-(* This assignment was missing: the counter above ran, but nothing ever turned
-   it into the flag the tower is driven from, so xHmiLinkLost stayed FALSE for
-   ever and the lost-link branch below was dead code. *)
 xHmiLinkLost := udiHmiStaleCycles >= HMI_STALE_CYCLES;
 
-(* Cleared every cycle. Without this the ELSE branch below ORs onto last
-   cycle's value, so a lamp that came on once could never go off again. *)
 wTrafficLightMask := WORD#0;
 IF xHmiLinkLost THEN
-    (* The lamp bits are stale by definition here, so they are not consulted at
-       all: all three lamps together is the whole verdict. The HMI itself never
-       commands that combination -- ComputeFlags in PLC210PidClient.cs lights
-       exactly one -- so it cannot be mistaken for a state the operator put the
-       tower into. *)
     wTrafficLightMask := WORD#16#0007;
 ELSE
     IF xTrafficLightGreen THEN

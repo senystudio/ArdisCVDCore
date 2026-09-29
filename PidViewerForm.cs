@@ -6,25 +6,6 @@ using System.Windows.Forms;
 
 namespace ArdisCVDCore
 {
-    /// <summary>
-    /// View -> PID Viewer: the chamber PID panel that used to sit down the right
-    /// hand side of the old main window.
-    /// </summary>
-    /// <remarks>
-    /// What the controller is doing, and the direct-drive override. The gains and
-    /// output limits are NOT here: they are edited in Settings -> Process
-    /// Parameters, which is the one place that owns them -- having the same five
-    /// numbers on two screens meant two chances to disagree about which set was
-    /// live. The pressure setpoint likewise stays in the main window's Chamber
-    /// Pressure box, where the design puts it.
-    ///
-    /// Direct mode still lives here because it is an operating decision rather
-    /// than a tuning parameter, and it takes effect immediately.
-    ///
-    /// Deliberately no connection state and no measured pressure either: the main
-    /// window already carries both -- the Status plate for the link and the
-    /// Chamber Pressure box for the reading.
-    /// </remarks>
     public class PidViewerForm : Form
     {
         private const string IniSection = "PidViewer";
@@ -56,8 +37,6 @@ namespace ArdisCVDCore
             _d = AddReadout(chamber, "D", 88);
             _output = AddReadout(chamber, "Output", 110);
 
-            // Below the readouts, separated from them: this is the one control on
-            // the window, and everything above it is just reporting.
             _direct = new CheckBox
             {
                 AutoSize = true,
@@ -86,9 +65,6 @@ namespace ArdisCVDCore
             _timer.Tick += Timer_Tick;
         }
 
-
-        // One column of captions, one of values, shared by the readouts and the
-        // Direct Input row so they line up.
         private const int LabelX = 12;
         private const int ValueX = 120;
         private const int ValueWidth = 100;
@@ -132,8 +108,6 @@ namespace ArdisCVDCore
 
         private void LoadFromSettings()
         {
-            // Handlers attached after the initial fill so restoring the current state
-            // does not itself count as an operator action.
             _direct.CheckedChanged -= Direct_CheckedChanged;
             _direct.Checked = ChamberPid.DirectMode;
             _direct.CheckedChanged += Direct_CheckedChanged;
@@ -175,8 +149,6 @@ namespace ArdisCVDCore
                 Location = new Point(0, 0);
         }
 
-        // No SET button here: the direct-mode switch and its voltage take effect
-        // the moment they change, as they did before the redesign.
         private void Direct_CheckedChanged(object sender, EventArgs e)
         {
             ChamberPid.DirectMode = _direct.Checked;

@@ -3,14 +3,6 @@ using System.Windows.Forms;
 
 namespace ArdisCVDCore
 {
-    /// <summary>
-    /// A trend window whose Y axis range and visible point count this dialog edits.
-    /// </summary>
-    /// <remarks>
-    /// Replaces the four near-identical constructor overloads this dialog used to
-    /// carry (one per section window). Every trend window keeps these three values
-    /// as fields and re-applies them to its chart after the dialog closes with OK.
-    /// </remarks>
     public interface ITrendChartHost
     {
         double MaximumYAxis { get; set; }

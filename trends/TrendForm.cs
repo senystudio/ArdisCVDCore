@@ -6,23 +6,8 @@ using System.Windows.Forms.DataVisualization.Charting;
 
 namespace ArdisCVDCore.trends
 {
-    /// <summary>
-    /// Everything the four trend windows have in common: the chart, the
-    /// horizontal scroll-back bar, the once-a-second sampling tick, the
-    /// right-click GraphScaler dialog and the window-position INI round trip.
-    /// </summary>
-    /// <remarks>
-    /// Before the redesign each section had one window that mixed its controls
-    /// and its chart, and the chart half was copy-pasted four times. The controls
-    /// now live on MainForm, so what is left is only the chart -- and there is no
-    /// reason to keep four copies of it. A derived window supplies its series in
-    /// its constructor and fills them in <see cref="AppendPoints"/>; everything
-    /// else happens here.
-    /// </remarks>
     public abstract class TrendForm : Form, ITrendChartHost
     {
-        // A point a second, so: an hour of history, 100 points (~1.5 min) on
-        // screen by default. Both carried over from the old section windows.
         protected int numberOfPointsInChart = 3600;
         protected int numberOfPointsInArea = 100;
 
@@ -89,7 +74,6 @@ namespace ArdisCVDCore.trends
             _timer.Tick += Timer_Tick;
         }
 
-        /// <summary>Adds a line series; call from the derived constructor.</summary>
         protected Series AddSeries(string name, string legendText, Color color, int borderWidth)
         {
             Series series = new Series(name)
@@ -105,7 +89,6 @@ namespace ArdisCVDCore.trends
             return series;
         }
 
-        /// <summary>Adds the dashed companion line a setpoint series is drawn with.</summary>
         protected Series AddSetPointSeries(string name, string legendText, Color color)
         {
             Series series = AddSeries(name, legendText, color, 1);
@@ -113,15 +96,8 @@ namespace ArdisCVDCore.trends
             return series;
         }
 
-        /// <summary>One point per series, every second. Use <see cref="Plot"/>.</summary>
         protected abstract void AppendPoints(string xTime);
 
-        /// <summary>
-        /// Appends one point. <paramref name="gap"/> leaves a hole in the line
-        /// instead of plotting a misleading zero when the reading is not valid --
-        /// MSChart's own axis auto-scaling throws on a raw NaN, IsEmpty is its
-        /// supported way of saying "no data here".
-        /// </summary>
         protected void Plot(string seriesName, string xTime, double y, bool gap)
         {
             int index = chart.Series[seriesName].Points.AddXY(xTime, y);
@@ -211,8 +187,6 @@ namespace ArdisCVDCore.trends
                 chart.ChartAreas["ChartArea1"].AxisX.Minimum = count - numberOfPointsInArea;
         }
 
-        // Every series gets exactly one point per tick, so they all reach the
-        // cap together and the first series is a good enough bellwether.
         private void TrimPoints()
         {
             if (chart.Series.Count == 0 || chart.Series[0].Points.Count < numberOfPointsInChart)
@@ -248,8 +222,6 @@ namespace ArdisCVDCore.trends
             if (_tickCount > numberOfPointsInChart)
                 _leftLimit = _tickCount - numberOfPointsInChart;
 
-            // "Last N points" -- entry 10 means "everything recorded so far",
-            // and a fixed N is refused until that many points actually exist.
             if (PointsViewIndex == 10)
                 numberOfPointsInArea = Math.Min(_tickCount, numberOfPointsInChart);
             else
@@ -265,12 +237,6 @@ namespace ArdisCVDCore.trends
             OnChartMouseWheel(e);
         }
 
-        /// <summary>
-        /// Wheel zoom of the Y axis. The default steps one decade at a time down
-        /// to 0.001, which suits every axis that spans a single order of
-        /// magnitude (sccm, kW). Pressure overrides it -- a Torr axis has to
-        /// reach 1e-8.
-        /// </summary>
         protected virtual void OnChartMouseWheel(MouseEventArgs e)
         {
             double max = chart.ChartAreas["ChartArea1"].AxisY.Maximum;

@@ -5,11 +5,6 @@ using System.Threading;
 
 namespace ArdisCVDCore.modules_hw
 {
-    /// <summary>
-    /// Reads the Thyracont vacuum sensor values published by the PLC210 project.
-    /// The PLC itself talks to the sensor over RS-485; the HMI only reads the
-    /// prepared values over Modbus TCP.
-    /// </summary>
     public static class PLC210ThyracontClient
     {
         public sealed class State

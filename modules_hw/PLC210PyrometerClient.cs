@@ -5,13 +5,6 @@ using System.Threading;
 
 namespace ArdisCVDCore.modules_hw
 {
-    /// <summary>
-    /// Reads the 2 Kelvin pyrometers (RXT-PRO, Smart-Spectrum) published by PRG_Pyrometers
-    /// at awHolding[160..191]. Both talk Modbus RTU to the PLC over the same RS485-2 bus as
-    /// the RRG-20 gas regulators (slave IDs 7/8); the HMI only reads the prepared values over
-    /// this Modbus TCP connection, same [PLC210] endpoint as the other PLC210*Client classes,
-    /// each with their own socket.
-    /// </summary>
     public static class PLC210PyrometerClient
     {
         public sealed class PyrometerReading
@@ -24,9 +17,6 @@ namespace ArdisCVDCore.modules_hw
             public bool Ch2Overload;
             public bool CommFault;
             public ushort RawDeviceStatus;
-            // Commissioning-only diagnostics from FB_PyrometerModbusMaster (awHolding[168]/[169],
-            // see PRG_Pyrometers.st): last driver fault code and raw byte count received on the
-            // last poll, before any CRC/address validation -- 0 bytes means the wire is silent.
             public ushort LastFaultCode;
             public ushort LastRxSize;
 
@@ -57,9 +47,6 @@ namespace ArdisCVDCore.modules_hw
             }
         }
 
-        // Same per-model thresholds as ArdisCVDMaster's two driver classes:
-        // Pyrometr_Euromix_Kelvin_1ch_modbus (RXT-PRO, _lowLimit = 200) and
-        // Pyrometr_Euromix_Kelvin_modbus (Smart, _lowLimit = 500).
         public const double RxtLowLimit = 200.0;
         public const string RxtLowLimitLabel = "<200";
         public const double SmartLowLimit = 500.0;

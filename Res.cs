@@ -6,18 +6,6 @@ using System.Reflection;
 
 namespace ArdisCVDCore
 {
-    /// <summary>
-    /// The pictures under res\, embedded into the executable.
-    /// </summary>
-    /// <remarks>
-    /// The design file that this UI was built from arrived without its .resx,
-    /// so the valve pictures and the logo are loaded from here instead of from
-    /// a per-form ComponentResourceManager. Loading them once and handing the
-    /// same instance to every PictureBox is deliberate: the eight gas valves and
-    /// six vacuum valves swap between the same two bitmaps once a second, and a
-    /// fresh Image per swap would churn GDI handles for no reason. Nothing ever
-    /// disposes these -- they live as long as the process.
-    /// </remarks>
     internal static class Res
     {
         private const string Prefix = "ArdisCVDCore.res.";
@@ -30,10 +18,8 @@ namespace ArdisCVDCore
         private static readonly Icon _appIcon = LoadIcon("ardis.ico");
         private static readonly string _glyphFont = FindGlyphFont("Segoe Fluent Icons", "Segoe MDL2 Assets");
 
-        /// <summary>Red valve body -- the valve is closed (or its state is unknown).</summary>
         public static Image ValveClosed { get { return _valveClosed; } }
 
-        /// <summary>Green valve body -- the PLC has confirmed the valve is open.</summary>
         public static Image ValveOpen { get { return _valveOpen; } }
 
         public static Color OnGreen { get { return _onGreen; } }
@@ -75,9 +61,6 @@ namespace ArdisCVDCore
 
         private static Image LoadImage(string fileName)
         {
-            // No using: Bitmap keeps a reference to the stream it was built from
-            // for the lifetime of the image, and disposing it early makes every
-            // later draw throw.
             Stream stream = Open(fileName);
             return stream == null ? null : Image.FromStream(stream);
         }

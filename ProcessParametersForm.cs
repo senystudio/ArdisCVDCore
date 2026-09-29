@@ -6,11 +6,6 @@ using System.Windows.Forms;
 
 namespace ArdisCVDCore
 {
-    /// <summary>
-    /// Settings -&gt; Process Parameters: the chamber PID gains and limits, plus
-    /// the alarm/abort thresholds and gas correction factors the previous machine
-    /// carried.
-    /// </summary>
     public partial class ProcessParametersForm : Form
     {
         private const string IniSection = "ProcessParameters";
@@ -162,7 +157,6 @@ namespace ArdisCVDCore
             label90.Visible = false;
         }
 
-        // --- Chamber PID ------------------------------------------------------
         private void LoadChamberPid()
         {
             Chamber_pid_P.Value = Clamp(Chamber_pid_P, (decimal)ChamberPid.Kp);
@@ -206,7 +200,6 @@ namespace ArdisCVDCore
             return Math.Max(numeric.Minimum, Math.Min(numeric.Maximum, value));
         }
 
-        // --- Alarm and abort --------------------------------------------------
         private void LoadAlarms()
         {
             for (int i = 0; i < AlarmSettings.ParamCount; i++)
@@ -301,10 +294,6 @@ namespace ArdisCVDCore
             StoreGasCorrection();
 
             StartApplyBlink();
-
-            // The button says Apply, so it applies and stays open -- the same as
-            // the window it came from, and it lets the operator watch the effect
-            // in PID Viewer before closing.
         }
 
         private void StartApplyBlink()
@@ -327,11 +316,6 @@ namespace ArdisCVDCore
             OK.BackColor = _applyBlinkLeft % 2 == 0 ? Res.OnGreen : SystemColors.Window;
         }
 
-        /// <summary>
-        /// Puts the factory gains back in the fields without applying them --
-        /// nothing reaches the PLC until Apply is pressed, so a misclick here
-        /// cannot disturb a running process.
-        /// </summary>
         private void Reset_Click(object sender, EventArgs e)
         {
             DialogResult answer = MessageBox.Show(this,
@@ -393,10 +377,6 @@ namespace ArdisCVDCore
                 gcf.Value = Clamp(gcf, 1.00m);
         }
 
-        // The design wires these, but in the window it came from they only fed the
-        // interpolated-PID quadrants selected by a DomainUpDown and an "Interp
-        // PID" checkbox -- neither of which exists in this layout. Apply reads the
-        // three spinners directly, so there is nothing for them to do.
         private void Chamber_pid_P_ValueChanged(object sender, EventArgs e) { }
 
         private void Chamber_pid_I_ValueChanged(object sender, EventArgs e) { }

@@ -4,10 +4,6 @@ using System.Windows.Forms;
 
 namespace ArdisCVDCore.trends
 {
-    /// <summary>
-    /// View -> Temperature Trend: the active pyrometer's two channels and its
-    /// two-colour ratio temperature.
-    /// </summary>
     public class TemperatureTrendForm : TrendForm
     {
         public TemperatureTrendForm()
@@ -20,8 +16,6 @@ namespace ArdisCVDCore.trends
 
         protected override void AppendPoints(string xTime)
         {
-            // Only one physical pyrometer is ever wired at a time -- the same
-            // active-reading selection MainForm uses for its Ch1/Ch2/½ boxes.
             PLC210PyrometerClient.PyrometerReading active = MainForm.SelectActivePyrometer(
                 PLC210PyrometerClient.GetState());
 
@@ -31,9 +25,6 @@ namespace ArdisCVDCore.trends
             Plot("Ratio", xTime, gap ? 0 : active.RatioTemp, gap);
         }
 
-        // Ported as-is from the old Temperature Section window: a °C axis wants
-        // coarse steps at the top of its range and fine ones near zero, which is
-        // a different shape from the shared decade zoom.
         protected override void OnChartMouseWheel(MouseEventArgs e)
         {
             double d = Area.AxisY.Maximum;

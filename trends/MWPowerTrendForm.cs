@@ -3,7 +3,6 @@ using System.Drawing;
 
 namespace ArdisCVDCore.trends
 {
-    /// <summary>View -> MW Power Trend: incident against its setpoint, and reflected.</summary>
     public class MWPowerTrendForm : TrendForm
     {
         public MWPowerTrendForm()

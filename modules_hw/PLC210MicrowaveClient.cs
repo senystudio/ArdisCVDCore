@@ -5,13 +5,6 @@ using System.Threading;
 
 namespace ArdisCVDCore.modules_hw
 {
-    /// <summary>
-    /// Reads/writes the 10 kW microwave generator published by PRG_Microwave
-    /// at awHolding[192..205]. PLC talks Modbus RTU to the generator (slave
-    /// id 9) on RS485-2, same bus as the РРГ-20 gas regulators. Mirrors the
-    /// generator's own touch screen: Preheat/Microwave/Reset are three
-    /// independent commands, no PLC-side auto-sequencing.
-    /// </summary>
     public static class PLC210MicrowaveClient
     {
         public sealed class State
@@ -42,9 +35,6 @@ namespace ArdisCVDCore.modules_hw
             public bool MagnetronTooWarm;
             public bool WaterFlowFault;
 
-            // Snapshot of the live fault bits latched by PRG_Microwave.st at the
-            // moment it tripped -- unlike the live booleans above, this doesn't
-            // change if the underlying condition clears before the operator looks.
             public ushort FaultReasonBits;
             public int PreheatElapsedSeconds;
 
@@ -52,17 +42,8 @@ namespace ArdisCVDCore.modules_hw
             public short DiagIncidentRaw;
             public short DiagReflectedRaw;
 
-            // Raw awHolding[192..205] words exactly as read over Modbus TCP --
-            // for the on-screen register dump, so the operator can cross-check
-            // our decoding against CODESYS/the generator's own screen directly.
             public ushort[] RawRegisters;
 
-            /// <summary>
-            /// The generator itself is answering, not just the PLC. Everything
-            /// PRG_Microwave.st publishes about preheat is an echo of the last
-            /// request -- status bit 0x0020 and the awHolding[205] counter alike
-            /// -- so none of it means anything unless this is true.
-            /// </summary>
             public bool GeneratorAnswering
             {
                 get { return Connected && !CommError; }

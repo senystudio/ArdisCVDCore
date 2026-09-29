@@ -21,9 +21,6 @@ VAR
     fbRead : COM.Read;
     aParams : ARRAY[1..7] OF COM.PARAMETER;
     hCom : CAA.HANDLE;
-    (* aTx[0..2] (ADR) and aTx[8] (checksum) are overwritten every scan below
-       from udiAddress -- the "001"/'D' baked into this literal is only the
-       switch-position-1 default. *)
     aTx : ARRAY[0..9] OF BYTE := [BYTE#48, BYTE#48, BYTE#49, BYTE#48, BYTE#77, BYTE#86, BYTE#48, BYTE#48, BYTE#68, BYTE#13];
     aRx : ARRAY[0..63] OF BYTE;
     aAdr : ARRAY[0..2] OF BYTE;
@@ -68,16 +65,10 @@ aParams[1].udiParameterId := COM.CAA_Parameter_Constants.udiPort;
 aParams[1].udiValue := udiPort;
 aParams[2].udiParameterId := COM.CAA_Parameter_Constants.udiBaudrate;
 aParams[2].udiValue := udiBaudrate;
-(* Confirmed via CODESYS Library Manager, CAA SerialCom (COM) docs, PARITY/
-   STOPBIT enums: PARITY EVEN=0/ODD=1/NONE=2, STOPBIT ONESTOPBIT=0/
-   ONE5STOPBITS=1/TWOSTOPBITS=2. So parity=2 = NONE and stopbits=0 =
-   ONESTOPBIT -- exactly what the sensor needs (no parity, 1 stop bit;
-   matches ArdisCVDMaster_cfg.xml HiVacuumSensorSerialPortParameters and the
-   Thyracont manual). *)
 aParams[3].udiParameterId := COM.CAA_Parameter_Constants.udiParity;
-aParams[3].udiValue := 2;   (* NONE *)
+aParams[3].udiValue := 2;
 aParams[4].udiParameterId := COM.CAA_Parameter_Constants.udiStopBits;
-aParams[4].udiValue := 0;   (* ONESTOPBIT *)
+aParams[4].udiValue := 0;
 aParams[5].udiParameterId := COM.CAA_Parameter_Constants.udiTimeout;
 aParams[5].udiValue := 200000;
 aParams[6].udiParameterId := COM.CAA_Parameter_Constants.udiByteSize;
@@ -85,9 +76,6 @@ aParams[6].udiValue := 8;
 aParams[7].udiParameterId := COM.CAA_Parameter_Constants.udiBinary;
 aParams[7].udiValue := 1;
 
-(* Derive the 3-digit ASCII address and request checksum from udiAddress
-   every scan, so the rotary-switch position is a one-line change at the
-   call site instead of a hand-edited byte array + recomputed checksum. *)
 iAddr := UDINT_TO_INT(udiAddress);
 IF (iAddr < 1) OR (iAddr > 16) THEN
     iAddr := 1;
@@ -105,10 +93,6 @@ FOR i := 0 TO 7 DO
 END_FOR;
 aTx[8] := INT_TO_BYTE(iChecksum MOD 64 + 64);
 
-(* tPollInterval <= 0 means "no idle at all" -- go straight back to state 10
-   the very next scan after a poll finishes, instead of waiting a tick.
-   Only saves one scan's worth of time per cycle (the write/read stages
-   still each cost their own scan), but it's free. *)
 IF tPollInterval <= T#0MS THEN
     udiPollTicksMax := 0;
 ELSIF tPollInterval <= T#200MS THEN
@@ -165,11 +149,6 @@ CASE iState OF
             iFrameStart := -1;
 
             IF iSize >= 10 THEN
-                (* Match ADR + AC='1' (a reply) + "MV". The access code must be
-                   '1' here, not '0' -- '0' is the code WE sent in aTx (a read
-                   request); a real response comes back with AC='1'. Matching
-                   '0' here would only ever re-find the outgoing request and
-                   could never recognize an actual reply. *)
                 FOR i := 0 TO iSize - 8 DO
                     IF (aRx[i] = aAdr[0]) AND (aRx[i + 1] = aAdr[1]) AND
                        (aRx[i + 2] = aAdr[2]) AND (aRx[i + 3] = BYTE#49) AND

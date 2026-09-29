@@ -5,29 +5,8 @@ using System.Threading;
 
 namespace ArdisCVDCore.modules_hw
 {
-    /// <summary>
-    /// The turbo pump's KYKY TD drive module, as published by the PLC210
-    /// project at registers 240..247. The PLC talks Modbus RTU to the drive;
-    /// the HMI only asks for run/stop and reads back what the drive says.
-    /// </summary>
-    /// <remarks>
-    /// Register meanings are in GVL_ModbusHolding.st and the drive's own
-    /// register addresses in GVL_TurboPumpIO.st. The values here are raw
-    /// device units -- Hz, 0.01 V, 0.01 A, degC -- not the x1000 fixed point
-    /// the pressure and cooling blocks use.
-    /// </remarks>
     public static class PLC210TurboPumpClient
     {
-        /// <summary>
-        /// Rated output frequency of the drive, used as the full scale of the
-        /// speed bar on the mimic diagram.
-        /// </summary>
-        /// <remarks>
-        /// Per-model, from the TD manual's performance table: TD-25J/TD-25
-        /// 600 Hz, TD-80 1200 Hz, TD-150J/TD-150 704/850 Hz, TD-300 950 Hz.
-        /// 850 is the TD-150 fitted here, and is the same number
-        /// ArdisCVDMaster's drawRod scaled its bar against.
-        /// </remarks>
         public const int RatedSpeedHz = 850;
 
         public sealed class State
@@ -64,7 +43,6 @@ namespace ArdisCVDCore.modules_hw
                 }
             }
 
-            /// <summary>The first fault the drive is reporting, or null.</summary>
             public string FaultText
             {
                 get
@@ -93,9 +71,6 @@ namespace ArdisCVDCore.modules_hw
         private const ushort CommandRun = 0x0001;
         private const ushort CommandValid = 0x8000;
 
-        // SHI = 0x01 with SLO = 0x08 is the drive's watchdog fault, spelled out
-        // as a whole word in the TD manual rather than as a status bit -- on the
-        // bits alone it would read as the harmless "high speed, not working".
         private const ushort WatchdogStatusWord = 0x0108;
 
         private static readonly object Sync = new object();
@@ -110,11 +85,6 @@ namespace ArdisCVDCore.modules_hw
         private static TcpClient _tcpClient;
         private static IModbusMaster _master;
 
-        // Null until the drive has been read back once. The pump latches its own
-        // state, so a freshly started HMI must not command anything before it
-        // knows what the pump is doing -- otherwise reopening this window while
-        // the pump runs would spin it down. On the first good read it adopts the
-        // drive's own "working" bit and only then starts commanding.
         private static bool? _requestedRun;
 
         private static State _state = new State
@@ -285,7 +255,6 @@ namespace ArdisCVDCore.modules_hw
                 TemperatureC = registers[6] & 0x00FF,
                 DriveAnswering = (registers[7] & 0x0001) != 0,
 
-                // TD manual 4.2.2 e), status low byte.
                 StartFailure = (status & 0x0001) != 0,
                 Overload = (status & 0x0002) != 0,
                 AtNormalSpeed = (status & 0x0004) != 0,

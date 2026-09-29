@@ -27,21 +27,6 @@ namespace ArdisCVDCore
         }
     }
 
-    /// <summary>
-    /// Rolls the nine Modbus clients up into one verdict for the Status plate on
-    /// the main window, plus the per-section detail lines behind it.
-    /// </summary>
-    /// <remarks>
-    /// Before the redesign each section window printed its own fault text. The
-    /// sections are on one screen now and there is no room for seven status
-    /// strings, so the main window shows only OK / Warning / Error and clicking
-    /// it opens <see cref="StatusForm"/> with the full list.
-    ///
-    /// Error means the operator has lost control of something: a dead Modbus
-    /// connection, or a generator that has tripped and needs RESET. Warning
-    /// means the plant is still under control but a reading or a channel is not
-    /// trustworthy.
-    /// </remarks>
     public static class SystemStatus
     {
         public static List<StatusLine> Collect()
@@ -254,8 +239,6 @@ namespace ArdisCVDCore
             }
         }
 
-        // Mirrors F_MbValidateResponse.st's fault codes -- kept in sync with that
-        // file's WORD#n return values.
         private static string FaultCodeText(int code)
         {
             switch (code)
@@ -307,13 +290,6 @@ namespace ArdisCVDCore
         {
             PLC210MicrowaveClient.State state = PLC210MicrowaveClient.GetState();
 
-            // A generator that is simply switched off is not something the
-            // operator has lost control of -- it is how the machine sits between
-            // runs -- so it no longer turns the Status plate red. The Microwave
-            // Section carries a grey "Not connected" instead, and this line stays
-            // only so the detail list still says what is going on. Checked ahead
-            // of FaultActive because CommError sets that flag too, and the rest
-            // of the fault bits are stale coil reads once the generator is quiet.
             if (!state.Connected)
             {
                 lines.Add(new StatusLine("Microwave Power Supply", StatusLevel.Error, "Not connected"));
@@ -329,17 +305,6 @@ namespace ArdisCVDCore
             lines.Add(new StatusLine("Microwave Power Supply", StatusLevel.Ok, "Connected"));
         }
 
-        /// <summary>
-        /// Cooling loop: reports channels the МВ210-102 modules cannot vouch
-        /// for, and nothing else.
-        /// </summary>
-        /// <remarks>
-        /// No threshold on the readings themselves. "How little flow is too
-        /// little" and "what happens then" are policy decisions nobody has made
-        /// yet, and the generator already has its own no-water interlock in
-        /// hardware (see FaultReason, bit 0x0200) -- so inventing a second,
-        /// softer one here would only produce nuisance warnings.
-        /// </remarks>
         private static void AddCooling(ICollection<StatusLine> lines)
         {
             PLC210CoolingClient.State state = PLC210CoolingClient.GetState();
@@ -376,18 +341,6 @@ namespace ArdisCVDCore
             lines.Add(new StatusLine("Cooling System", StatusLevel.Ok, "Connected"));
         }
 
-        /// <summary>
-        /// The turbo pump's KYKY TD drive.
-        /// </summary>
-        /// <remarks>
-        /// A drive that is not answering is a Warning, not an Error, for the
-        /// same reason the microwave generator is: between runs the pump is
-        /// simply switched off, and the drive is quiet, which is not something
-        /// the operator has lost control of. A fault while it is answering is a
-        /// different matter -- every one of those bits means the rotor has
-        /// either stopped or is about to -- and the forevacuum interlock hangs
-        /// off the same reading, so it goes up as an Error.
-        /// </remarks>
         private static void AddTurboPump(ICollection<StatusLine> lines)
         {
             PLC210TurboPumpClient.State state = PLC210TurboPumpClient.GetState();
@@ -410,10 +363,6 @@ namespace ArdisCVDCore
                 return;
             }
 
-            // Drive current as well as speed and temperature: a rotor working
-            // against a gas load draws more of it long before it gets hot enough
-            // to trip, so it is the reading that says "this was started too
-            // early" while there is still time to do something about it.
             lines.Add(new StatusLine("Turbo pump", StatusLevel.Ok,
                 (state.AtNormalSpeed ? "At speed, " : "Spinning up, ")
                 + state.SpeedHz.ToString(CultureInfo.InvariantCulture) + " Hz, "
@@ -421,12 +370,6 @@ namespace ArdisCVDCore
                 + state.TemperatureC.ToString(CultureInfo.InvariantCulture) + " °C"));
         }
 
-        /// <summary>
-        /// Decodes the reason PRG_Microwave.st latched at the moment it tripped
-        /// (awHolding[204]) -- not the live status bits, which may already have
-        /// cleared by the time the operator looks at the screen. More than one
-        /// bit can be set, so the order below is roughly most-serious first.
-        /// </summary>
         public static string FaultReason(PLC210MicrowaveClient.State state)
         {
             if (state.WaterFaultLatched)

@@ -3,11 +3,8 @@ using System.Drawing;
 
 namespace ArdisCVDCore.trends
 {
-    /// <summary>View -> Gas Trend: the six РРГ-20 channels, measured and setpoint.</summary>
     public class GasTrendForm : TrendForm
     {
-        // Index order matches PLC210GasFlowClient.GasNames (== PLC channel index,
-        // == aCfg[] order in FB_MfcModbusMaster.st): H2, CH4, N2, O2, Ar, H2 (2nd line).
         private static readonly string[] SeriesName = { "H2", "CH4", "N2", "O2", "Ar", "H2_2" };
         private static readonly string[] SeriesLabel = { "H2", "CH4", "N2", "O2", "Ar", "H2 (2)" };
         private static readonly Color[] ChannelColor =

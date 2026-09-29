@@ -5,15 +5,8 @@ using System.Windows.Forms;
 
 namespace ArdisCVDCore.trends
 {
-    /// <summary>
-    /// View -> Pressure Trend: chamber pressure against its setpoint, plus the
-    /// Thyracont high-vacuum gauge on the same axis.
-    /// </summary>
     public class PressureTrendForm : TrendForm
     {
-        // Cache of the ChamberPressure/ChamberPressureSetPoint colours, captured
-        // just before the wheel zoom blanks them out down in Hi-Vac territory --
-        // Color.Empty means "not currently hidden, nothing to restore".
         private Color _chamberPressureColor = Color.Empty;
         private Color _chamberPressureSetPointColor = Color.Empty;
 
@@ -33,15 +26,11 @@ namespace ArdisCVDCore.trends
 
             double measured = pidState.PlcPressureAvailable ? Math.Max(0, pidState.PlcPressureTorr) : 0;
 
-            // Zero, not a gap, before the first SET -- same as the old window:
-            // no setpoint has been committed, so the PLC is holding at nothing.
             Plot("ChamberPressure", xTime, measured);
             Plot("ChamberPressureSetPoint", xTime, chamber == null ? 0 : chamber.Setpoint);
             Plot("HiVac", xTime, thyracontState.PressureTorr, !thyracontState.HasValidValue);
         }
 
-        // A Torr axis on this rig spans from 800 down to ~1e-8, so the shared
-        // one-decade-at-a-time zoom is not enough here.
         protected override void OnChartMouseWheel(MouseEventArgs e)
         {
             double max = Area.AxisY.Maximum;
@@ -112,12 +101,6 @@ namespace ArdisCVDCore.trends
             Area.AxisY.Minimum = min;
         }
 
-        // Blank the line and its legend entry out rather than Series.Enabled =
-        // false: a disabled series stops counting as chart data entirely, and if
-        // it is the only source of data left (HiVac may have no valid reading
-        // yet) the ChartArea's axis recalculation on the next repaint throws
-        // ("the minimum and maximum axis values have not been specified").
-        // Color.Transparent keeps the series a normal, counted data source.
         private void HideChamberPressure()
         {
             if (chart.Series["ChamberPressure"].Color != Color.Transparent)

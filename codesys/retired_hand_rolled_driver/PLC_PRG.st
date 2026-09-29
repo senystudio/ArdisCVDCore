@@ -1,37 +1,8 @@
     PROGRAM PLC_PRG
     VAR
-        (* Modbus Holding Registers: awHolding now lives in GVL_ModbusHolding
-        (shared with PRG_Thyracont on the fast ThyracontTask). Normal PID
-        exchange does not map these values to physical outputs. The
-        xDoBlinkTest variable below is a manual bench output test and must be
-        mapped to a free DO channel in CODESYS I/O Mapping. The
-        wBenchMuAo1Output variable is a manual bench analog-output command
-        and must be mapped to the MU210 AO1 output/channel in CODESYS I/O
-        Mapping or in the Modbus TCP Client slave channel mapping. *)
         xDoBlinkTest : BOOL;
         wBenchMuAo1Output : ARRAY[0..0] OF WORD;
 
-        (* Traffic light (MU210-402 relay module, Ethernet Modbus TCP,
-           192.168.1.15, no native OWEN device profile -- added as a generic
-           Modbus TCP Slave). ArdisCVDMaster's PLC210PidClient writes these
-           into awHolding[1] bits 4-6 every cycle unconditionally (same flags
-           word as xChamberEnable/xPlenumEnable/xReset below), so the light
-           reflects ErrorDispatcher.errSwitchStatus even before the PID panel
-           has been touched. Physical wiring (confirmed on the panel, see
-           terminal labels DO1A/B/C..DO4A/B/C): DO1=green, DO2=yellow,
-           DO3=red, DO4..DO16=spare/unused -- common (+) is jumpered across
-           the used channels' COM terminal.
-
-           Output goes out as ONE bitmask word (wTrafficLightMask), not three
-           coils: the MU210-402 answers FC05 (Write Single Coil) with Modbus
-           exception 01 ILLEGAL FUNCTION -- confirmed live, the module simply
-           does not implement coil functions, like most OWEN Mx210 modules.
-           Its discrete outputs are driven by a holding register bitmask via
-           FC16/FC06 instead. Bit0=DO1(green), bit1=DO2(yellow),
-           bit2=DO3(red). Writing the whole word also forces DO4..DO16 to 0,
-           which is fine here -- nothing else is wired to this module. Map
-           wTrafficLightMask to a single Modbus channel (see comment on the
-           mask assembly further down). *)
         xTrafficLightGreen  : BOOL;
         xTrafficLightYellow : BOOL;
         xTrafficLightRed    : BOOL;
@@ -52,7 +23,6 @@
 
         fbChamber : FB_IncrementalPid;
         fbPlenum  : FB_IncrementalPid;
-        (* fbThyracont moved to PRG_Thyracont (own fast ThyracontTask). *)
 
         xProtocolOk    : BOOL;
         xChamberEnable : BOOL;
@@ -94,10 +64,6 @@ xTrafficLightGreen  := (awHolding[1] AND WORD#16#0010) <> WORD#0;
 xTrafficLightYellow := (awHolding[1] AND WORD#16#0020) <> WORD#0;
 xTrafficLightRed    := (awHolding[1] AND WORD#16#0040) <> WORD#0;
 
-(* Assemble the MU210-402 output bitmask. Map wTrafficLightMask to that
-   module's single "discrete output state" holding register, written with
-   FC16 (Write Multiple Registers, length 1) or FC06 (Write Single
-   Register) -- NOT FC05, which the module rejects with ILLEGAL FUNCTION. *)
 wTrafficLightMask := WORD#0;
 IF xTrafficLightGreen THEN
     wTrafficLightMask := wTrafficLightMask OR WORD#16#0001;
@@ -220,18 +186,10 @@ dwValue := F_ToFixed(fbPlenum.rOutput);
 awHolding[128] := DWORD_TO_WORD(dwValue);
 awHolding[129] := DWORD_TO_WORD(SHR(dwValue, 16));
 
-(* Chamber pressure as actually measured from MV210 (rChMeasuredMv), published
-   so the HMI can read it -- previously nothing exposed this over Modbus.
-   130/131 and 132 are free registers inside the 100..137 block the HMI
-   already reads every cycle, so no extra Modbus round trip is needed. *)
 dwValue := F_ToFixed(rChMeasuredMv);
 awHolding[130] := DWORD_TO_WORD(dwValue);
 awHolding[131] := DWORD_TO_WORD(SHR(dwValue, 16));
 awHolding[132] := wMvAi1Status;
-
-(* Thyracont poll + awHolding[140..147] publishing moved to PRG_Thyracont,
-   which runs on its own fast cyclic task (ThyracontTask, 50 ms) so the
-   sensor updates several times per second instead of once per 600-800 ms. *)
 
 uiBenchMuAo1Command := WORD_TO_UINT(awHolding[154]);
 xBenchMuAo1Enable := awHolding[155] = WORD#16#A55A;

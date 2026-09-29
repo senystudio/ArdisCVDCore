@@ -5,13 +5,6 @@ using System.Threading;
 
 namespace ArdisCVDCore.modules_hw
 {
-    /// <summary>
-    /// Reads/writes the 6 РРГ-20 gas regulator channels published by PRG_GasFlow
-    /// at awHolding[64..99]. The PLC itself talks Modbus RTU to the regulators
-    /// over RS485-2; the HMI only exchanges setpoints/measured values with the
-    /// PLC over this Modbus TCP connection, same [PLC210] endpoint as
-    /// PLC210PidClient/PLC210ThyracontClient use, each with their own socket.
-    /// </summary>
     public static class PLC210GasFlowClient
     {
         public sealed class ChannelState
@@ -26,11 +19,6 @@ namespace ArdisCVDCore.modules_hw
             public bool ClosedByDisable;
             public int FaultCode;
 
-            // awHolding[96] bit i: PRG_GasFlow.st reading MFC_*.xError straight
-            // off the Modbus device in the CODESYS tree -- this one regulator is
-            // not answering on RS485. MeasuredSccm above is whatever it last
-            // said and is never cleared, so it goes stale rather than to zero:
-            // nothing may believe the reading while this is set.
             public bool SlaveError;
 
             public ChannelState Clone()
@@ -51,8 +39,6 @@ namespace ArdisCVDCore.modules_hw
             public uint SweepCounter;
             public ChannelState[] Channels;
 
-            // Temporary diagnostics while commissioning the native Modbus_COM
-            // master: awHolding[96..99], see PRG_GasFlow.st.
             public ushort DiagSlaveErrorMask;
             public ushort DiagH2MeasuredRaw;
             public int DiagH2InitState;
@@ -249,8 +235,6 @@ namespace ArdisCVDCore.modules_hw
                     if (_errConnCount < 2)
                         Logger.WriteError(new Exception("Gas regulators: " + ex.Message));
 
-                    // Re-queue only the writes that didn't make it out this cycle, so a
-                    // transient TCP hiccup doesn't silently drop an operator's SET click.
                     if (pending != null)
                     {
                         lock (Sync)
