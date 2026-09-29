@@ -1,5 +1,7 @@
 PROGRAM PRG_Cooling
+(* cooling: water temperature and flow per circuit, water and air pressure *)
 VAR CONSTANT
+    (* scaling to volts and sensor units *)
     C_INT_TO_VOLT : REAL := 100.0;
 
     C_TEMP_ZERO  : REAL := 1.0;
@@ -11,6 +13,7 @@ VAR CONSTANT
     C_WATER_BAR_PER_VOLT : REAL := 1.666;
     C_CDA_BAR_PER_VOLT   : REAL := 1.0;
 
+    (* circuit indices *)
     C_STAGE    : INT := 0;
     C_CHAMBER  : INT := 1;
     C_MWHEAD   : INT := 2;
@@ -21,12 +24,15 @@ VAR CONSTANT
 
     C_CIRCUIT_MAX : INT := 6;
 
+    (* module channels *)
     C_MOD2_BASE : INT := 8;
     C_WATER_CH  : INT := 14;
     C_CDA_CH    : INT := 15;
 
+    (* flow channel of each circuit, temperature on the next one *)
     C_FLOW_CH : ARRAY[0..6] OF INT := [0, 2, 4, 6, 12, 8, 10];
 
+    (* status bits for air and water pressure *)
     C_CDA_BIT   : INT := 8;
     C_WATER_BIT : INT := 9;
 END_VAR
@@ -47,6 +53,7 @@ VAR
     rCdaBar    : REAL;
 END_VAR
 
+(* both modules to volts, bad channels read as zero *)
 FOR i := 0 TO 7 DO
     axChanOk[i] := (awCoolMod1Status[i] = WORD#16#0000);
     IF axChanOk[i] THEN
@@ -63,6 +70,7 @@ FOR i := 0 TO 7 DO
     END_IF;
 END_FOR;
 
+(* temperature and flow per circuit *)
 wTempOk := WORD#0;
 wFlowOk := WORD#0;
 FOR i := 0 TO C_CIRCUIT_MAX DO
@@ -89,6 +97,7 @@ FOR i := 0 TO C_CIRCUIT_MAX DO
     END_IF;
 END_FOR;
 
+(* compressed air and water pressure *)
 rCdaBar := arChanVolt[C_CDA_CH] / C_CDA_BAR_PER_VOLT;
 IF axChanOk[C_CDA_CH] THEN
     wFlowOk := wFlowOk OR SHL(WORD#1, C_CDA_BIT);
@@ -99,6 +108,7 @@ IF axChanOk[C_WATER_CH] THEN
     wFlowOk := wFlowOk OR SHL(WORD#1, C_WATER_BIT);
 END_IF;
 
+(* everything to the hmi, registers 206..239 *)
 FOR i := 0 TO C_CIRCUIT_MAX DO
     dwValue := F_ToFixed(arTempC[i]);
     awHolding[206 + 2*i] := DWORD_TO_WORD(dwValue);

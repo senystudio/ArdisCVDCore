@@ -1,4 +1,5 @@
 PROGRAM PRG_VacuumOutputs
+(* vacuum valves and pumps *)
 VAR
     wVpvCommand  : WORD;
     wVpvStatus   : WORD;
@@ -7,6 +8,7 @@ VAR
     i : INT;
 END_VAR
 
+(* valves: command from the hmi, all closed on abort *)
 IF xAbortActive THEN
     wVpvCommand := WORD#0;
 ELSE
@@ -17,6 +19,7 @@ FOR i := 1 TO 8 DO
     axVpvOutput[i] := (wVpvCommand AND SHL(WORD#1, i - 1)) <> WORD#0;
 END_FOR;
 
+(* valve state to the hmi *)
 wVpvStatus := WORD#0;
 FOR i := 1 TO 8 DO
     IF axVpvOutput[i] THEN
@@ -26,10 +29,12 @@ END_FOR;
 
 awHolding[136] := wVpvStatus;
 
+(* water pump and forevacuum pump, forevacuum off on abort *)
 wPumpCommand := awHolding[137];
 xWaterPumpOutput := (wPumpCommand AND WORD#16#0001) <> WORD#0;
 xForeVacPumpOutput := ((wPumpCommand AND WORD#16#0002) <> WORD#0) AND (NOT xAbortActive) AND (NOT xForeVacInhibit);
 
+(* pump state to the hmi *)
 wPumpStatus := WORD#0;
 IF xWaterPumpOutput THEN
     wPumpStatus := wPumpStatus OR WORD#16#0001;

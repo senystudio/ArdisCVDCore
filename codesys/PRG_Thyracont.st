@@ -1,4 +1,5 @@
 PROGRAM PRG_Thyracont
+(* thyracont vacuum gauge *)
 VAR
     fbThyracont : FB_ThyracontAscii;
     udiThyracontPort : UDINT := 5;
@@ -9,6 +10,7 @@ END_VAR
 
 
 
+(* poll the gauge *)
 fbThyracont(
     xEnable := TRUE,
     udiPort := udiThyracontPort,
@@ -16,6 +18,7 @@ fbThyracont(
     udiBaudrate := 9600,
     tPollInterval := T#0MS);
 
+(* pressure and status to the hmi, registers 140..147 *)
 uValue.rValue := fbThyracont.rPressureTorr;
 awHolding[140] := DWORD_TO_WORD(uValue.dwValue);
 awHolding[141] := DWORD_TO_WORD(SHR(uValue.dwValue, 16));

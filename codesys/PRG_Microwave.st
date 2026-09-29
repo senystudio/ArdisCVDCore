@@ -1,4 +1,5 @@
 PROGRAM PRG_Microwave
+(* microwave generator *)
 VAR CONSTANT
     C_MIN_SETPOINT_KW : REAL := 1.0;
     C_MAX_SETPOINT_KW : REAL := 10.0;
@@ -41,14 +42,17 @@ VAR
     xMwLinkWasOk   : BOOL;
 END_VAR
 
+(* link ok after 4 s without errors *)
 fbCommOk(IN := NOT MW_GEN.xError, PT := T#4S);
 
+(* commands from the hmi, preheat and microwave off on abort *)
 xMwPreheatRequest := ((awHolding[192] AND WORD#16#0001) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit);
 xMwOnRequest      := ((awHolding[192] AND WORD#16#0002) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit);
 xMwResetRequest   := (awHolding[192] AND WORD#16#0004) <> WORD#0;
 xMwReconnectRequest := (awHolding[192] AND WORD#16#0008) <> WORD#0;
 
 
+(* generator status bits *)
 xMwWorking     := axMwStatusBlock1[0];
 xMwFailure     := axMwStatusBlock1[1];
 
@@ -64,6 +68,7 @@ xMwFireFailure        := axMwStatusBlock3[2];
 xMwMagnetronTooWarm   := axMwStatusBlock3[1];
 xMwWaterFlowFault     := axMwStatusBlock3[0];
 
+(* any fault, and which one *)
 xMwFaultActive := xMwFailure OR xMwReflective OR xMwCommError
     OR xMwFilamentFlowFault OR xMwFilamentUnderflow OR xMwMagnetronAbnormal1
     OR xMwAnodeFlowFault OR xMwFireFailure OR xMwMagnetronTooWarm OR xMwWaterFlowFault;
@@ -87,6 +92,7 @@ ELSE
     stMw.wFaultReason := WORD#0;
 END_IF;
 
+(* fault reset: hold the pulse for 10 cycles *)
 IF xMwResetRequest AND (NOT stMw.xLastResetRequest) THEN
     stMw.iResetHoldScans := 10;
 END_IF;
@@ -99,6 +105,7 @@ ELSE
     xMwResetTrigger := FALSE;
 END_IF;
 
+(* preheat, sent only on change *)
 IF xMwPreheatRequest <> stMw.xLastPreheatValue THEN
     xMwPreheatValue := xMwPreheatRequest;
     xMwPreheatTrigger := TRUE;
@@ -109,6 +116,7 @@ END_IF;
 
 fbPreheatTimer(IN := xMwPreheatRequest AND (NOT xMwPreheatDone), PT := T#1H);
 
+(* microwave on, also sent only on change *)
 IF xMwOnRequest <> stMw.xLastOnValue THEN
     xMwOnValue := xMwOnRequest;
     xMwOnTrigger := TRUE;
@@ -117,6 +125,7 @@ ELSE
     xMwOnTrigger := FALSE;
 END_IF;
 
+(* power setpoint 1..10 kw, resent after the link comes back *)
 rSetpointKw := F_ReadFixed(awHolding[193], awHolding[194]);
 IF rSetpointKw < C_MIN_SETPOINT_KW THEN
     rSetpointKw := C_MIN_SETPOINT_KW;
@@ -138,6 +147,7 @@ ELSE
     xMwSetpointTrigger := FALSE;
 END_IF;
 
+(* incident and reflected power to the hmi *)
 rIncidentKw  := INT_TO_REAL(WORD_TO_INT(awMwPowerRaw[0])) / 100.0;
 rReflectedKw := INT_TO_REAL(WORD_TO_INT(awMwPowerRaw[1])) / 1000.0;
 
@@ -148,6 +158,7 @@ dwValue := F_ToFixed(rReflectedKw);
 awHolding[199] := DWORD_TO_WORD(dwValue);
 awHolding[200] := DWORD_TO_WORD(SHR(dwValue, 16));
 
+(* status to the hmi *)
 wStatus := WORD#0;
 IF xMwWorking THEN wStatus := wStatus OR WORD#16#0001; END_IF;
 IF xMwFailure THEN wStatus := wStatus OR WORD#16#0002; END_IF;
@@ -166,11 +177,13 @@ IF xMwMagnetronTooWarm THEN wStatus := wStatus OR WORD#16#4000; END_IF;
 IF xMwWaterFlowFault THEN wStatus := wStatus OR WORD#16#8000; END_IF;
 awHolding[195] := wStatus;
 
+(* rest to the hmi: counter, raw values, fault reason, preheat time *)
 awHolding[201] := awHolding[201] + WORD#1;
 awHolding[202] := awMwPowerRaw[0];
 awHolding[203] := awMwPowerRaw[1];
 awHolding[204] := stMw.wFaultReason;
 awHolding[205] := DWORD_TO_WORD(TIME_TO_DWORD(fbPreheatTimer.ET) / DWORD#1000);
 
+(* reconnect to the generator after a link error *)
 fbConfirmPulse(IN := xMwReconnectRequest, PT := T#500MS);
 MW_GEN.xConfirmError := fbConfirmPulse.Q;

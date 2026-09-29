@@ -1,4 +1,5 @@
 PROGRAM PRG_TurboPump
+(* turbo pump *)
 VAR
     xCommandValid    : BOOL;
     xRunRequest      : BOOL;
@@ -14,6 +15,7 @@ VAR CONSTANT
     C_CMD_STOP : WORD := WORD#16#0003;
 END_VAR
 
+(* command from the hmi, stop only on abort *)
 xCommandValid := ((awHolding[240] AND WORD#16#8000) <> WORD#0) OR xAbortActive;
 xRunRequest := ((awHolding[240] AND WORD#16#0001) <> WORD#0) AND (NOT xAbortActive) AND (NOT xTurboInhibit);
 
@@ -23,6 +25,7 @@ ELSE
     wCommandWanted := C_CMD_STOP;
 END_IF;
 
+(* send to the drive only when the command changes *)
 IF xCommandValid AND ((NOT xCommandIssued) OR (wCommandWanted <> wCommandSent)) THEN
     wTurboCommandValue := wCommandWanted;
     xTurboCommandTrigger := TRUE;
@@ -32,6 +35,7 @@ ELSE
     xTurboCommandTrigger := FALSE;
 END_IF;
 
+(* status to the hmi *)
 wLatchedStatus := WORD#0;
 IF wCommandSent = C_CMD_RUN THEN
     wLatchedStatus := wLatchedStatus OR WORD#16#0001;

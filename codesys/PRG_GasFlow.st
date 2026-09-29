@@ -1,5 +1,7 @@
 PROGRAM PRG_GasFlow
+(* mass flow controllers, six gas channels *)
 VAR CONSTANT
+    (* full scale per channel, sccm *)
     aFullScaleSccm : ARRAY[0..5] OF REAL := [1000.0, 100.0, 50.0, 1000.0, 10.0, 1000.0];
     C_INIT_DELAY_SCANS : INT := 3;
 END_VAR
@@ -20,8 +22,10 @@ VAR
     i           : INT;
 END_VAR
 
+(* gas enabled: hmi protocol ok, gas switched on, no abort *)
 xGasSubsystemEnable := (awHolding[0] = WORD#1) AND ((awHolding[1] AND WORD#16#0008) <> WORD#0) AND (NOT xAbortActive);
 
+(* link error per controller *)
 axSlaveError[0] := MFC_H2.xError;
 axSlaveError[1] := MFC_CH4.xError;
 axSlaveError[2] := MFC_O2.xError;
@@ -29,13 +33,16 @@ axSlaveError[3] := MFC_N2.xError;
 axSlaveError[4] := MFC_Ar.xError;
 axSlaveError[5] := MFC_H22.xError;
 
+(* setpoints from the hmi *)
 FOR i := 0 TO 5 DO
     arSetpointSccm[i] := F_ReadFixed(awHolding[66 + i*5], awHolding[67 + i*5]);
 END_FOR;
 
+(* per channel: init, close, setpoint *)
 FOR i := 0 TO 5 DO
     CASE aChState[i].eInit OF
 
+        (* after enable, write ramp and mode one command at a time *)
         INIT_START:
             awRampTimeValue[i] := WORD#200;
             axRampTimeTrigger[i] := TRUE;
@@ -82,6 +89,7 @@ FOR i := 0 TO 5 DO
                 aChState[i].eInit := INIT_DONE;
             END_IF;
 
+        (* regulating, close on disable or error *)
         INIT_DONE:
             IF (NOT xGasSubsystemEnable) OR axSlaveError[i] THEN
                 aChState[i].xRegulating := FALSE;
@@ -109,6 +117,7 @@ FOR i := 0 TO 5 DO
             aChState[i].eInit := INIT_START;
     END_CASE;
 
+    (* setpoint to device units, sent only on change *)
     rRaw := arSetpointSccm[i] / aFullScaleSccm[i] * 10000.0;
     IF rRaw < 0.0 THEN
         rRaw := 0.0;
@@ -129,6 +138,7 @@ FOR i := 0 TO 5 DO
     END_IF;
 END_FOR;
 
+(* flow and status per channel to the hmi *)
 xAnyFault := FALSE;
 xAllFault := TRUE;
 FOR i := 0 TO 5 DO
@@ -157,6 +167,7 @@ FOR i := 0 TO 5 DO
     awHolding[iBase + 4] := wChStatus;
 END_FOR;
 
+(* overall gas status *)
 wGasStatus := WORD#0;
 IF NOT xAllFault THEN
     wGasStatus := wGasStatus OR WORD#16#0001;
@@ -173,6 +184,7 @@ END_IF;
 awHolding[64] := wGasStatus;
 awHolding[65] := awHolding[65] + WORD#1;
 
+(* link errors per channel, debug for the first two channels *)
 wChStatus := WORD#0;
 FOR i := 0 TO 5 DO
     IF axSlaveError[i] THEN

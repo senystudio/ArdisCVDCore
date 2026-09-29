@@ -1,4 +1,4 @@
-- [Working style](ardis-cvdcore-working-style.md) — NO comments in .st or C# code, Russian only, don't build until told, ask instead of inventing
+- [Working style](ardis-cvdcore-working-style.md) — no comments in C#, short English (* *) comments only in PLC_PRG/PRG_*.st, never touch Designer.cs, Russian only, don't build until told, ask instead of inventing
 - [Open work](ardis-cvdcore-open-work.md) — what's inert on purpose, what's parked, and the decisions still outstanding
 - [Reference projects](ardis-reference-projects.md) — where the two older Ardis apps live and what each is good for
 - [Build and smoke test](ardis-cvdcore-build.md) — MSBuild invocation (Build, never Rebuild: it deletes the live config.ini), driving the Parallels Windows VM with prlctl from macOS, the NModbus trap, how to screenshot the running app

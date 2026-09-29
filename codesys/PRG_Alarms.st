@@ -1,4 +1,5 @@
 PROGRAM PRG_Alarms
+(* alarms and abort *)
 VAR
     i : INT;
     iBase : INT;
@@ -72,6 +73,7 @@ VAR CONSTANT
     C_CIRC_EXTERNAL : INT := 6;
 END_VAR
 
+(* first scan: all alarms off if the retain memory was lost *)
 IF xFirstScan THEN
     xFirstScan := FALSE;
     IF wRetainMagic <> C_RETAIN_MAGIC THEN
@@ -87,6 +89,7 @@ IF xFirstScan THEN
     END_IF;
 END_IF;
 
+(* alarm thresholds from the hmi *)
 xThresholdsOk := (awHolding[248] AND WORD#16#FF00) = C_BLOCK_MAGIC;
 
 IF xThresholdsOk THEN
@@ -122,11 +125,13 @@ ELSE
     xRunActive := FALSE;
 END_IF;
 
+(* rebuild every alarm from scratch each cycle *)
 FOR i := 0 TO 63 DO
     axAlarm[i] := FALSE;
     axAbort[i] := FALSE;
 END_FOR;
 
+(* inputs from the register map *)
 wMwStatus := awHolding[195];
 wCommand := awHolding[192];
 xMwRequested := ((wCommand AND WORD#16#0003) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit);
@@ -145,6 +150,7 @@ xFlowArmed := fbFlowArm.Q;
 
 xPyroValid := (awHolding[166] AND WORD#16#0001) <> WORD#0;
 
+(* chamber pressure and gases: setpoint, measured value, when to check *)
 arBandSetpoint[0] := F_ReadFixed(awHolding[4], awHolding[5]);
 arBandMeasured[0] := F_ReadFixed(awHolding[130], awHolding[131]);
 axBandGate[0] := TRUE;
@@ -157,6 +163,7 @@ FOR i := 0 TO 5 DO
         AND ((awHolding[96] AND SHL(WORD#1, i)) = WORD#0);
 END_FOR;
 
+(* deviation from the setpoint beyond the band *)
 FOR i := 0 TO 6 DO
     rSetpoint := arBandSetpoint[i];
     rMeasured := arBandMeasured[i];
@@ -177,6 +184,7 @@ FOR i := 0 TO 6 DO
     END_IF;
 END_FOR;
 
+(* reflected microwave power *)
 IF (wParamAlarmEnable AND WORD#16#0080) <> WORD#0 THEN
     IF rReflKw * 1000.0 >= UINT_TO_REAL(WORD_TO_UINT(wMwReflAlarmWatt)) THEN
         axAlarm[7] := TRUE;
@@ -188,6 +196,7 @@ IF (wParamAbortEnable AND WORD#16#0080) <> WORD#0 THEN
     END_IF;
 END_IF;
 
+(* sample temperature from the pyrometer *)
 rSampleC := F_ReadFixed(awHolding[160], awHolding[161]);
 IF xPyroValid AND ((wTempEnable AND WORD#16#0001) <> WORD#0)
     AND (wSampleTargetC > WORD#0) THEN
@@ -198,6 +207,7 @@ IF xPyroValid AND ((wTempEnable AND WORD#16#0001) <> WORD#0)
     END_IF;
 END_IF;
 
+(* cooling water temperatures, only while the water pump runs *)
 arWaterTempC[0] := F_ReadFixed(awHolding[206 + 2*C_CIRC_INTERNAL], awHolding[207 + 2*C_CIRC_INTERNAL]);
 arWaterTempC[1] := F_ReadFixed(awHolding[206 + 2*C_CIRC_EXTERNAL], awHolding[207 + 2*C_CIRC_EXTERNAL]);
 arWaterTempC[2] := F_ReadFixed(awHolding[206 + 2*C_CIRC_STAGE], awHolding[207 + 2*C_CIRC_STAGE]);
@@ -227,6 +237,7 @@ FOR i := 0 TO 3 DO
     END_IF;
 END_FOR;
 
+(* cooling water flows, armed 4 s after the pump starts *)
 FOR i := 0 TO 5 DO
     CASE i OF
         0: iBase := C_CIRC_STAGE;
@@ -258,6 +269,7 @@ FOR i := 0 TO 5 DO
     END_IF;
 END_FOR;
 
+(* water pressure *)
 rWaterBar := F_ReadFixed(awHolding[234], awHolding[235]);
 IF ((wFlowValid AND WORD#16#0200) <> WORD#0)
     AND ((wInputEnable AND WORD#16#0040) <> WORD#0) THEN
@@ -268,6 +280,7 @@ IF ((wFlowValid AND WORD#16#0200) <> WORD#0)
     END_IF;
 END_IF;
 
+(* compressed air pressure *)
 rCdaBar := F_ReadFixed(awHolding[236], awHolding[237]);
 IF (wFlowValid AND WORD#16#0100) <> WORD#0 THEN
     IF rCdaBar <= C_CDA_ABORT_BAR THEN
@@ -277,6 +290,7 @@ IF (wFlowValid AND WORD#16#0100) <> WORD#0 THEN
     END_IF;
 END_IF;
 
+(* chamber lid *)
 IF ((wInputEnable AND WORD#16#0080) <> WORD#0) AND (NOT xLidClosed) THEN
     IF (wInputReaction AND WORD#16#0080) <> WORD#0 THEN
         axAbort[24] := TRUE;
@@ -285,10 +299,12 @@ IF ((wInputEnable AND WORD#16#0080) <> WORD#0) AND (NOT xLidClosed) THEN
     END_IF;
 END_IF;
 
+(* chamber pressure above 800 torr *)
 IF arBandMeasured[0] > C_CHAMBER_MAX_TORR THEN
     axAlarm[25] := TRUE;
 END_IF;
 
+(* microwave generator faults, only while it is requested *)
 IF xMwRequested THEN
     IF (wMwStatus AND WORD#16#8000) <> WORD#0 THEN axAbort[32] := TRUE; END_IF;
     IF (wMwStatus AND WORD#16#2000) <> WORD#0 THEN axAbort[33] := TRUE; END_IF;
@@ -302,6 +318,7 @@ IF xMwRequested THEN
     IF (wMwStatus AND WORD#16#0002) <> WORD#0 THEN axAbort[41] := TRUE; END_IF;
 END_IF;
 
+(* turbo pump faults *)
 IF xTurboAnswering THEN
     IF (wTurboStatus AND WORD#16#0001) <> WORD#0 THEN axAlarm[48] := TRUE; END_IF;
     IF (wTurboStatus AND WORD#16#0002) <> WORD#0 THEN axAlarm[49] := TRUE; END_IF;
@@ -311,6 +328,7 @@ IF xTurboAnswering THEN
     IF wTurboStatus = WORD#16#0108 THEN axAlarm[53] := TRUE; END_IF;
 END_IF;
 
+(* pack the flags into masks *)
 FOR i := 0 TO 3 DO
     awAlarmMask[i] := WORD#0;
     awAbortMask[i] := WORD#0;
@@ -332,6 +350,7 @@ FOR i := 0 TO 63 DO
     END_IF;
 END_FOR;
 
+(* abort: latches on its own, cleared by a reset from the hmi *)
 xReset := (awHolding[1] AND WORD#16#0004) <> WORD#0;
 
 IF xAnyAbort AND (NOT xAbortActive) THEN
@@ -342,6 +361,7 @@ IF xAnyAbort AND (NOT xAbortActive) THEN
     END_FOR;
 END_IF;
 
+(* on abort, inhibit everything that was on *)
 IF xAbortActive THEN
     wGpvInhibit := wGpvInhibit OR awHolding[133];
     wVpvInhibit := wVpvInhibit OR awHolding[135];
@@ -350,12 +370,14 @@ IF xAbortActive THEN
     IF (awHolding[192] AND WORD#16#0003) <> WORD#0 THEN xMwInhibit := TRUE; END_IF;
 END_IF;
 
+(* an inhibit clears once the hmi switches that output off *)
 wGpvInhibit := wGpvInhibit AND awHolding[133];
 wVpvInhibit := wVpvInhibit AND awHolding[135];
 IF (awHolding[137] AND WORD#16#0002) = WORD#0 THEN xForeVacInhibit := FALSE; END_IF;
 IF (awHolding[240] AND WORD#16#0001) = WORD#0 THEN xTurboInhibit := FALSE; END_IF;
 IF (awHolding[192] AND WORD#16#0003) = WORD#0 THEN xMwInhibit := FALSE; END_IF;
 
+(* reset from the hmi, only when no abort cause is left *)
 IF xReset AND (NOT xResetPrev) AND (NOT xAnyAbort) THEN
     xAbortActive := FALSE;
     FOR i := 0 TO 3 DO
@@ -364,6 +386,7 @@ IF xReset AND (NOT xResetPrev) AND (NOT xAnyAbort) THEN
 END_IF;
 xResetPrev := xReset;
 
+(* masks and status to the hmi *)
 FOR i := 0 TO 3 DO
     awHolding[280 + i] := awAlarmMask[i];
     awHolding[284 + i] := awAbortMask[i];

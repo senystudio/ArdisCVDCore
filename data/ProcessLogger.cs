@@ -418,8 +418,8 @@ namespace ArdisCVDCore
             row.Append("\t").Append(EncodeBool(s.Pumps));
             row.Append("\t").Append(EncodeBool(s.DInputs));
 
-            row.Append("\t").Append(EncodeByte(s.WarningsInput)).Append("\t");
-            row.Append("\t").Append(EncodeByte(s.ErrorsInput)).Append("\t");
+            row.Append("\t").Append(EncodeByte(s.WarningsInput));
+            row.Append("\t").Append(EncodeByte(s.ErrorsInput));
 
             return row.ToString();
         }
