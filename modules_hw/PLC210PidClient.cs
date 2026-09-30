@@ -32,6 +32,8 @@ namespace ArdisCVDCore.modules_hw
             public double DirectValue;
             public bool SmartMode;
             public double SmartKp;
+            public ushort PresetId;
+            public double PresetOutput;
             public double FlowCorrection;
             public double PressureCorrection;
             public double TotalGasFlow;
@@ -69,6 +71,7 @@ namespace ArdisCVDCore.modules_hw
             public double PlcPressureTorr;
             public string PlcPressureSource;
             public string PlcPressureStatusText;
+            public ushort ChamberPresetDoneId;
 
             public ushort DiscreteInputs;
 
@@ -92,6 +95,7 @@ namespace ArdisCVDCore.modules_hw
                     PlcPressureTorr = PlcPressureTorr,
                     PlcPressureSource = PlcPressureSource,
                     PlcPressureStatusText = PlcPressureStatusText,
+                    ChamberPresetDoneId = ChamberPresetDoneId,
                     DiscreteInputs = DiscreteInputs
                 };
             }
@@ -178,6 +182,10 @@ namespace ArdisCVDCore.modules_hw
 
         private const int ChamberPressureOffset = 30;
         private const int ChamberPressureStatusOffset = 32;
+        private const int ChamberPresetDoneOffset = 14;
+
+        private const int ChamberPresetOutputRegister = 56;
+        private const int ChamberPresetIdRegister = 58;
 
         private const double Scale = 1000.0;
 
@@ -563,6 +571,8 @@ namespace ArdisCVDCore.modules_hw
 
             WriteChannel(registers, 4, chamber);
             WriteChannel(registers, 30, plenum);
+            SetFixed(registers, ChamberPresetOutputRegister, chamber.PresetOutput);
+            registers[ChamberPresetIdRegister] = chamber.PresetId;
             return registers;
         }
 
@@ -603,6 +613,7 @@ namespace ArdisCVDCore.modules_hw
                 PlcPressureTorr = ReadFixed(registers, ChamberPressureOffset),
                 PlcPressureSource = "PLC (MV210 via MV210 AI1)",
                 PlcPressureStatusText = mvStatus == 0 ? "OK" : "MV210 status " + mvStatus.ToString("X4"),
+                ChamberPresetDoneId = registers[ChamberPresetDoneOffset],
                 DiscreteInputs = registers[DiscreteInputsOffset]
             };
         }

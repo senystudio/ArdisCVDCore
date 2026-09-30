@@ -23,5 +23,12 @@ namespace ArdisCVDCore
 
         public static bool DirectMode;
         public static double DirectValue;
+
+        public const double PresetSlope = 23.75449;
+        public const double PresetOffset = 2306.41063;
+
+        public static bool PresetPending;
+        public static ushort PresetId;
+        public static double PresetOutput;
     }
 }

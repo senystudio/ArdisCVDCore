@@ -283,6 +283,9 @@ namespace ArdisCVDCore
             PLC210PidClient.State state = PLC210PidClient.GetState();
             double measured = state.PlcPressureAvailable ? Math.Max(0, state.PlcPressureTorr) : 0;
 
+            if (ChamberPid.PresetPending && state.Connected && state.ChamberPresetDoneId == ChamberPid.PresetId)
+                ChamberPid.PresetPending = false;
+
             PLC210PidClient.Channel chamber = new PLC210PidClient.Channel
             {
                 Enabled = true,
@@ -293,6 +296,8 @@ namespace ArdisCVDCore
                 Kd = ChamberPid.Kd,
                 SmartMode = ChamberPid.SmartMode,
                 SmartKp = ChamberPid.SmartKp,
+                PresetId = ChamberPid.PresetPending ? ChamberPid.PresetId : (ushort)0,
+                PresetOutput = ChamberPid.PresetOutput,
                 LowerLimit = ChamberPid.DirectMode ? 0 : ChamberPid.LowerLimit,
                 UpperLimit = ChamberPid.DirectMode ? 5000 : ChamberPid.UpperLimit,
                 DirectMode = ChamberPid.DirectMode,
@@ -509,7 +514,40 @@ namespace ArdisCVDCore
         {
             ChamberPid.Setpoint = (double)ChamberPressureSetPoint.Value;
             ChamberPid.Committed = true;
+            ArmChamberPreset();
             PushChamberChannel();
+        }
+
+        private const int MainGasValveIndex = 7;
+
+        private void ArmChamberPreset()
+        {
+            if (ChamberPid.Setpoint <= 0)
+            {
+                ChamberPid.PresetPending = false;
+                return;
+            }
+
+            PLC210GasValveClient.State valves = PLC210GasValveClient.GetState();
+            double totalFlow = 0;
+            if (valves.Connected && valves.ValveOn[MainGasValveIndex])
+            {
+                for (int i = 0; i < _gasSetpoint.Length; i++)
+                    if (valves.ValveOn[i])
+                        totalFlow += (double)_gasSetpoint[i].Value;
+            }
+
+            double x = totalFlow / ChamberPid.Setpoint;
+
+            ushort doneId = PLC210PidClient.GetState().ChamberPresetDoneId;
+            ushort id = ChamberPid.PresetId;
+            do
+                id++;
+            while (id == 0 || id == doneId);
+
+            ChamberPid.PresetId = id;
+            ChamberPid.PresetOutput = ChamberPid.PresetSlope * x + ChamberPid.PresetOffset;
+            ChamberPid.PresetPending = true;
         }
 
         private void UpdateMicrowaveSection()

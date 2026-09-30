@@ -10,6 +10,8 @@ VAR_INPUT
     rKd           : REAL;
     xSmartMode    : BOOL;
     rSmartKp      : REAL;
+    wPresetId     : WORD;
+    rPresetOutput : REAL;
     rLowerLimit   : REAL;
     rUpperLimit   : REAL;
     rDirectValue  : REAL;
@@ -21,6 +23,7 @@ VAR_OUTPUT
     rI      : REAL;
     rD      : REAL;
     rOutput : REAL;
+    wPresetDoneId : WORD;
 END_VAR
 VAR
     rPreviousError : REAL;
@@ -33,6 +36,9 @@ VAR
     rErrAverageLast    : REAL;
     rErrAverageIntegral : REAL;
     rKpActive           : REAL;
+    wPresetSeenId       : WORD;
+    xPresetArmed        : BOOL;
+    rPresetFromError    : REAL;
 END_VAR
 
 IF rLowerLimit <= rUpperLimit THEN
@@ -64,6 +70,12 @@ IF xReset OR NOT xInitialized THEN
     END_FOR;
 
     xInitialized := TRUE;
+END_IF;
+
+IF wPresetId <> wPresetSeenId THEN
+    wPresetSeenId := wPresetId;
+    xPresetArmed := wPresetId <> WORD#0;
+    rPresetFromError := rError;
 END_IF;
 
 IF rCycleSeconds > 0.001 THEN
@@ -110,6 +122,11 @@ rPreviousError := rError;
 
 IF xDirectMode THEN
     rOutput := rDirectValue;
+    rPresetFromError := rError;
+ELSIF xPresetArmed AND rError * rPresetFromError <= 0.0 THEN
+    rOutput := rPresetOutput;
+    xPresetArmed := FALSE;
+    wPresetDoneId := wPresetSeenId;
 ELSE
     rOutput := rOutput + rP + rI + rD;
 END_IF;
