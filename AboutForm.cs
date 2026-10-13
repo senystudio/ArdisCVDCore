@@ -6,7 +6,7 @@ namespace ArdisCVDCore
     public class AboutForm : Form
     {
         private const string Version = "21";
-        private const string ReleaseDate = "22.09.2026";
+        private const string ReleaseDate = "13.10.2026";
 
         private const string Authors = "Sizov Y. E., Chernyavskiy S. V., Pavlov A. Y.";
 

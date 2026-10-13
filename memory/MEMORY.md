@@ -1,3 +1,4 @@
+- [About date](about-form-date.md) — at the start of every session set AboutForm.ReleaseDate to today (dd.MM.yyyy)
 - [Working style](ardis-cvdcore-working-style.md) — no comments in C#, short English (* *) comments only in PLC_PRG/PRG_*.st, never touch Designer.cs, Russian only, don't build until told, ask instead of inventing
 - [Open work](ardis-cvdcore-open-work.md) — what's inert on purpose, what's parked, and the decisions still outstanding
 - [Reference projects](ardis-reference-projects.md) — where the two older Ardis apps live and what each is good for
