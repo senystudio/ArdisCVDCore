@@ -6,7 +6,7 @@
 - [МВ210-102 Modbus map](mv210-102-modbus-map.md) — register addresses and the three traps that break the cooling modules
 - [PLC210 register contract](plc210-register-contract.md) — awHolding map, which client reads what, and the signals that are only an echo
 - [Pyrometer / MW RS-485 conflict](pyrometer-mw-rs485-conflict.md) — why PYRO_RXT hangs, what was ruled out, and the fix that is still pending
-- [Memory location](memory-location.md) — the files live in the repo now; the ~/.claude path is a junction to them
+- [Memory location](memory-location.md) — the files live in the repo; the ~/.claude path is a link to them (junction on Windows, symlink on the Mac)
 - [Microwave water fault](microwave-water-fault-flow.md) — when the no-water error shows, what drops Preheat/MW, what clears it
 - [Alarm/Abort design](alarm-abort-design.md) — решения 22.09.2026: логика в ПЛК, что именно делает Abort, два окна статуса
 - [Gas Correction Factor](gas-correction-factor-open.md) — с 24.09.2026 включён как в референсе: хранится в config.ini, ни на что не влияет; семантика применения всё ещё открыта

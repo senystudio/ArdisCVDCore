@@ -16,7 +16,7 @@ This says *how* to build, not *when*. The rule in [[ardis-cvdcore-working-style]
 
 .NET Framework 4.7.2 WinForms, no solution file. **The project is under git since 21.08.2026** — the older note here saying there is no version control is wrong and was written before the first commit.
 
-**The project moved machines.** As of 22.09.2026 it lives on macOS at `/Users/sennix/Desktop/ArdisCVDCore`, not at `c:\Users\PAVLOV\Desktop\ArdisCVDCore`. Every Windows path in these memory files predates the move. The `~/.claude/projects/.../memory` junction described in [[memory-location]] does **not** exist on this machine — that path is an empty real directory, so write memory straight into the repo's `memory/`.
+**The project moved machines.** As of 22.09.2026 it lives on macOS at `/Users/sennix/Desktop/ArdisCVDCore`, not at `c:\Users\PAVLOV\Desktop\ArdisCVDCore`. Every Windows path in these memory files predates the move. Since 13.10.2026 the `~/.claude/projects/.../memory` path on this Mac is a symlink to the repo's `memory/`, see [[memory-location]].
 
 On Windows, build with VS MSBuild, not `dotnet`:
 

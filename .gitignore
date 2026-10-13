@@ -10,3 +10,8 @@
 /bin/Debug/Logs/
 /bin/Debug/ProcessLogs/
 /bin/Debug/configBackup.bin
+/bin/Debug/configs/
+/bin/Release/Logs/
+/bin/Release/ProcessLogs/
+/bin/Release/configBackup.bin
+/bin/Release/configs/
