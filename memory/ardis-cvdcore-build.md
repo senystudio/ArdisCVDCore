@@ -12,6 +12,8 @@ metadata:
 
 This says *how* to build, not *when*. The rule in [[ardis-cvdcore-working-style]] still holds: do not build until the user asks.
 
+**Standing rule, given 13.10.2026: always build Release, never Debug** («запиши в память что всегда нужно теперь собирать в Release»). Output goes to `bin\Release\`. Why: Windows Defender deleted the Debug exe as LummaStealer (a false positive on an unsigned .NET exe), and an optimized Release build is less suspicious to its heuristics. The same day `AssemblyInfo.cs` got real metadata (company `ООО «Оптосистемы»`, version 21 to match `AboutForm.Version`) and the unused `System.Net.Http` reference was dropped from the csproj. The first Release build (13.10.2026) succeeded with no warnings. Everything below that still says `bin\Debug` or `Configuration=Debug` predates this rule; read it as Release. **Open question:** the live `config.ini` (window positions, alarm thresholds; 1824 bytes) and `configBackup.bin` (MW operating hours) sit in `bin\Debug`, while `bin\Release\configs\config.ini` is a fresh copy of the 301-byte repo template. Ask the user before copying them across.
+
 .NET Framework 4.7.2 WinForms, no solution file. **The project is under git since 21.08.2026** — the older note here saying there is no version control is wrong and was written before the first commit.
 
 **The project moved machines.** As of 22.09.2026 it lives on macOS at `/Users/sennix/Desktop/ArdisCVDCore`, not at `c:\Users\PAVLOV\Desktop\ArdisCVDCore`. Every Windows path in these memory files predates the move. The `~/.claude/projects/.../memory` junction described in [[memory-location]] does **not** exist on this machine — that path is an empty real directory, so write memory straight into the repo's `memory/`.
@@ -20,7 +22,7 @@ On Windows, build with VS MSBuild, not `dotnet`:
 
 ```
 & 'C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe' `
-    'ArdisCVDCore.csproj' /t:Rebuild /p:Configuration=Debug
+    'ArdisCVDCore.csproj' /t:Rebuild /p:Configuration=Release
 ```
 
 On the macOS machine Mono's `msbuild` and `dotnet` are both on PATH, but a .NET Framework WinForms target will not produce a runnable app there. **The Windows side is reachable from the Mac shell**, though: Parallels Desktop runs a `Windows 11` VM (ARM64, Parallels Tools 26.3.3) and `/usr/local/bin/prlctl` drives it without any GUI or SSH. Verified 22.09.2026:
