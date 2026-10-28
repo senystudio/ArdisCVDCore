@@ -7,6 +7,7 @@
 *.compileinfo
 *.precompilecache
 *.dat
+*.ini
 /bin/Debug/Logs/
 /bin/Debug/ProcessLogs/
 /bin/Debug/configBackup.bin
