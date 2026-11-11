@@ -38,6 +38,10 @@ Alarm codes are bit numbers in the 64-bit masks, one byte per subsystem: 0..7 se
 
 **awHolding[56..58] и [114], добавлены 30.09.2026:** предустановка выхода PID камеры: 56/57 = y (x1000), 58 = номер взвода (0 = нет флага), 114 = номер последней выполненной подстановки от ПЛК, см. [[chamber-pid-preset]]. Во входном блоке свободны 59..63, в выходном — 115..119.
 
+**awHolding[59..61] и [115], добавлены 11.11.2026:** сдвиг выхода PID камеры при смене газов: 59/60 = Δ (x1000, со знаком), 61 = номер сдвига, 115 = номер последнего принятого сдвига, см. [[chamber-pid-preset]]. Во входном блоке свободны 62..63, в выходном — 116..119.
+
+**awHolding[170], добавлен 11.11.2026:** HMI → ПЛК, бит 0 = RECONNECT пирометра RXT. `PLC210PyrometerClient` пишет его FC06 каждый цикл (0, и 1 на один цикл после нажатия), `PRG_Pyrometers` по фронту даёт `TP` 500 мс в `PYRO_RXT.xConfirmError`. Выбран 170, а не 168: HMI всё ещё разбирает 168/169 как `LastFaultCode`/`LastRxSize` (хвост старого драйвера, никем не читается). 171..175 в блоке пирометров свободны, 176..191 читаются как Smart, но никто их не пишет.
+
 Still free: 148, 149, 158, 159. `PLC210PidClient.OutputRegisterCount` is 40, i.e. it reads 100..139 in one go — that is the cheap place to hang a new HMI-visible flag, no ninth socket.
 
 **awHolding[139], added 25.08.2026:** bit 0..7 = FDI1..FDI8, bit 8..11 = DI9..DI12, 1 = contact closed. The chamber lid switch is one of those bits; which one is chosen HMI-side from `config.ini` `[PLC210] LidInput` (default 1 = FDI1, never confirmed on the machine). The PLC's own I/O node also offers the whole group as one `Bit mask inputs` DWORD channel at `%ID51` — same bit order, provable from the addresses (`%ID51` = bytes 204..207, `Fast input 1` = `%IX204.0`, `Input 9` = `%IX205.0`). Either mapping works; the project currently uses twelve BOOLs in `GVL_PlcIO.st`.
@@ -51,3 +55,5 @@ Still free: 148, 149, 158, 159. `PLC210PidClient.OutputRegisterCount` is 40, i.e
 `PRG_Microwave.xMwPreheatTrigger` fires only on a *change* of the request, so a PREHEAT pressed while the generator is off never reaches it when the generator comes back. Not fixed — see [[ardis-cvdcore-open-work]].
 
 See [[mv210-102-modbus-map]] for the МВ210-102 cooling modules, which are separate Modbus TCP slaves and not part of this array.
+
+**awHolding[271] бит 1 и [292] бит 5, добавлены 11.11.2026:** 271 бит 0x0002 = сброс аварий от HMI (раньше был бит 0x0004 в `awHolding[1]`, который заодно сбрасывал PID камеры и теперь HMI для аварий не используется). 292 бит 0x0020 = trip генератора МВ (`xMwTripActive`). См. [[microwave-water-fault-flow]].

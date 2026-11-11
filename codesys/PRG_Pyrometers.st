@@ -9,7 +9,17 @@ VAR
     wPyroRxtStatus  : WORD;
 
     dwValue : DWORD;
+
+    fbCommOk       : TON;
+    fbConfirmPulse : TP;
+    xPyroReconnectRequest : BOOL;
 END_VAR
+
+(* link ok after 4 s without errors *)
+fbCommOk(IN := NOT PYRO_RXT.xError, PT := T#4S);
+
+(* reconnect request from the hmi, register 170 bit 0 *)
+xPyroReconnectRequest := (awHolding[170] AND WORD#16#0001) <> WORD#0;
 
 (* rxt pyrometer: ch1, ch2 and ratio *)
 uPyroValue.dwValue := SHL(WORD_TO_DWORD(awPyroRxtCh1Raw[1]), 16) OR WORD_TO_DWORD(awPyroRxtCh1Raw[0]);
@@ -33,7 +43,7 @@ awHolding[165] := DWORD_TO_WORD(SHR(dwValue, 16));
 
 (* status: link and channel overload *)
 wPyroRxtStatus := WORD#0;
-IF NOT PYRO_RXT.xError THEN
+IF fbCommOk.Q THEN
     wPyroRxtStatus := wPyroRxtStatus OR WORD#16#0001;
 END_IF;
 IF (wPyroRxtAdcStatus AND WORD#16#0001) <> WORD#0 THEN
@@ -42,8 +52,12 @@ END_IF;
 IF (wPyroRxtAdcStatus AND WORD#16#0002) <> WORD#0 THEN
     wPyroRxtStatus := wPyroRxtStatus OR WORD#16#0004;
 END_IF;
-IF PYRO_RXT.xError THEN
+IF NOT fbCommOk.Q THEN
     wPyroRxtStatus := wPyroRxtStatus OR WORD#16#0008;
 END_IF;
 awHolding[166] := wPyroRxtStatus;
 awHolding[167] := wPyroRxtDevStatus;
+
+(* reconnect to the pyrometer after a link error *)
+fbConfirmPulse(IN := xPyroReconnectRequest, PT := T#500MS);
+PYRO_RXT.xConfirmError := fbConfirmPulse.Q;

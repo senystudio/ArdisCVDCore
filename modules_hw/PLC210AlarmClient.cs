@@ -22,6 +22,7 @@ namespace ArdisCVDCore.modules_hw
             public bool ThresholdsAccepted;
             public bool RetainWasBlank;
             public bool WaitingForFreshPress;
+            public bool MicrowaveTripped;
 
             public ushort GasValveInhibit;
             public ushort VacuumValveInhibit;
@@ -58,6 +59,8 @@ namespace ArdisCVDCore.modules_hw
         private const ushort ThresholdCount = 32;
         private const ushort StateStart = 280;
         private const ushort StateCount = 16;
+        private const int ResetWordOffset = 23;
+        private const ushort ResetBit = 0x0002;
 
         private static readonly object Sync = new object();
 
@@ -71,6 +74,7 @@ namespace ArdisCVDCore.modules_hw
         private static IModbusMaster _master;
 
         private static ushort[] _thresholds;
+        private static bool _resetPending;
 
         private static State _state = new State();
 
@@ -126,6 +130,12 @@ namespace ArdisCVDCore.modules_hw
                 return _state.Clone();
         }
 
+        public static void RequestReset()
+        {
+            lock (Sync)
+                _resetPending = true;
+        }
+
         public static void PushThresholds(ushort[] block)
         {
             if (block == null || block.Length != ThresholdCount)
@@ -145,6 +155,7 @@ namespace ArdisCVDCore.modules_hw
                 int port;
                 bool reconnect;
                 ushort[] thresholds;
+                bool resetPulse;
 
                 lock (Sync)
                 {
@@ -156,6 +167,13 @@ namespace ArdisCVDCore.modules_hw
                     reconnect = _forceReconnect;
                     _forceReconnect = false;
                     thresholds = _thresholds;
+                    resetPulse = _resetPending && thresholds != null;
+                    if (resetPulse)
+                    {
+                        _resetPending = false;
+                        thresholds = (ushort[])thresholds.Clone();
+                        thresholds[ResetWordOffset] |= ResetBit;
+                    }
                 }
 
                 try
@@ -186,6 +204,12 @@ namespace ArdisCVDCore.modules_hw
                     _errConnCount++;
                     if (_errConnCount < 2)
                         Logger.WriteError(new Exception("Alarms: " + ex.Message));
+
+                    if (resetPulse)
+                    {
+                        lock (Sync)
+                            _resetPending = true;
+                    }
 
                     Disconnect();
                     lock (Sync)
@@ -221,6 +245,7 @@ namespace ArdisCVDCore.modules_hw
                 ThresholdsAccepted = (status & 0x0004) != 0,
                 RetainWasBlank = (status & 0x0008) != 0,
                 WaitingForFreshPress = (status & 0x0010) != 0,
+                MicrowaveTripped = (status & 0x0020) != 0,
 
                 AbortCount = registers[13],
                 GasValveInhibit = registers[14],

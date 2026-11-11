@@ -45,9 +45,11 @@ END_VAR
 (* link ok after 4 s without errors *)
 fbCommOk(IN := NOT MW_GEN.xError, PT := T#4S);
 
-(* commands from the hmi, preheat and microwave off on abort *)
-xMwPreheatRequest := ((awHolding[192] AND WORD#16#0001) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit);
-xMwOnRequest      := ((awHolding[192] AND WORD#16#0002) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit);
+(* commands from the hmi, preheat and microwave off on abort or generator trip *)
+xMwPreheatRequest := ((awHolding[192] AND WORD#16#0001) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit)
+    AND (NOT xMwTripActive);
+xMwOnRequest      := ((awHolding[192] AND WORD#16#0002) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit)
+    AND (NOT xMwTripActive);
 xMwResetRequest   := (awHolding[192] AND WORD#16#0004) <> WORD#0;
 xMwReconnectRequest := (awHolding[192] AND WORD#16#0008) <> WORD#0;
 

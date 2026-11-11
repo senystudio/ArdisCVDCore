@@ -12,6 +12,8 @@ VAR_INPUT
     rSmartKp      : REAL;
     wPresetId     : WORD;
     rPresetOutput : REAL;
+    wShiftId      : WORD;
+    rShiftDelta   : REAL;
     rLowerLimit   : REAL;
     rUpperLimit   : REAL;
     rDirectValue  : REAL;
@@ -24,6 +26,7 @@ VAR_OUTPUT
     rD      : REAL;
     rOutput : REAL;
     wPresetDoneId : WORD;
+    wShiftDoneId  : WORD;
 END_VAR
 VAR
     rPreviousError : REAL;
@@ -39,6 +42,9 @@ VAR
     wPresetSeenId       : WORD;
     xPresetArmed        : BOOL;
     rPresetFromError    : REAL;
+    wShiftSeenId        : WORD;
+    xShiftNew           : BOOL;
+    rPresetShift        : REAL;
 END_VAR
 
 IF rLowerLimit <= rUpperLimit THEN
@@ -50,6 +56,15 @@ ELSE
 END_IF;
 
 rError := rMeasured - rSetpoint;
+
+xShiftNew := FALSE;
+IF wShiftId <> wShiftSeenId THEN
+    wShiftSeenId := wShiftId;
+    IF wShiftId <> WORD#0 THEN
+        xShiftNew := TRUE;
+        wShiftDoneId := wShiftId;
+    END_IF;
+END_IF;
 
 IF NOT xEnable THEN
     rP := 0.0;
@@ -72,10 +87,19 @@ IF xReset OR NOT xInitialized THEN
     xInitialized := TRUE;
 END_IF;
 
+IF xShiftNew THEN
+    IF xPresetArmed THEN
+        rPresetShift := rPresetShift + rShiftDelta;
+    ELSIF NOT xDirectMode THEN
+        rOutput := rOutput + rShiftDelta;
+    END_IF;
+END_IF;
+
 IF wPresetId <> wPresetSeenId THEN
     wPresetSeenId := wPresetId;
     xPresetArmed := wPresetId <> WORD#0;
     rPresetFromError := rError;
+    rPresetShift := 0.0;
 END_IF;
 
 IF rCycleSeconds > 0.001 THEN
@@ -124,7 +148,7 @@ IF xDirectMode THEN
     rOutput := rDirectValue;
     rPresetFromError := rError;
 ELSIF xPresetArmed AND rError * rPresetFromError <= 0.0 THEN
-    rOutput := rPresetOutput;
+    rOutput := rPresetOutput + rPresetShift;
     xPresetArmed := FALSE;
     wPresetDoneId := wPresetSeenId;
 ELSE

@@ -46,6 +46,8 @@ VAR
     xChSmartMode : BOOL;
     rChPresetOutput : REAL;
     wChPresetId     : WORD;
+    rChShiftDelta   : REAL;
+    wChShiftId      : WORD;
     rPlSetpoint : REAL;
     rPlMeasured : REAL;
     rPlKp       : REAL;
@@ -142,6 +144,8 @@ rChSmartKp := F_ReadFixed(awHolding[27], awHolding[28]);
 xChSmartMode := awHolding[29] <> WORD#0;
 rChPresetOutput := F_ReadFixed(awHolding[56], awHolding[57]);
 wChPresetId := awHolding[58];
+rChShiftDelta := F_ReadFixed(awHolding[59], awHolding[60]);
+wChShiftId := awHolding[61];
 
 rPlSetpoint := F_ReadFixed(awHolding[30], awHolding[31]);
 rPlMeasured := F_ReadFixed(awHolding[32], awHolding[33]);
@@ -166,6 +170,8 @@ fbChamber(
     rSmartKp := rChSmartKp,
     wPresetId := wChPresetId,
     rPresetOutput := rChPresetOutput,
+    wShiftId := wChShiftId,
+    rShiftDelta := rChShiftDelta,
     rLowerLimit := rChLower,
     rUpperLimit := rChUpper,
     rDirectValue := rChDirect,
@@ -218,6 +224,7 @@ dwValue := F_ToFixed(fbChamber.rOutput);
 awHolding[112] := DWORD_TO_WORD(dwValue);
 awHolding[113] := DWORD_TO_WORD(SHR(dwValue, 16));
 awHolding[114] := fbChamber.wPresetDoneId;
+awHolding[115] := fbChamber.wShiftDoneId;
 
 (* plenum pid terms to the hmi *)
 dwValue := F_ToFixed(fbPlenum.rError);

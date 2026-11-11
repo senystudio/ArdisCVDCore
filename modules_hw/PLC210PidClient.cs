@@ -34,6 +34,8 @@ namespace ArdisCVDCore.modules_hw
             public double SmartKp;
             public ushort PresetId;
             public double PresetOutput;
+            public ushort ShiftId;
+            public double ShiftDelta;
             public double FlowCorrection;
             public double PressureCorrection;
             public double TotalGasFlow;
@@ -72,6 +74,7 @@ namespace ArdisCVDCore.modules_hw
             public string PlcPressureSource;
             public string PlcPressureStatusText;
             public ushort ChamberPresetDoneId;
+            public ushort ChamberShiftDoneId;
 
             public ushort DiscreteInputs;
 
@@ -96,6 +99,7 @@ namespace ArdisCVDCore.modules_hw
                     PlcPressureSource = PlcPressureSource,
                     PlcPressureStatusText = PlcPressureStatusText,
                     ChamberPresetDoneId = ChamberPresetDoneId,
+                    ChamberShiftDoneId = ChamberShiftDoneId,
                     DiscreteInputs = DiscreteInputs
                 };
             }
@@ -183,9 +187,12 @@ namespace ArdisCVDCore.modules_hw
         private const int ChamberPressureOffset = 30;
         private const int ChamberPressureStatusOffset = 32;
         private const int ChamberPresetDoneOffset = 14;
+        private const int ChamberShiftDoneOffset = 15;
 
         private const int ChamberPresetOutputRegister = 56;
         private const int ChamberPresetIdRegister = 58;
+        private const int ChamberShiftDeltaRegister = 59;
+        private const int ChamberShiftIdRegister = 61;
 
         private const double Scale = 1000.0;
 
@@ -573,6 +580,8 @@ namespace ArdisCVDCore.modules_hw
             WriteChannel(registers, 30, plenum);
             SetFixed(registers, ChamberPresetOutputRegister, chamber.PresetOutput);
             registers[ChamberPresetIdRegister] = chamber.PresetId;
+            SetFixed(registers, ChamberShiftDeltaRegister, chamber.ShiftDelta);
+            registers[ChamberShiftIdRegister] = chamber.ShiftId;
             return registers;
         }
 
@@ -614,6 +623,7 @@ namespace ArdisCVDCore.modules_hw
                 PlcPressureSource = "PLC (MV210 via MV210 AI1)",
                 PlcPressureStatusText = mvStatus == 0 ? "OK" : "MV210 status " + mvStatus.ToString("X4"),
                 ChamberPresetDoneId = registers[ChamberPresetDoneOffset],
+                ChamberShiftDoneId = registers[ChamberShiftDoneOffset],
                 DiscreteInputs = registers[DiscreteInputsOffset]
             };
         }

@@ -28,6 +28,8 @@ VAR_GLOBAL
     xForeVacInhibit : BOOL;
     xTurboInhibit   : BOOL;
     xMwInhibit      : BOOL;
+    xMwTripActive   : BOOL;
+    wMwTripLatched  : WORD;
     xThresholdsOk   : BOOL;
     xRetainWasBlank : BOOL;
     uiAbortCount    : UINT;

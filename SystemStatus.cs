@@ -353,7 +353,7 @@ namespace ArdisCVDCore
 
             if (!state.DriveAnswering)
             {
-                lines.Add(new StatusLine("Turbo pump", StatusLevel.Warning, "Drive not answering"));
+                lines.Add(new StatusLine("Turbo pump", StatusLevel.Warning, "Not connected"));
                 return;
             }
 
@@ -368,6 +368,24 @@ namespace ArdisCVDCore
                 + state.SpeedHz.ToString(CultureInfo.InvariantCulture) + " Hz, "
                 + state.DriveCurrent.ToString("F2", CultureInfo.InvariantCulture) + " A, "
                 + state.TemperatureC.ToString(CultureInfo.InvariantCulture) + " °C"));
+        }
+
+        public static void ResetFaults()
+        {
+            PLC210AlarmClient.RequestReset();
+            PLC210MicrowaveClient.RequestReset();
+        }
+
+        public static bool ResetAvailable(PLC210AlarmClient.State alarms)
+        {
+            if (!alarms.Connected)
+                return false;
+
+            if (alarms.AbortActive || alarms.MicrowaveTripped)
+                return true;
+
+            PLC210MicrowaveClient.State microwave = PLC210MicrowaveClient.GetState();
+            return microwave.GeneratorAnswering && microwave.FaultActive;
         }
 
         public static string FaultReason(PLC210MicrowaveClient.State state)

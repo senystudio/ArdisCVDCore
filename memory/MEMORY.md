@@ -7,7 +7,7 @@
 - [PLC210 register contract](plc210-register-contract.md) — awHolding map, which client reads what, and the signals that are only an echo
 - [Pyrometer / MW RS-485 conflict](pyrometer-mw-rs485-conflict.md) — why PYRO_RXT hangs, what was ruled out, and the fix that is still pending
 - [Memory location](memory-location.md) — the files live in the repo; the ~/.claude path is a link to them (junction on Windows, symlink on the Mac)
-- [Microwave water fault](microwave-water-fault-flow.md) — when the no-water error shows, what drops Preheat/MW, what clears it
+- [Microwave water fault](microwave-water-fault-flow.md) — с 11.11.2026 ошибка генератора гасит только МВ (trip до Reset), Reset один в Fault Status, во время Abort кнопки не шлют включения
 - [Alarm/Abort design](alarm-abort-design.md) — решения 22.09.2026: логика в ПЛК, что именно делает Abort, два окна статуса
 - [Gas Correction Factor](gas-correction-factor-open.md) — с 24.09.2026 включён как в референсе: хранится в config.ini, ни на что не влияет; семантика применения всё ещё открыта
 - [Мёртвый датчик и аварии](alarm-dead-sensor-open.md) — не решено: что делать, когда прибор перестал отвечать, а показание замёрзло
@@ -15,4 +15,5 @@
 - [Smart Mode PID](chamber-pid-smart-mode.md) — Smart P на подъёме (давление выше уставки и D > 0), с перегиба — обычный P; в ПЛК, регистры 27..29; первая версия была перевёрнута
 - [Светофор](signal-tower-rule.md) — аварии и связь горят независимо (зелёная+жёлтая), МВ и турбонасос не влияют; что считается «проблемой связи»
 - [Положение окон](window-placement.md) — почему графики не запоминали место: открытые при выходе окна не получают FormClosing; RestoreBounds для свёрнутых
-- [Предустановка выхода PID](chamber-pid-preset.md) — SET давления: y = 23.75449·(Σ газов с GPV и GPV8 / уставка) + 2306.41, ПЛК ставит rOutput = y при пересечении уставки; регистры 56..58, 114
+- [Предустановка выхода PID](chamber-pid-preset.md) — SET давления: y = 23.75449·(Σ газов с GPV и GPV8 / уставка) + 2306.41, ПЛК ставит rOutput = y при пересечении уставки; при смене газов rOutput сдвигается на Δy; регистры 56..61, 114, 115
+- [Рецепты](recipe-system.md) — перенос Recipe Editor + автомат из ArdisCVDMaster: решения пользователя по железу, МВ, авариям, Stop

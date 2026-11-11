@@ -191,7 +191,7 @@ namespace ArdisCVDCore
 
         private void Reset_Click(object sender, EventArgs e)
         {
-            PLC210PidClient.RequestReset();
+            SystemStatus.ResetFaults();
         }
 
         private void ClearHistory_Click(object sender, EventArgs e)
@@ -206,7 +206,7 @@ namespace ArdisCVDCore
             _alarmDump.Text = "Alarm  " + FormatMask(state.AlarmMask);
             _abortDump.Text = "Abort  " + FormatMask(state.AbortOrLatched);
 
-            _reset.Enabled = state.Connected && state.AbortActive;
+            _reset.Enabled = SystemStatus.ResetAvailable(state);
 
             RefreshCurrent(state);
             RefreshHistory();

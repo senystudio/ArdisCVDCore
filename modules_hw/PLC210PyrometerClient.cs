@@ -34,6 +34,11 @@ namespace ArdisCVDCore.modules_hw
             public PyrometerReading Rxt;
             public PyrometerReading Smart;
 
+            public bool RxtAnswering
+            {
+                get { return Connected && Rxt != null && Rxt.Valid && !Rxt.CommFault; }
+            }
+
             public State Clone()
             {
                 return new State
@@ -55,6 +60,7 @@ namespace ArdisCVDCore.modules_hw
         private const byte UnitId = 1;
         private const ushort RegisterStart = 160;
         private const ushort RegisterCount = 32;
+        private const ushort ReconnectRegister = 170;
         private const int SmartOffset = 16;
         private const double Scale = 1000.0;
 
@@ -67,6 +73,7 @@ namespace ArdisCVDCore.modules_hw
         private static bool _rxtAnswered = true;
         private static bool _smartAnswered = true;
         private static bool _forceReconnect;
+        private static bool _rxtReconnectPending;
         private static Thread _worker;
         private static TcpClient _tcpClient;
         private static IModbusMaster _master;
@@ -131,6 +138,12 @@ namespace ArdisCVDCore.modules_hw
                 return _state.Clone();
         }
 
+        public static void RequestRxtReconnect()
+        {
+            lock (Sync)
+                _rxtReconnectPending = true;
+        }
+
         private static void LogDeviceFaults(State plcState)
         {
             bool rxt = plcState.Rxt != null && plcState.Rxt.Valid;
@@ -151,6 +164,7 @@ namespace ArdisCVDCore.modules_hw
                 string host;
                 int port;
                 bool reconnect;
+                bool rxtReconnectPulse;
 
                 lock (Sync)
                 {
@@ -161,6 +175,8 @@ namespace ArdisCVDCore.modules_hw
                     port = _port;
                     reconnect = _forceReconnect;
                     _forceReconnect = false;
+                    rxtReconnectPulse = _rxtReconnectPending;
+                    _rxtReconnectPending = false;
                 }
 
                 try
@@ -169,6 +185,8 @@ namespace ArdisCVDCore.modules_hw
                         Disconnect();
 
                     EnsureConnected(host, port);
+                    _master.WriteSingleRegister(UnitId, ReconnectRegister, (ushort)(rxtReconnectPulse ? 0x0001 : 0x0000));
+
                     ushort[] registers = _master.ReadHoldingRegisters(UnitId, RegisterStart, RegisterCount);
                     State plcState = ParseRegisters(registers);
                     plcState.Connected = true;
@@ -186,6 +204,12 @@ namespace ArdisCVDCore.modules_hw
                     _errConnCount++;
                     if (_errConnCount < 2)
                         Logger.WriteError(new Exception("Pyrometers: " + ex.Message));
+
+                    if (rxtReconnectPulse)
+                    {
+                        lock (Sync)
+                            _rxtReconnectPending = true;
+                    }
 
                     Disconnect();
                     lock (Sync)

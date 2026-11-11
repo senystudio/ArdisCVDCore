@@ -83,6 +83,7 @@
     <Compile Include="data\IniWriter.cs" />
     <Compile Include="data\Logger.cs" />
     <Compile Include="data\ProcessLogger.cs" />
+    <Compile Include="data\StepData.cs" />
     <Compile Include="modules_hw\PLC210PidClient.cs" />
     <Compile Include="modules_hw\PLC210ThyracontClient.cs" />
     <Compile Include="modules_hw\PLC210GasFlowClient.cs" />
@@ -108,6 +109,21 @@
     </Compile>
     <Compile Include="MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MainForm.Recipe.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="RecipeEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="RecipeEditor.Designer.cs">
+      <DependentUpon>RecipeEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="RecipeSelector.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="RecipeSelector.Designer.cs">
+      <DependentUpon>RecipeSelector.cs</DependentUpon>
     </Compile>
     <Compile Include="AboutForm.cs">
       <SubType>Form</SubType>

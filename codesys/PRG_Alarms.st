@@ -34,6 +34,7 @@ VAR
     wFlowValid : WORD;
     wTurboStatus : WORD;
     wDiscrete : WORD;
+    wMwTripNow : WORD;
 
     xMwRequested : BOOL;
     xPyroValid : BOOL;
@@ -134,7 +135,8 @@ END_FOR;
 (* inputs from the register map *)
 wMwStatus := awHolding[195];
 wCommand := awHolding[192];
-xMwRequested := ((wCommand AND WORD#16#0003) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit);
+xMwRequested := ((wCommand AND WORD#16#0003) <> WORD#0) AND (NOT xAbortActive) AND (NOT xMwInhibit)
+    AND (NOT xMwTripActive);
 rReflKw := F_ReadFixed(awHolding[199], awHolding[200]);
 
 wTempValid := awHolding[238];
@@ -304,19 +306,30 @@ IF arBandMeasured[0] > C_CHAMBER_MAX_TORR THEN
     axAlarm[25] := TRUE;
 END_IF;
 
-(* microwave generator faults, only while it is requested *)
+(* microwave generator faults while requested: only the microwave stops, latched until reset *)
 IF xMwRequested THEN
-    IF (wMwStatus AND WORD#16#8000) <> WORD#0 THEN axAbort[32] := TRUE; END_IF;
-    IF (wMwStatus AND WORD#16#2000) <> WORD#0 THEN axAbort[33] := TRUE; END_IF;
-    IF (wMwStatus AND WORD#16#4000) <> WORD#0 THEN axAbort[34] := TRUE; END_IF;
-    IF (wMwStatus AND WORD#16#1000) <> WORD#0 THEN axAbort[35] := TRUE; END_IF;
-    IF (wMwStatus AND WORD#16#0800) <> WORD#0 THEN axAbort[36] := TRUE; END_IF;
-    IF (wMwStatus AND WORD#16#0004) <> WORD#0 THEN axAbort[37] := TRUE; END_IF;
-    IF (wMwStatus AND WORD#16#0400) <> WORD#0 THEN axAbort[38] := TRUE; END_IF;
-    IF (wMwStatus AND WORD#16#0200) <> WORD#0 THEN axAbort[39] := TRUE; END_IF;
+    wMwTripNow := WORD#0;
+    IF (wMwStatus AND WORD#16#8000) <> WORD#0 THEN wMwTripNow := wMwTripNow OR WORD#16#0001; END_IF;
+    IF (wMwStatus AND WORD#16#2000) <> WORD#0 THEN wMwTripNow := wMwTripNow OR WORD#16#0002; END_IF;
+    IF (wMwStatus AND WORD#16#4000) <> WORD#0 THEN wMwTripNow := wMwTripNow OR WORD#16#0004; END_IF;
+    IF (wMwStatus AND WORD#16#1000) <> WORD#0 THEN wMwTripNow := wMwTripNow OR WORD#16#0008; END_IF;
+    IF (wMwStatus AND WORD#16#0800) <> WORD#0 THEN wMwTripNow := wMwTripNow OR WORD#16#0010; END_IF;
+    IF (wMwStatus AND WORD#16#0004) <> WORD#0 THEN wMwTripNow := wMwTripNow OR WORD#16#0020; END_IF;
+    IF (wMwStatus AND WORD#16#0400) <> WORD#0 THEN wMwTripNow := wMwTripNow OR WORD#16#0040; END_IF;
+    IF (wMwStatus AND WORD#16#0200) <> WORD#0 THEN wMwTripNow := wMwTripNow OR WORD#16#0080; END_IF;
+    IF (wMwStatus AND WORD#16#0002) <> WORD#0 THEN wMwTripNow := wMwTripNow OR WORD#16#0200; END_IF;
     IF (wMwStatus AND WORD#16#0010) <> WORD#0 THEN axAlarm[40] := TRUE; END_IF;
-    IF (wMwStatus AND WORD#16#0002) <> WORD#0 THEN axAbort[41] := TRUE; END_IF;
+    IF wMwTripNow <> WORD#0 THEN
+        xMwTripActive := TRUE;
+        wMwTripLatched := wMwTripLatched OR wMwTripNow;
+    END_IF;
 END_IF;
+
+FOR i := 0 TO 9 DO
+    IF (wMwTripLatched AND SHL(WORD#1, i)) <> WORD#0 THEN
+        axAlarm[32 + i] := TRUE;
+    END_IF;
+END_FOR;
 
 (* turbo pump faults *)
 IF xTurboAnswering THEN
@@ -351,7 +364,7 @@ FOR i := 0 TO 63 DO
 END_FOR;
 
 (* abort: latches on its own, cleared by a reset from the hmi *)
-xReset := (awHolding[1] AND WORD#16#0004) <> WORD#0;
+xReset := xThresholdsOk AND ((awHolding[271] AND WORD#16#0002) <> WORD#0);
 
 IF xAnyAbort AND (NOT xAbortActive) THEN
     xAbortActive := TRUE;
@@ -370,6 +383,10 @@ IF xAbortActive THEN
     IF (awHolding[192] AND WORD#16#0003) <> WORD#0 THEN xMwInhibit := TRUE; END_IF;
 END_IF;
 
+IF xMwTripActive AND ((awHolding[192] AND WORD#16#0003) <> WORD#0) THEN
+    xMwInhibit := TRUE;
+END_IF;
+
 (* an inhibit clears once the hmi switches that output off *)
 wGpvInhibit := wGpvInhibit AND awHolding[133];
 wVpvInhibit := wVpvInhibit AND awHolding[135];
@@ -377,12 +394,16 @@ IF (awHolding[137] AND WORD#16#0002) = WORD#0 THEN xForeVacInhibit := FALSE; END
 IF (awHolding[240] AND WORD#16#0001) = WORD#0 THEN xTurboInhibit := FALSE; END_IF;
 IF (awHolding[192] AND WORD#16#0003) = WORD#0 THEN xMwInhibit := FALSE; END_IF;
 
-(* reset from the hmi, only when no abort cause is left *)
-IF xReset AND (NOT xResetPrev) AND (NOT xAnyAbort) THEN
-    xAbortActive := FALSE;
-    FOR i := 0 TO 3 DO
-        awAbortLatched[i] := WORD#0;
-    END_FOR;
+(* reset from the hmi: microwave trip always, abort only when no cause is left *)
+IF xReset AND (NOT xResetPrev) THEN
+    xMwTripActive := FALSE;
+    wMwTripLatched := WORD#0;
+    IF NOT xAnyAbort THEN
+        xAbortActive := FALSE;
+        FOR i := 0 TO 3 DO
+            awAbortLatched[i] := WORD#0;
+        END_FOR;
+    END_IF;
 END_IF;
 xResetPrev := xReset;
 
@@ -409,6 +430,9 @@ END_IF;
 IF (wGpvInhibit <> WORD#0) OR (wVpvInhibit <> WORD#0)
     OR xForeVacInhibit OR xTurboInhibit OR xMwInhibit THEN
     wStatusWord := wStatusWord OR WORD#16#0010;
+END_IF;
+IF xMwTripActive THEN
+    wStatusWord := wStatusWord OR WORD#16#0020;
 END_IF;
 awHolding[292] := wStatusWord;
 awHolding[294] := wGpvInhibit;

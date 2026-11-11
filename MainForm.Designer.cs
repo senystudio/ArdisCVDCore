@@ -281,7 +281,6 @@
             this.pictureBox16 = new System.Windows.Forms.PictureBox();
             this.Gas_groupBox = new System.Windows.Forms.GroupBox();
             this.button1 = new System.Windows.Forms.Button();
-            this.button2 = new System.Windows.Forms.Button();
             this.button9 = new System.Windows.Forms.Button();
             this.pictureBox3 = new System.Windows.Forms.PictureBox();
             this.Vacuum_groupBox.SuspendLayout();
@@ -1386,7 +1385,6 @@
             this.Microwave_groupBox.BackColor = System.Drawing.SystemColors.GradientActiveCaption;
             this.Microwave_groupBox.Controls.Add(this.PreheatBar);
             this.Microwave_groupBox.Controls.Add(this.button9);
-            this.Microwave_groupBox.Controls.Add(this.button2);
             this.Microwave_groupBox.Controls.Add(this.button1);
             this.Microwave_groupBox.Controls.Add(this.StartMW);
             this.Microwave_groupBox.Controls.Add(this.MicrowaveIncident_groupBox);
@@ -3422,25 +3420,13 @@
             this.button1.UseVisualStyleBackColor = false;
             this.button1.Click += new System.EventHandler(this.button1_Click_1);
             // 
-            // button2
-            // 
-            this.button2.BackColor = System.Drawing.SystemColors.Control;
-            this.button2.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button2.Location = new System.Drawing.Point(8, 120);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(179, 26);
-            this.button2.TabIndex = 395;
-            this.button2.Text = "RESET";
-            this.button2.UseVisualStyleBackColor = false;
-            this.button2.Click += new System.EventHandler(this.ResetMW_Click);
-            // 
             // button9
             // 
             this.button9.BackColor = System.Drawing.SystemColors.Control;
             this.button9.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button9.Location = new System.Drawing.Point(193, 120);
+            this.button9.Location = new System.Drawing.Point(8, 120);
             this.button9.Name = "button9";
-            this.button9.Size = new System.Drawing.Size(180, 26);
+            this.button9.Size = new System.Drawing.Size(365, 26);
             this.button9.TabIndex = 396;
             this.button9.Text = "STOP";
             this.button9.UseVisualStyleBackColor = false;
@@ -3890,7 +3876,6 @@
         public System.Windows.Forms.GroupBox Gas_groupBox;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button button9;
-        private System.Windows.Forms.Button button2;
         private System.Windows.Forms.PictureBox pictureBox3;
     }
 }

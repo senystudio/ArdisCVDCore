@@ -102,7 +102,7 @@ namespace ArdisCVDCore
                 "Every gas setpoint has been forced to zero. Check the venting", null);
 
             AddMicrowave(map, MicrowaveFirst + 0, "no cooling water at the generator",
-                "Start the water pump, then press RESET on the generator");
+                "Start the water pump, then press Reset in Fault Status");
             AddMicrowave(map, MicrowaveFirst + 1, "arc or fire detected",
                 "Inspect the applicator and the waveguide before restarting");
             AddMicrowave(map, MicrowaveFirst + 2, "the magnetron is overheating",
@@ -177,8 +177,8 @@ namespace ArdisCVDCore
         {
             Add(map, code, "Microwave",
                 "Generator fault: " + reason,
-                recommendation,
-                "Everything stopped. " + recommendation);
+                "Microwave switched off. " + recommendation,
+                null);
         }
 
         private static void AddTurbo(Dictionary<int, AlarmEntry> map, int code,

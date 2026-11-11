@@ -30,5 +30,11 @@ namespace ArdisCVDCore
         public static bool PresetPending;
         public static ushort PresetId;
         public static double PresetOutput;
+
+        public static double GasFlow;
+        public static double PresetGasFlow;
+        public static bool ShiftPending;
+        public static ushort ShiftId;
+        public static double ShiftDelta;
     }
 }

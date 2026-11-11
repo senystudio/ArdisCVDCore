@@ -34,6 +34,10 @@ namespace ArdisCVDCore
         private readonly Timer _applyBlinkTimer = new Timer();
         private int _applyBlinkLeft;
 
+        private const int PyroStateIntervalMs = 500;
+        private readonly Timer _pyroStateTimer = new Timer();
+        private Button PyroReconnect;
+
         public ProcessParametersForm()
         {
             InitializeComponent();
@@ -48,6 +52,38 @@ namespace ArdisCVDCore
             _applyBlinkTimer.Interval = ApplyBlinkIntervalMs;
             _applyBlinkTimer.Tick += ApplyBlinkTimer_Tick;
             Disposed += (s, e) => _applyBlinkTimer.Dispose();
+
+            CreatePyroReconnect();
+            _pyroStateTimer.Interval = PyroStateIntervalMs;
+            _pyroStateTimer.Tick += (s, e) => UpdatePyroReconnect();
+            Disposed += (s, e) => _pyroStateTimer.Dispose();
+        }
+
+        private void CreatePyroReconnect()
+        {
+            PyroReconnect = new Button
+            {
+                Name = "PyroReconnect",
+                Text = "RECONNECT",
+                BackColor = SystemColors.Control,
+                UseVisualStyleBackColor = false,
+                Font = new Font("Microsoft Sans Serif", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 204),
+                Location = new Point(136, 34),
+                Size = new Size(84, 22),
+                Visible = false
+            };
+            PyroReconnect.Click += PyroReconnect_Click;
+            SampleDeviation.Controls.Add(PyroReconnect);
+        }
+
+        private void UpdatePyroReconnect()
+        {
+            PyroReconnect.Visible = !PLC210PyrometerClient.GetState().RxtAnswering;
+        }
+
+        private void PyroReconnect_Click(object sender, EventArgs e)
+        {
+            PLC210PyrometerClient.RequestRxtReconnect();
         }
 
         private void ProcessParametersForm_Load(object sender, EventArgs e)
@@ -57,6 +93,8 @@ namespace ArdisCVDCore
             LoadChamberPid();
             LoadAlarms();
             LoadGasCorrection();
+            UpdatePyroReconnect();
+            _pyroStateTimer.Start();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
@@ -155,6 +193,8 @@ namespace ArdisCVDCore
             label88.Visible = false;
             label87.Visible = false;
             label90.Visible = false;
+            Chamber_SmartMode.Visible = false;
+            Chamber_pid_SmartP.Visible = false;
         }
 
         private void LoadChamberPid()

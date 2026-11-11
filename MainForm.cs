@@ -15,6 +15,7 @@ namespace ArdisCVDCore
         private const int PreheatSeconds = 150;
 
         private NumericUpDown[] _gasSetpoint;
+        private int _gasValveMask = -1;
         private TextBox[] _gasMeasured;
 
         private PictureBox[] _gasValveBox;
@@ -39,7 +40,7 @@ namespace ArdisCVDCore
 
         private const int MicrowaveAutoResetDelayTicks = 5;
         private int _microwaveAutoResetTicks;
-        private bool _waterFaultWarned;
+        private bool _microwaveTripHandled;
 
         private int _turboBarSpeedHz;
         private bool _turboBarAtSpeed;
@@ -64,6 +65,7 @@ namespace ArdisCVDCore
             BindChannels();
             BindMenuIcons();
             SetLoggingMenu(Logger.Enabled);
+            AddRecipeEditorMenu();
             ProcessLogger.Init();
         }
 
@@ -131,6 +133,7 @@ namespace ArdisCVDCore
                 return;
             }
 
+            RecipeEditor.AppExiting = true;
             CloseOtherWindows();
 
             SuperCycle.Stop();
@@ -271,10 +274,12 @@ namespace ArdisCVDCore
             UpdateAlarms();
             UpdateStatusPlate();
 
+            RecipeTick();
+
             if (ChamberPid.Committed)
                 PushChamberChannel();
 
-            if (_manualRunActive && Logger.Enabled)
+            if ((_manualRunActive || _autoActive) && Logger.Enabled)
                 ProcessLogger.Record(ProcessSample.Capture(DateTime.Now));
         }
 
@@ -285,6 +290,12 @@ namespace ArdisCVDCore
 
             if (ChamberPid.PresetPending && state.Connected && state.ChamberPresetDoneId == ChamberPid.PresetId)
                 ChamberPid.PresetPending = false;
+
+            if (ChamberPid.ShiftPending && state.Connected && state.ChamberShiftDoneId == ChamberPid.ShiftId)
+                ChamberPid.ShiftPending = false;
+
+            if (!ChamberPid.ShiftPending && ChamberPid.GasFlow != ChamberPid.PresetGasFlow)
+                QueueChamberShift(state.ChamberShiftDoneId);
 
             PLC210PidClient.Channel chamber = new PLC210PidClient.Channel
             {
@@ -298,6 +309,8 @@ namespace ArdisCVDCore
                 SmartKp = ChamberPid.SmartKp,
                 PresetId = ChamberPid.PresetPending ? ChamberPid.PresetId : (ushort)0,
                 PresetOutput = ChamberPid.PresetOutput,
+                ShiftId = ChamberPid.ShiftPending ? ChamberPid.ShiftId : (ushort)0,
+                ShiftDelta = ChamberPid.ShiftDelta,
                 LowerLimit = ChamberPid.DirectMode ? 0 : ChamberPid.LowerLimit,
                 UpperLimit = ChamberPid.DirectMode ? 5000 : ChamberPid.UpperLimit,
                 DirectMode = ChamberPid.DirectMode,
@@ -330,8 +343,14 @@ namespace ArdisCVDCore
         private void GasesSet_Click(object sender, EventArgs e)
         {
             int index = GasChannelOf(sender);
-            if (index >= 0)
-                PLC210GasFlowClient.RequestSetpoint(index, (double)_gasSetpoint[index].Value);
+            if (index < 0)
+                return;
+
+            if (_gasSetpoint[index].Value > 0 && BlockedUntilReset("Gases", false))
+                return;
+
+            PLC210GasFlowClient.RequestSetpoint(index, (double)_gasSetpoint[index].Value);
+            UpdateChamberGasFlow();
         }
 
         private int GasChannelOf(object setButton)
@@ -352,6 +371,8 @@ namespace ArdisCVDCore
                 return;
 
             bool wanted = !IsShownOpen(box);
+            if (wanted && BlockedUntilReset("Valves", false))
+                return;
 
             int index = Array.IndexOf(_gasValveBox, box);
             if (index >= 0)
@@ -428,6 +449,14 @@ namespace ArdisCVDCore
             PLC210GasValveClient.State gasValves = PLC210GasValveClient.GetState();
             for (int i = 0; i < _gasValveBox.Length; i++)
                 ShowValve(_gasValveBox[i], gasValves.Connected && gasValves.ValveOn[i]);
+
+            if (gasValves.Connected)
+            {
+                int previousMask = _gasValveMask;
+                _gasValveMask = GasValveMask(gasValves);
+                if (previousMask >= 0 && previousMask != _gasValveMask)
+                    UpdateChamberGasFlow();
+            }
 
             PLC210VacuumClient.State vacuum = PLC210VacuumClient.GetState();
             for (int i = 0; i < _vacuumValveBox.Length; i++)
@@ -529,13 +558,7 @@ namespace ArdisCVDCore
             }
 
             PLC210GasValveClient.State valves = PLC210GasValveClient.GetState();
-            double totalFlow = 0;
-            if (valves.Connected && valves.ValveOn[MainGasValveIndex])
-            {
-                for (int i = 0; i < _gasSetpoint.Length; i++)
-                    if (valves.ValveOn[i])
-                        totalFlow += (double)_gasSetpoint[i].Value;
-            }
+            double totalFlow = valves.Connected ? ChamberGasFlow(GasValveMask(valves)) : 0;
 
             double x = totalFlow / ChamberPid.Setpoint;
 
@@ -548,6 +571,52 @@ namespace ArdisCVDCore
             ChamberPid.PresetId = id;
             ChamberPid.PresetOutput = ChamberPid.PresetSlope * x + ChamberPid.PresetOffset;
             ChamberPid.PresetPending = true;
+            ChamberPid.PresetGasFlow = totalFlow;
+            ChamberPid.GasFlow = totalFlow;
+        }
+
+        private void QueueChamberShift(ushort doneId)
+        {
+            double from = ChamberPid.PresetGasFlow;
+            ChamberPid.PresetGasFlow = ChamberPid.GasFlow;
+            if (ChamberPid.Setpoint <= 0)
+                return;
+
+            ushort id = ChamberPid.ShiftId;
+            do
+                id++;
+            while (id == 0 || id == doneId);
+
+            ChamberPid.ShiftId = id;
+            ChamberPid.ShiftDelta = ChamberPid.PresetSlope * (ChamberPid.GasFlow - from) / ChamberPid.Setpoint;
+            ChamberPid.ShiftPending = true;
+        }
+
+        private void UpdateChamberGasFlow()
+        {
+            if (_gasValveMask >= 0)
+                ChamberPid.GasFlow = ChamberGasFlow(_gasValveMask);
+        }
+
+        private double ChamberGasFlow(int valveMask)
+        {
+            if ((valveMask & (1 << MainGasValveIndex)) == 0)
+                return 0;
+
+            double totalFlow = 0;
+            for (int i = 0; i < _gasSetpoint.Length; i++)
+                if ((valveMask & (1 << i)) != 0)
+                    totalFlow += (double)_gasSetpoint[i].Value;
+            return totalFlow;
+        }
+
+        private static int GasValveMask(PLC210GasValveClient.State valves)
+        {
+            int mask = 0;
+            for (int i = 0; i < PLC210GasValveClient.ValveCount; i++)
+                if (valves.ValveOn[i])
+                    mask |= 1 << i;
+            return mask;
         }
 
         private void UpdateMicrowaveSection()
@@ -601,44 +670,15 @@ namespace ArdisCVDCore
                 _preheatBarFilledSeconds = filledSeconds;
                 PreheatBar.Invalidate();
             }
-
-            CheckMicrowaveWater(state);
-        }
-
-        private void CheckMicrowaveWater(PLC210MicrowaveClient.State state)
-        {
-            if (state.GeneratorAnswering && state.WaterFlowFault && !state.Idle)
-            {
-                if (_waterFaultWarned)
-                    return;
-
-                _waterFaultWarned = true;
-                PLC210MicrowaveClient.LatchWaterFault();
-                PLC210MicrowaveClient.RequestMicrowave(false);
-                ProcessLogger.OpTimeLogging(false, "MWPower");
-                PLC210MicrowaveClient.RequestPreheat(false);
-
-                BeginInvoke(new MethodInvoker(delegate
-                {
-                    MessageBox.Show(
-                        this,
-                        "No cooling water at the microwave generator.",
-                        "Microwave",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
-                }));
-
-                return;
-            }
-
-            if (state.Idle)
-                _waterFaultWarned = false;
         }
 
         private void StartMW_Click(object sender, EventArgs e)
         {
             bool turnOn = !_microwaveState.PreheatOn;
             if (!turnOn && !ConfirmSwitchOff("Preheat"))
+                return;
+
+            if (turnOn && (BlockedUntilReset("Preheat", true) || BlockedByGeneratorFault("Preheat")))
                 return;
 
             PLC210MicrowaveClient.RequestPreheat(turnOn);
@@ -651,6 +691,9 @@ namespace ArdisCVDCore
                 return;
 
             if (!turnOn && !ConfirmSwitchOff("Microwave"))
+                return;
+
+            if (turnOn && (BlockedUntilReset("Microwave", true) || BlockedByGeneratorFault("Microwave")))
                 return;
 
             PLC210MicrowaveClient.RequestMicrowave(turnOn);
@@ -668,9 +711,42 @@ namespace ArdisCVDCore
                 MessageBoxDefaultButton.Button2) == DialogResult.Yes;
         }
 
-        private void ResetMW_Click(object sender, EventArgs e)
+        private bool BlockedUntilReset(string title, bool microwave)
         {
-            PLC210MicrowaveClient.RequestReset();
+            PLC210AlarmClient.State alarms = PLC210AlarmClient.GetState();
+            if (!alarms.Connected)
+                return false;
+
+            string reason;
+            if (alarms.AbortActive)
+                reason = "Abort is active.";
+            else if (microwave && alarms.MicrowaveTripped)
+                reason = "The microwave was switched off by a generator fault.";
+            else
+                return false;
+
+            MessageBox.Show(
+                this,
+                reason + "\r\n\r\nOpen Fault Status and press Reset first.",
+                title,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return true;
+        }
+
+        private bool BlockedByGeneratorFault(string title)
+        {
+            PLC210MicrowaveClient.State microwave = PLC210MicrowaveClient.GetState();
+            if (!microwave.GeneratorAnswering || !microwave.FaultActive)
+                return false;
+
+            string text = microwave.WaterFlowFault
+                ? "No cooling water at the microwave generator.\r\n\r\nStart the water pump, then open Fault Status and press Reset."
+                : "The microwave generator reports a fault: " + SystemStatus.FaultReason(microwave)
+                    + ".\r\n\r\nFix the cause, then open Fault Status and press Reset.";
+
+            MessageBox.Show(this, text, title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return true;
         }
 
         private void MWReconnect_Click(object sender, EventArgs e)
@@ -679,6 +755,11 @@ namespace ArdisCVDCore
         }
 
         private void StopMW_Click(object sender, EventArgs e)
+        {
+            DropMicrowaveRequests();
+        }
+
+        private static void DropMicrowaveRequests()
         {
             PLC210MicrowaveClient.RequestMicrowave(false);
             ProcessLogger.OpTimeLogging(false, "MWPower");
@@ -732,6 +813,9 @@ namespace ArdisCVDCore
                     return;
                 }
             }
+
+            if (turnOn && BlockedUntilReset("Forevacuum pump", false))
+                return;
 
             PLC210VacuumClient.RequestForeVacPump(turnOn);
         }
@@ -833,6 +917,9 @@ namespace ArdisCVDCore
                 PLC210TurboPumpClient.RequestRun(false);
                 return;
             }
+
+            if (BlockedUntilReset("Turbo pump", false))
+                return;
 
             string blocker = DescribeTurboStartBlockers(state);
             if (blocker != null)
@@ -952,19 +1039,56 @@ namespace ArdisCVDCore
                 {
                     _abortHandled = true;
                     DropRequestsAfterAbort();
+                    StopRecipeAfterAbort();
                 }
             }
             else
             {
                 _abortHandled = false;
             }
+
+            if (state.MicrowaveTripped)
+            {
+                if (!_microwaveTripHandled)
+                {
+                    _microwaveTripHandled = true;
+                    DropMicrowaveRequests();
+                    ShowMicrowaveTrip(state);
+                }
+            }
+            else
+            {
+                _microwaveTripHandled = false;
+            }
+        }
+
+        private void ShowMicrowaveTrip(PLC210AlarmClient.State state)
+        {
+            string reason = "generator fault";
+            for (int code = AlarmCatalog.MicrowaveFirst; code < AlarmCatalog.MicrowaveFirst + 10; code++)
+            {
+                if (state.IsAlarm(code))
+                {
+                    reason = AlarmCatalog.Describe(code);
+                    break;
+                }
+            }
+
+            BeginInvoke(new MethodInvoker(delegate
+            {
+                MessageBox.Show(
+                    this,
+                    "The microwave was switched off.\r\n\r\n" + reason
+                        + "\r\n\r\nFix the cause, then open Fault Status and press Reset.",
+                    "Microwave",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }));
         }
 
         private void DropRequestsAfterAbort()
         {
-            PLC210MicrowaveClient.RequestMicrowave(false);
-            ProcessLogger.OpTimeLogging(false, "MWPower");
-            PLC210MicrowaveClient.RequestPreheat(false);
+            DropMicrowaveRequests();
 
             for (int i = 0; i < PLC210GasFlowClient.GasNames.Length; i++)
                 PLC210GasFlowClient.RequestSetpoint(i, 0);
@@ -1182,6 +1306,8 @@ namespace ArdisCVDCore
             Water_Btn.Enabled = _manualRunActive;
 
             AutoMode_groupBox.Enabled = !_manualRunActive;
+            ManualRun.Enabled = !_autoActive;
+            RecipeOpen.Enabled = !_autoActive;
         }
 
         private static string DescribeRunningEquipment()
@@ -1266,11 +1392,6 @@ namespace ArdisCVDCore
                 elapsed.Seconds);
         }
 
-        private void AutomaticRun_Click(object sender, EventArgs e) { }
-
-        private void AutomaticPause_Click(object sender, EventArgs e) { }
-
-        private void RecipeOpen_Click(object sender, EventArgs e) { }
 
 
         private void TempLoopDelayTimer_Tick(object sender, EventArgs e) { }

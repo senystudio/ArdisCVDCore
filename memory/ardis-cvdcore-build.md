@@ -64,3 +64,5 @@ Two traps. **Mac folders are not shared into the VM** — `Host Shared Folders: 
 Beware: PowerShell flattens nested arrays, so a table of replacements built as `@(@('a','b'),@('c','d'))` silently iterates six strings instead of three pairs and the edits appear to succeed while doing nothing. Use the Edit tool or a hashtable.
 
 See [[ardis-cvdcore-open-work]].
+
+**Смоук-тест форм, 11.11.2026.** Меню MainForm (MenuStrip) через UI Automation не видно — это один Pane `menuStrip1` без детей; `%f{UP}{UP}{ENTER}` попадает в Exit. Надёжнее всего форму проверять так: интерактивная задача `powershell -STA`, `Assembly.LoadFrom('C:\ArdisRun\ArdisCVDCore.exe')`, `Activator.CreateInstance`, `Show()`, приватные обработчики вызывать рефлексией и крутить `Application.DoEvents()` пока делается `prlctl capture`. Общая папка `ClaudeScratch` может принадлежать другой сессии — не перенаправлять её, а заводить свою (`ClaudeScratch67` и т.п.).
