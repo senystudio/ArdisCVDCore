@@ -8,8 +8,6 @@ namespace ArdisCVDCore
 {
     public class PidViewerForm : Form
     {
-        private const string IniSection = "PidViewer";
-
         private readonly CheckBox _direct;
         private readonly CustomNumericUpDown _directValue;
 
@@ -125,28 +123,13 @@ namespace ArdisCVDCore
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-            RestoreWindowPlacement();
             _timer.Start();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             _timer.Stop();
-            Rectangle bounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
-            IniWriter.INI.Write(IniSection, "X", bounds.X.ToString(CultureInfo.InvariantCulture));
-            IniWriter.INI.Write(IniSection, "Y", bounds.Y.ToString(CultureInfo.InvariantCulture));
             base.OnFormClosing(e);
-        }
-
-        private void RestoreWindowPlacement()
-        {
-            if (IniWriter.INI.KeyExists("X", IniSection) && IniWriter.INI.KeyExists("Y", IniSection))
-                Location = new Point(
-                    int.Parse(IniWriter.INI.ReadINI(IniSection, "X")),
-                    int.Parse(IniWriter.INI.ReadINI(IniSection, "Y")));
-
-            if (Location.X < 0 || Location.Y < 0)
-                Location = new Point(0, 0);
         }
 
         private void Direct_CheckedChanged(object sender, EventArgs e)

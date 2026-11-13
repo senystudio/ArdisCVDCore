@@ -62,10 +62,12 @@ namespace ArdisCVDCore
         public MainForm()
         {
             InitializeComponent();
+            BuildWorkspace();
             BindChannels();
             BindMenuIcons();
             SetLoggingMenu(Logger.Enabled);
             AddRecipeEditorMenu();
+            BuildToolbar();
             ProcessLogger.Init();
         }
 
@@ -120,7 +122,7 @@ namespace ArdisCVDCore
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            RestoreWindowPlacement();
+            ApplySavedWindowMode();
             StartPlcClients();
             SuperCycle.Start();
         }
@@ -145,10 +147,6 @@ namespace ArdisCVDCore
                 write.Wait(5000);
 
             StopPlcClients();
-
-            Rectangle bounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
-            IniWriter.INI.Write("MainForm", "X", bounds.X.ToString(CultureInfo.InvariantCulture));
-            IniWriter.INI.Write("MainForm", "Y", bounds.Y.ToString(CultureInfo.InvariantCulture));
         }
 
         private void CloseOtherWindows()
@@ -184,17 +182,6 @@ namespace ArdisCVDCore
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question,
                 MessageBoxDefaultButton.Button2) == DialogResult.Yes;
-        }
-
-        private void RestoreWindowPlacement()
-        {
-            if (IniWriter.INI.KeyExists("X", "MainForm") && IniWriter.INI.KeyExists("Y", "MainForm"))
-                Location = new Point(
-                    int.Parse(IniWriter.INI.ReadINI("MainForm", "X")),
-                    int.Parse(IniWriter.INI.ReadINI("MainForm", "Y")));
-
-            if (Location.X < 0 || Location.Y < 0)
-                Location = new Point(0, 0);
         }
 
         private void StartPlcClients()
@@ -887,10 +874,11 @@ namespace ArdisCVDCore
 
             Rectangle text = Rectangle.Inflate(area, -6, 0);
             TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding;
-            TextRenderer.DrawText(e.Graphics, "Preheat Status", PreheatBarFont, text,
+            Font font = _scaler.ScaledFont(PreheatBarFont);
+            TextRenderer.DrawText(e.Graphics, "Preheat Status", font, text,
                 SystemColors.ControlText, flags | TextFormatFlags.Left);
             TextRenderer.DrawText(e.Graphics, _preheatBarShownSeconds.ToString(CultureInfo.InvariantCulture) + "s",
-                PreheatBarFont, text, SystemColors.ControlText, flags | TextFormatFlags.Right);
+                font, text, SystemColors.ControlText, flags | TextFormatFlags.Right);
         }
 
         private void TurboSpeedBar_Paint(object sender, PaintEventArgs e)
@@ -1107,12 +1095,9 @@ namespace ArdisCVDCore
         {
             List<StatusLine> lines = SystemStatus.Collect();
 
-            if (!_statusPlateLeft.HasValue)
-                _statusPlateLeft = StatusLabel.Left;
-
             if (SystemStatus.PlcConnected())
             {
-                StatusLabel.Left = _statusPlateLeft.Value;
+                StatusLabel.Left = _scaler.ScaledBounds(StatusLabel).Left;
                 StatusLevel alarmLevel = SystemStatus.AlarmLevel();
                 StatusLabel.Text = SystemStatus.Describe(alarmLevel);
                 StatusLabel.BackColor = PlateColor(alarmLevel);
@@ -1130,8 +1115,6 @@ namespace ArdisCVDCore
 
             PLC210PidClient.SetTrafficLight(SystemStatus.TowerLamp(lines));
         }
-
-        private int? _statusPlateLeft;
 
         private static Color PlateColor(StatusLevel level)
         {
@@ -1211,43 +1194,31 @@ namespace ArdisCVDCore
 
         private void GasTrendToolMenu_Click(object sender, EventArgs e)
         {
-            _gasTrendForm = ShowSingleton(_gasTrendForm);
+            _gasTrendForm = ToggleTrend(_gasTrendForm);
+            UpdateTrendButtons();
         }
 
         private void PressureTrendToolMenu_Click(object sender, EventArgs e)
         {
-            _pressureTrendForm = ShowSingleton(_pressureTrendForm);
+            _pressureTrendForm = ToggleTrend(_pressureTrendForm);
+            UpdateTrendButtons();
         }
 
         private void MWPowerToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            _mwPowerTrendForm = ShowSingleton(_mwPowerTrendForm);
+            _mwPowerTrendForm = ToggleTrend(_mwPowerTrendForm);
+            UpdateTrendButtons();
         }
 
         private void temperatureTrendToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            _temperatureTrendForm = ShowSingleton(_temperatureTrendForm);
+            _temperatureTrendForm = ToggleTrend(_temperatureTrendForm);
+            UpdateTrendButtons();
         }
 
         private void PIDToolStripMenuItem_Click(object sender, EventArgs e)
         {
             _pidViewerForm = ShowSingleton(_pidViewerForm);
-        }
-
-        private static T ShowSingleton<T>(T existing) where T : Form, new()
-        {
-            if (existing == null || existing.IsDisposed)
-            {
-                T created = new T();
-                created.Show();
-                return created;
-            }
-
-            if (existing.WindowState == FormWindowState.Minimized)
-                existing.WindowState = FormWindowState.Normal;
-
-            existing.Activate();
-            return existing;
         }
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)

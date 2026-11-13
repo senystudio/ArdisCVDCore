@@ -11,7 +11,7 @@ namespace ArdisCVDCore.trends
         private Color _chamberPressureSetPointColor = Color.Empty;
 
         public PressureTrendForm()
-            : base("PressureTrend", "Pressure Trend", 0, 800)
+            : base("Pressure Trend", 0, 800)
         {
             AddSeries("ChamberPressure", "ChamberPressure (Torr)", Color.RoyalBlue, 3);
             AddSetPointSeries("ChamberPressureSetPoint", "ChamberPressureSetPoint (Torr)", Color.LightSkyBlue);

@@ -35,6 +35,9 @@ namespace ArdisCVDCore
         {
             InitializeComponent();
             Icon = Res.AppIcon;
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
+            StartPosition = FormStartPosition.Manual;
             Step = new StepItemData();
             AdaptToMachine();
         }

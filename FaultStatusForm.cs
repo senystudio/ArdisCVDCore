@@ -9,8 +9,6 @@ namespace ArdisCVDCore
 {
     public class FaultStatusForm : Form
     {
-        private const string IniSection = "FaultStatus";
-
         private static readonly Color AlarmBack = Color.FromArgb(249, 239, 60);
         private static readonly Color AbortBack = Color.FromArgb(255, 32, 104);
         private static readonly Color ClearedFore = Color.FromArgb(110, 110, 110);
@@ -33,7 +31,8 @@ namespace ArdisCVDCore
         {
             Text = "Fault Status";
             ClientSize = new Size(1105, 358);
-            MinimumSize = new Size(640, 300);
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
             StartPosition = FormStartPosition.Manual;
             Icon = Res.AppIcon;
 
@@ -147,7 +146,6 @@ namespace ArdisCVDCore
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-            RestoreWindowPlacement();
 
             int wanted = Math.Min(130, Math.Max(_split.Panel1MinSize,
                 _split.Height - _split.Panel2MinSize - _split.SplitterWidth));
@@ -160,28 +158,7 @@ namespace ArdisCVDCore
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             _timer.Stop();
-            Rectangle bounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
-            IniWriter.INI.Write(IniSection, "X", bounds.X.ToString(CultureInfo.InvariantCulture));
-            IniWriter.INI.Write(IniSection, "Y", bounds.Y.ToString(CultureInfo.InvariantCulture));
-            IniWriter.INI.Write(IniSection, "Width", bounds.Width.ToString(CultureInfo.InvariantCulture));
-            IniWriter.INI.Write(IniSection, "Height", bounds.Height.ToString(CultureInfo.InvariantCulture));
             base.OnFormClosing(e);
-        }
-
-        private void RestoreWindowPlacement()
-        {
-            if (IniWriter.INI.KeyExists("X", IniSection) && IniWriter.INI.KeyExists("Y", IniSection))
-                Location = new Point(
-                    int.Parse(IniWriter.INI.ReadINI(IniSection, "X")),
-                    int.Parse(IniWriter.INI.ReadINI(IniSection, "Y")));
-
-            if (IniWriter.INI.KeyExists("Width", IniSection) && IniWriter.INI.KeyExists("Height", IniSection))
-                Size = new Size(
-                    int.Parse(IniWriter.INI.ReadINI(IniSection, "Width")),
-                    int.Parse(IniWriter.INI.ReadINI(IniSection, "Height")));
-
-            if (Location.X < 0 || Location.Y < 0)
-                Location = new Point(0, 0);
         }
 
         private void Timer_Tick(object sender, EventArgs e)

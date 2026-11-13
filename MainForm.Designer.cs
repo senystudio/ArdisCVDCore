@@ -1625,7 +1625,7 @@
             this.groupBox14.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox14.Name = "groupBox14";
             this.groupBox14.Padding = new System.Windows.Forms.Padding(2);
-            this.groupBox14.Size = new System.Drawing.Size(153, 50);
+            this.groupBox14.Size = new System.Drawing.Size(137, 50);
             this.groupBox14.TabIndex = 396;
             this.groupBox14.TabStop = false;
             this.groupBox14.Text = "Stopwatch";
@@ -1634,7 +1634,7 @@
             // 
             this.StopWatchText.AutoSize = true;
             this.StopWatchText.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.StopWatchText.Location = new System.Drawing.Point(8, 17);
+            this.StopWatchText.Location = new System.Drawing.Point(3, 17);
             this.StopWatchText.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.StopWatchText.Name = "StopWatchText";
             this.StopWatchText.Size = new System.Drawing.Size(88, 24);
@@ -1643,7 +1643,7 @@
             // 
             // SWErase
             // 
-            this.SWErase.Location = new System.Drawing.Point(100, 30);
+            this.SWErase.Location = new System.Drawing.Point(91, 30);
             this.SWErase.Margin = new System.Windows.Forms.Padding(2);
             this.SWErase.Name = "SWErase";
             this.SWErase.Size = new System.Drawing.Size(40, 20);
@@ -1654,7 +1654,7 @@
             // 
             // SWStartStop
             // 
-            this.SWStartStop.Location = new System.Drawing.Point(100, 11);
+            this.SWStartStop.Location = new System.Drawing.Point(91, 11);
             this.SWStartStop.Margin = new System.Windows.Forms.Padding(2);
             this.SWStartStop.Name = "SWStartStop";
             this.SWStartStop.Size = new System.Drawing.Size(40, 20);
@@ -1728,7 +1728,7 @@
             this.RecipeOpen.Location = new System.Drawing.Point(321, 20);
             this.RecipeOpen.Margin = new System.Windows.Forms.Padding(2);
             this.RecipeOpen.Name = "RecipeOpen";
-            this.RecipeOpen.Size = new System.Drawing.Size(64, 28);
+            this.RecipeOpen.Size = new System.Drawing.Size(54, 28);
             this.RecipeOpen.TabIndex = 30;
             this.RecipeOpen.Text = "Open";
             this.RecipeOpen.UseVisualStyleBackColor = true;
@@ -1796,7 +1796,7 @@
             this.groupBox10.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.groupBox10.Location = new System.Drawing.Point(222, 51);
             this.groupBox10.Name = "groupBox10";
-            this.groupBox10.Size = new System.Drawing.Size(163, 34);
+            this.groupBox10.Size = new System.Drawing.Size(153, 34);
             this.groupBox10.TabIndex = 3;
             this.groupBox10.TabStop = false;
             this.groupBox10.Text = "Recipe Duration";
@@ -1880,7 +1880,7 @@
             this.groupBox6.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.groupBox6.Location = new System.Drawing.Point(243, 95);
             this.groupBox6.Name = "groupBox6";
-            this.groupBox6.Size = new System.Drawing.Size(142, 36);
+            this.groupBox6.Size = new System.Drawing.Size(132, 36);
             this.groupBox6.TabIndex = 8;
             this.groupBox6.TabStop = false;
             this.groupBox6.Text = "Time to End of Recipe";
@@ -1966,9 +1966,9 @@
             // groupBox4
             // 
             this.groupBox4.Controls.Add(this.CurrentTimeValue);
-            this.groupBox4.Location = new System.Drawing.Point(75, 11);
+            this.groupBox4.Location = new System.Drawing.Point(75, 16);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(75, 39);
+            this.groupBox4.Size = new System.Drawing.Size(75, 34);
             this.groupBox4.TabIndex = 1;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Current Time";
@@ -1976,9 +1976,9 @@
             // groupBox18
             // 
             this.groupBox18.Controls.Add(this.DurationValue);
-            this.groupBox18.Location = new System.Drawing.Point(154, 11);
+            this.groupBox18.Location = new System.Drawing.Point(154, 16);
             this.groupBox18.Name = "groupBox18";
-            this.groupBox18.Size = new System.Drawing.Size(81, 39);
+            this.groupBox18.Size = new System.Drawing.Size(81, 34);
             this.groupBox18.TabIndex = 2;
             this.groupBox18.TabStop = false;
             this.groupBox18.Text = "Duration";
@@ -1996,9 +1996,9 @@
             // groupBox19
             // 
             this.groupBox19.Controls.Add(this.StartTimeValue);
-            this.groupBox19.Location = new System.Drawing.Point(5, 11);
+            this.groupBox19.Location = new System.Drawing.Point(5, 16);
             this.groupBox19.Name = "groupBox19";
-            this.groupBox19.Size = new System.Drawing.Size(66, 39);
+            this.groupBox19.Size = new System.Drawing.Size(66, 34);
             this.groupBox19.TabIndex = 0;
             this.groupBox19.TabStop = false;
             this.groupBox19.Text = "Start Time";

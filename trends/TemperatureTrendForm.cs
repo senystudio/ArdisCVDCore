@@ -7,7 +7,7 @@ namespace ArdisCVDCore.trends
     public class TemperatureTrendForm : TrendForm
     {
         public TemperatureTrendForm()
-            : base("TemperatureTrend", "Temperature Trend", 200, 1500)
+            : base("Temperature Trend", 200, 1500)
         {
             AddSeries("Ch1", "Ch1, °C", Color.Blue, 3);
             AddSeries("Ch2", "Ch2, °C", Color.SeaGreen, 3);

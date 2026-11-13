@@ -13,7 +13,7 @@ namespace ArdisCVDCore.trends
         };
 
         public GasTrendForm()
-            : base("GasTrend", "Gas Trend", 0, 1000)
+            : base("Gas Trend", 0, 1000)
         {
             for (int i = 0; i < SeriesName.Length; i++)
             {

@@ -27,7 +27,15 @@ namespace ArdisCVDCore
                     Application.SetCompatibleTextRenderingDefault(false);
                     Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
                     Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
-                    Application.Run(new MainForm());
+                    using (SplashForm splash = new SplashForm())
+                    {
+                        splash.Show();
+                        splash.Update();
+
+                        MainForm main = new MainForm();
+                        main.Revealed += (s, e) => splash.Close();
+                        Application.Run(main);
+                    }
                 }
                 catch (Exception ex)
                 {

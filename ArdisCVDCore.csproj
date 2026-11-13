@@ -113,6 +113,10 @@
     <Compile Include="MainForm.Recipe.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="MainForm.Layout.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SchemeScaler.cs" />
     <Compile Include="RecipeEditor.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -155,6 +159,12 @@
     <Compile Include="trends\TemperatureTrendForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="trends\TrendDock.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="SplashForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="GraphScaler.resx">
@@ -167,6 +177,7 @@
     <EmbeddedResource Include="res\logo.png" />
     <EmbeddedResource Include="res\QR.png" />
     <EmbeddedResource Include="res\ardis.ico" />
+    <EmbeddedResource Include="res\start.png" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

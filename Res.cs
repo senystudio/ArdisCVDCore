@@ -13,6 +13,8 @@ namespace ArdisCVDCore
         private static readonly Image _valveClosed = LoadImage("Valve_red.png");
         private static readonly Image _valveOpen = LoadImage("Valve_green.png");
         private static readonly Color _onGreen = Color.FromArgb(0, 145, 14);
+        private static readonly Color _closeHot = Color.FromArgb(232, 17, 35);
+        private static readonly Color _closePressed = Color.FromArgb(241, 112, 122);
         private static readonly Image _logo = LoadImage("logo.png");
         private static readonly Image _qr = LoadImage("QR.png");
         private static readonly Icon _appIcon = LoadIcon("ardis.ico");
@@ -24,11 +26,20 @@ namespace ArdisCVDCore
 
         public static Color OnGreen { get { return _onGreen; } }
 
+        public static Color CloseHot { get { return _closeHot; } }
+
+        public static Color ClosePressed { get { return _closePressed; } }
+
         public static Image Logo { get { return _logo; } }
 
         public static Image Qr { get { return _qr; } }
 
         public static Icon AppIcon { get { return _appIcon; } }
+
+        public static Image LoadSplash()
+        {
+            return LoadImage("start.png");
+        }
 
         public static Image Glyph(char glyph, Color color, int size)
         {

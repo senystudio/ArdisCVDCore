@@ -5,7 +5,9 @@ metadata:
   type: project
 ---
 
-Все окна (MainForm, четыре тренда, PID Viewer, Status, Fault Status, Process Parameters) пишут X/Y (и Width/Height, где окно тянется) в `config.ini` из своего `OnFormClosing`, а читают в `OnLoad`.
+**С 13.11.2026 устарело почти целиком:** положение окон больше не запоминается, см. [[ui-layout]]. Ниже — история.
+
+Раньше все окна (MainForm, четыре тренда, PID Viewer, Status, Fault Status, Process Parameters) писали X/Y (и Width/Height, где окно тянется) в `config.ini` из своего `OnFormClosing`, а читают в `OnLoad`.
 
 **Баг, исправлен 29.09.2026 (не собрано):** окна, оставшиеся открытыми при выходе из программы, `FormClosing` не получают. Когда закрывается главное окно `Application.Run(new MainForm())`, WinForms просто вызывает `Dispose` на остальных окнах потока (`ThreadWindows.Dispose`), без WM_CLOSE. Графики обычно держат открытыми до выхода, поэтому их секции в `config.ini` навсегда остались `X=0, Y=0, 916x639`. Status/Fault Status «работали» только потому, что их закрывают крестиком раньше. Исправление: `MainForm.CloseOtherWindows()` сразу после подтверждения выхода закрывает все прочие `Application.OpenForms` (сначала копия списка, иначе Close во время перебора ломает коллекцию).
 

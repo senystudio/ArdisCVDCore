@@ -1,6 +1,5 @@
 using System;
 using System.Drawing;
-using System.Globalization;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 
@@ -15,7 +14,6 @@ namespace ArdisCVDCore.trends
         public double MinimumYAxis { get; set; }
         public int PointsViewIndex { get; set; }
 
-        private readonly string _iniSection;
         private readonly Timer _timer;
         private readonly HScrollBar _scrollBar;
 
@@ -25,16 +23,16 @@ namespace ArdisCVDCore.trends
 
         protected Chart chart;
 
-        protected TrendForm(string iniSection, string title, double yMinimum, double yMaximum)
+        protected TrendForm(string title, double yMinimum, double yMaximum)
         {
-            _iniSection = iniSection;
             MinimumYAxis = yMinimum;
             MaximumYAxis = yMaximum;
 
             Text = title;
-            ClientSize = new Size(900, 600);
-            StartPosition = FormStartPosition.Manual;
             Icon = Res.AppIcon;
+            TopLevel = false;
+            FormBorderStyle = FormBorderStyle.None;
+            Dock = DockStyle.Fill;
 
             ChartArea area = new ChartArea("ChartArea1");
             area.AxisX.IsLabelAutoFit = false;
@@ -113,42 +111,22 @@ namespace ArdisCVDCore.trends
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-            RestoreWindowPlacement();
-            _timer.Start();
-        }
-
-        protected override void OnShown(EventArgs e)
-        {
-            base.OnShown(e);
             chart.ChartAreas["ChartArea1"].AxisX.ScaleView.Zoomable = true;
             chart.ChartAreas["ChartArea1"].AxisY.ScaleView.Zoomable = true;
+            _timer.Start();
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             _timer.Stop();
-            Rectangle bounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
-            IniWriter.INI.Write(_iniSection, "X", bounds.X.ToString(CultureInfo.InvariantCulture));
-            IniWriter.INI.Write(_iniSection, "Y", bounds.Y.ToString(CultureInfo.InvariantCulture));
-            IniWriter.INI.Write(_iniSection, "Width", bounds.Width.ToString(CultureInfo.InvariantCulture));
-            IniWriter.INI.Write(_iniSection, "Height", bounds.Height.ToString(CultureInfo.InvariantCulture));
             base.OnFormClosing(e);
         }
 
-        private void RestoreWindowPlacement()
+        protected override void Dispose(bool disposing)
         {
-            if (IniWriter.INI.KeyExists("X", _iniSection) && IniWriter.INI.KeyExists("Y", _iniSection))
-                Location = new Point(
-                    int.Parse(IniWriter.INI.ReadINI(_iniSection, "X")),
-                    int.Parse(IniWriter.INI.ReadINI(_iniSection, "Y")));
-
-            if (IniWriter.INI.KeyExists("Width", _iniSection) && IniWriter.INI.KeyExists("Height", _iniSection))
-                Size = new Size(
-                    int.Parse(IniWriter.INI.ReadINI(_iniSection, "Width")),
-                    int.Parse(IniWriter.INI.ReadINI(_iniSection, "Height")));
-
-            if (Location.X < 0 || Location.Y < 0)
-                Location = new Point(0, 0);
+            if (disposing)
+                _timer.Dispose();
+            base.Dispose(disposing);
         }
 
         private void Timer_Tick(object sender, EventArgs e)

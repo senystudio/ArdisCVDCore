@@ -1,5 +1,5 @@
 - [About date](about-form-date.md) — at the start of every session set AboutForm.ReleaseDate to today (dd.MM.yyyy)
-- [Working style](ardis-cvdcore-working-style.md) — no comments in C#, short English (* *) comments only in PLC_PRG/PRG_*.st, never touch Designer.cs, Russian only, don't build until told, ask instead of inventing
+- [Working style](ardis-cvdcore-working-style.md) — no comments in C#, short English (* *) comments only in PLC_PRG/PRG_*.st, Designer.cs: only Location/Size-type values, never its comments, Russian only, don't build until told, ask instead of inventing
 - [Open work](ardis-cvdcore-open-work.md) — what's inert on purpose, what's parked, and the decisions still outstanding
 - [Reference projects](ardis-reference-projects.md) — where the two older Ardis apps live and what each is good for
 - [Build and smoke test](ardis-cvdcore-build.md) — always Release (since 13.10.2026); MSBuild invocation (Build, never Rebuild: it deletes the live config.ini), driving the Parallels Windows VM with prlctl from macOS, the NModbus trap, how to screenshot the running app
@@ -14,6 +14,7 @@
 - [Логирование](logging.md) — копия механики ArdisCVDMaster: NLog-журнал ошибок, ProcessLogs/*.dat, configBackup.bin; отличия и колонки
 - [Smart Mode PID](chamber-pid-smart-mode.md) — Smart P на подъёме (давление выше уставки и D > 0), с перегиба — обычный P; в ПЛК, регистры 27..29; первая версия была перевёрнута
 - [Светофор](signal-tower-rule.md) — аварии и связь горят независимо (зелёная+жёлтая), МВ и турбонасос не влияют; что считается «проблемой связи»
-- [Положение окон](window-placement.md) — почему графики не запоминали место: открытые при выходе окна не получают FormClosing; RestoreBounds для свёрнутых
+- [Положение окон](window-placement.md) — история: с 13.11.2026 положение окон не запоминается; CloseOtherWindows при выходе всё ещё нужен
 - [Предустановка выхода PID](chamber-pid-preset.md) — SET давления: y = 23.75449·(Σ газов с GPV и GPV8 / уставка) + 2306.41, ПЛК ставит rOutput = y при пересечении уставки; при смене газов rOutput сдвигается на Δy; регистры 56..61, 114, 115
 - [Рецепты](recipe-system.md) — перенос Recipe Editor + автомат из ArdisCVDMaster: решения пользователя по железу, МВ, авариям, Stop
+- [Редизайн интерфейса](ui-layout.md) — НА ПАУЗЕ с 13.11.2026: каркас (полный экран, графики справа, панель с иконками) готов и не закоммичен; последнюю сборку пользователь не смотрел; тема ISA-101 + тёмная не начата

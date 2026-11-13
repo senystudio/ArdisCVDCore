@@ -6,7 +6,7 @@ namespace ArdisCVDCore.trends
     public class MWPowerTrendForm : TrendForm
     {
         public MWPowerTrendForm()
-            : base("MWPowerTrend", "MW Power Trend", 0, PLC210MicrowaveClient.MaxSetpointKw)
+            : base("MW Power Trend", 0, PLC210MicrowaveClient.MaxSetpointKw)
         {
             AddSeries("Incident", "Incident, kW", Color.Blue, 3);
             AddSetPointSeries("IncidentSetPoint", "Incident set point, kW", Color.Blue);

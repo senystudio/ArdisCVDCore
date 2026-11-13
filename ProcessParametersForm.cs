@@ -8,8 +8,6 @@ namespace ArdisCVDCore
 {
     public partial class ProcessParametersForm : Form
     {
-        private const string IniSection = "ProcessParameters";
-
         private CheckBox[] _paramAlarmEnable;
         private CheckBox[] _paramAbortEnable;
         private NumericUpDown[] _paramAlarmVal;
@@ -42,6 +40,8 @@ namespace ArdisCVDCore
         {
             InitializeComponent();
             Icon = Res.AppIcon;
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
             StartPosition = FormStartPosition.Manual;
             BindAlarmControls();
             _gcf = new[] { GCFH2, GCFCH4, GCFN2, GCFO2, GCFAR };
@@ -88,7 +88,6 @@ namespace ArdisCVDCore
 
         private void ProcessParametersForm_Load(object sender, EventArgs e)
         {
-            RestoreWindowPlacement();
             HideRowsWithNoHardware();
             LoadChamberPid();
             LoadAlarms();
@@ -97,24 +96,6 @@ namespace ArdisCVDCore
             _pyroStateTimer.Start();
         }
 
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            Rectangle bounds = WindowState == FormWindowState.Normal ? Bounds : RestoreBounds;
-            IniWriter.INI.Write(IniSection, "X", bounds.X.ToString(CultureInfo.InvariantCulture));
-            IniWriter.INI.Write(IniSection, "Y", bounds.Y.ToString(CultureInfo.InvariantCulture));
-            base.OnFormClosing(e);
-        }
-
-        private void RestoreWindowPlacement()
-        {
-            if (IniWriter.INI.KeyExists("X", IniSection) && IniWriter.INI.KeyExists("Y", IniSection))
-                Location = new Point(
-                    int.Parse(IniWriter.INI.ReadINI(IniSection, "X")),
-                    int.Parse(IniWriter.INI.ReadINI(IniSection, "Y")));
-
-            if (Location.X < 0 || Location.Y < 0)
-                Location = new Point(0, 0);
-        }
 
         private void BindAlarmControls()
         {
