@@ -641,6 +641,7 @@ namespace ArdisCVDCore
             StartMW.Enabled = generatorAlive;
             button1.Enabled = generatorAlive && !state.FaultReportable && !state.ChamberPressureLow
                 && (state.FilamentPreheatDone || state.MicrowaveOn);
+            button9.Enabled = (generatorAlive && !state.Idle) || PLC210MicrowaveClient.AnythingRequested();
 
             bool preheating = generatorAlive && state.PreheatOn && !state.FilamentPreheatDone;
             int remaining = Math.Max(0, PreheatSeconds - state.PreheatElapsedSeconds);
@@ -741,7 +742,7 @@ namespace ArdisCVDCore
                 return false;
 
             string text = microwave.WaterFlowFault
-                ? "No cooling water at the microwave generator.\r\n\r\nStart the water pump, then open Fault Status and press Reset."
+                ? "No cooling water at the microwave generator.\r\n\r\nStart the water pump."
                 : "The microwave generator reports a fault: " + SystemStatus.FaultReason(microwave)
                     + ".\r\n\r\nFix the cause, then open Fault Status and press Reset.";
 
@@ -756,6 +757,9 @@ namespace ArdisCVDCore
 
         private void StopMW_Click(object sender, EventArgs e)
         {
+            if (!ConfirmSwitchOff("Microwave and Preheat"))
+                return;
+
             DropMicrowaveRequests();
         }
 

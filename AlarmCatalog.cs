@@ -102,7 +102,7 @@ namespace ArdisCVDCore
                 "Every gas setpoint has been forced to zero. Check the venting", null);
 
             AddMicrowave(map, MicrowaveFirst + 0, "no cooling water at the generator",
-                "Start the water pump, then press Reset in Fault Status");
+                "Start the water pump");
             AddMicrowave(map, MicrowaveFirst + 1, "arc or fire detected",
                 "Inspect the applicator and the waveguide before restarting");
             AddMicrowave(map, MicrowaveFirst + 2, "the magnetron is overheating",

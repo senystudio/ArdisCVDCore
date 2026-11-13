@@ -177,6 +177,12 @@ namespace ArdisCVDCore.modules_hw
                 _microwaveRequested = on;
         }
 
+        public static bool AnythingRequested()
+        {
+            lock (Sync)
+                return _preheatRequested || _microwaveRequested;
+        }
+
         public static void RequestSetpoint(double kw)
         {
             lock (Sync)

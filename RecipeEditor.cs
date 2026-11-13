@@ -97,6 +97,11 @@ namespace ArdisCVDCore
                 n.DecimalPlaces = 2;
                 n.Increment = 0.1m;
             }
+
+            ChamberPID_DirectMode_Value.Minimum = 0;
+            ChamberPID_DirectMode_Value.Maximum = 5000;
+            ChamberPID_DirectMode_Value.DecimalPlaces = 0;
+            ChamberPID_DirectMode_Value.Increment = 1;
         }
 
         private static void SetValue(NumericUpDown n, decimal value)
