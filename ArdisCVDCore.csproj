@@ -166,6 +166,7 @@
     <Compile Include="trends\TrendDock.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="trends\TrendLayout.cs" />
     <Compile Include="SplashForm.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -47,7 +47,6 @@ namespace ArdisCVDCore
         private SchemeScaler _scaler;
         private bool _fullScreen;
         private ToolStripMenuItem _fullScreenMenu;
-        private ToolStripMenuItem _sideBySideMenu;
         private ToolStripMenuItem _minimizeMenu;
         private ToolStripMenuItem _closeMenu;
 
@@ -87,6 +86,7 @@ namespace ArdisCVDCore
                 LayoutWorkspace();
                 UpdateTrendButtons();
             };
+            _trendDock.LayoutChanged += (s, e) => SaveTrendLayout();
 
             _splitter = new Panel
             {
@@ -133,9 +133,8 @@ namespace ArdisCVDCore
             Theme.Glyph(item, '\uE790', 20);
             item.Click += (s, e) => _themeForm = ShowSingleton(_themeForm);
 
-            int exitIndex = fileToolStripMenuItem.DropDownItems.IndexOf(ExitToolMenu);
-            int index = exitIndex > 0 ? exitIndex - 1 : fileToolStripMenuItem.DropDownItems.Count;
-            fileToolStripMenuItem.DropDownItems.Insert(index, item);
+            int index = viewToolStripMenuItem.DropDownItems.IndexOf(_fullScreenMenu);
+            viewToolStripMenuItem.DropDownItems.Insert(index >= 0 ? index : viewToolStripMenuItem.DropDownItems.Count, item);
         }
 
         private void AddLayoutMenu()
@@ -151,18 +150,28 @@ namespace ArdisCVDCore
                 IniWriter.INI.Write(LayoutIniSection, "FullScreen", _fullScreen ? "1" : "0");
             };
 
-            _sideBySideMenu = new ToolStripMenuItem("Graphs Side by Side");
-            Theme.Glyph(_sideBySideMenu, '', 20);
-            _sideBySideMenu.Click += (s, e) =>
-            {
-                _trendDock.SideBySide = !_trendDock.SideBySide;
-                _sideBySideMenu.Checked = _trendDock.SideBySide;
-                IniWriter.INI.Write(LayoutIniSection, "TrendsSideBySide", _trendDock.SideBySide ? "1" : "0");
-            };
-
             viewToolStripMenuItem.DropDownItems.Add(new ToolStripSeparator());
-            viewToolStripMenuItem.DropDownItems.Add(_sideBySideMenu);
             viewToolStripMenuItem.DropDownItems.Add(_fullScreenMenu);
+        }
+
+        private void SaveTrendLayout()
+        {
+            IniWriter.INI.Write(LayoutIniSection, "TrendArrange", _trendDock.Arrange.ToString());
+            IniWriter.INI.Write(LayoutIniSection, "TrendOrder", _trendDock.OrderText);
+            IniWriter.INI.Write(LayoutIniSection, "TrendLoneTop", _trendDock.LoneFirst ? "1" : "0");
+        }
+
+        private void LoadTrendLayout()
+        {
+            TrendArrange arrange;
+            string saved = ReadIniString(LayoutIniSection, "TrendArrange", "");
+            if (!Enum.TryParse(saved, out arrange) || !Enum.IsDefined(typeof(TrendArrange), arrange))
+                arrange = ReadIniString(LayoutIniSection, "TrendsSideBySide", "0") == "1"
+                    ? TrendArrange.Horizontal
+                    : TrendArrange.Vertical;
+
+            _trendDock.LoadLayout(arrange, ReadIniString(LayoutIniSection, "TrendLoneTop", "0") == "1",
+                ReadIniString(LayoutIniSection, "TrendOrder", ""));
         }
 
         protected override void OnHandleCreated(EventArgs e)
@@ -241,8 +250,7 @@ namespace ArdisCVDCore
 
         private void ApplySavedWindowMode()
         {
-            _trendDock.SideBySide = ReadIniString(LayoutIniSection, "TrendsSideBySide", "0") == "1";
-            _sideBySideMenu.Checked = _trendDock.SideBySide;
+            LoadTrendLayout();
 
             float share;
             if (float.TryParse(ReadIniString(LayoutIniSection, "TrendShare", ""), NumberStyles.Float,

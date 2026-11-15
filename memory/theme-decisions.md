@@ -43,3 +43,7 @@ metadata:
 ## 15.11.2026, камера в Dark (не собрано)
 
 Пользователь: камера на мнемосхеме «выбивается» в тёмной теме — **менять только Dark** («я только про тёмную тему говорю»). Камера нарисована RichTextBox'ами (ChamberHead, ChamberDown — ControlDark; ChamberBottom — ControlDarkDark; richTextBox2/3 столик — ControlLight; richTextBox1 волновод — ControlDark; richTextBox5 оранжевая молния — не трогается) и метками Ch1/Ch2/1/2 на ControlDark. Раньше RichTextBox имел Role.None. Теперь роль `Hardware` (по собственному цвету фона), цвета в палитре `Body/BodyShade/BodyLight/BodyText` заданы только у Dark: сначала корпус (44,60,112), низ (30,42,84) — «сливается», осветлено: корпус (82,100,156), низ (58,74,126), столик (196,202,220), подписи (230,233,244), у RichTextBox рамка None. У палитр без Body — восстановление снимка.
+
+## 15.11.2026, вечер
+
+По просьбе пользователя пункт Theme перенесён из File в View: после разделителя, перед Full Screen (`AddThemeMenu` в `MainForm.Layout.cs`). В File его больше нет.
