@@ -11,6 +11,7 @@ namespace ArdisCVDCore
         public RecipeSelector()
         {
             InitializeComponent();
+            Theme.Apply(this);
         }
 
         private void RecipeSelector_Load(object sender, EventArgs e)

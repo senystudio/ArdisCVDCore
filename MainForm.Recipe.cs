@@ -35,7 +35,7 @@ namespace ArdisCVDCore
         private void AddRecipeEditorMenu()
         {
             ToolStripMenuItem item = new ToolStripMenuItem("Recipe Editor");
-            item.Image = Res.Glyph('', SystemColors.ControlText, 20);
+            Theme.Glyph(item, '', 20);
             item.Click += (s, e) => _recipeEditor = ShowSingleton(_recipeEditor);
 
             int exitIndex = fileToolStripMenuItem.DropDownItems.IndexOf(ExitToolMenu);
@@ -213,7 +213,7 @@ namespace ArdisCVDCore
 
             AutoStartTimeValue.Text = DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
             AutomaticRun.Text = "Stop";
-            AutomaticPause.BackColor = SystemColors.Control;
+            AutomaticPause.BackColor = Theme.Current.ButtonBack;
             ApplyManualRunGate();
         }
 
@@ -730,7 +730,7 @@ namespace ArdisCVDCore
         private void SetAutoPause(bool on)
         {
             _autoPaused = on;
-            AutomaticPause.BackColor = on ? Color.IndianRed : SystemColors.Control;
+            AutomaticPause.BackColor = on ? Color.IndianRed : Theme.Current.ButtonBack;
 
             if (!on && _autoInterlocked)
             {
@@ -801,7 +801,7 @@ namespace ArdisCVDCore
             ProcessLogger.CreateLogFileEnded();
 
             AutomaticRun.Text = "Run";
-            AutomaticPause.BackColor = SystemColors.Control;
+            AutomaticPause.BackColor = Theme.Current.ButtonBack;
             CurrentStepName.Text = "...";
             AutoStartTimeValue.Text = IdleTime;
             TimeEndStepValue.Text = IdleTime;

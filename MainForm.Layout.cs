@@ -93,7 +93,7 @@ namespace ArdisCVDCore
                 Visible = false,
                 Width = SplitterWidth,
                 Cursor = Cursors.VSplit,
-                BackColor = SystemColors.ControlDark
+                BackColor = Theme.Current.Splitter
             };
             _splitter.MouseDown += Splitter_MouseDown;
             _splitter.MouseMove += Splitter_MouseMove;
@@ -113,6 +113,13 @@ namespace ArdisCVDCore
             _scaler = new SchemeScaler(_canvas, design);
             _scaler.SetCenterColumn(Gas_groupBox.Right, Microwave_groupBox.Left);
 
+            Theme.Apply(this);
+            Theme.Changed += (s, e) =>
+            {
+                _splitter.BackColor = Theme.Current.Splitter;
+                UpdateTrendButtons();
+            };
+
             MaximizeBox = true;
             MinimumSize = new Size(800, 560);
             StartPosition = FormStartPosition.CenterScreen;
@@ -120,23 +127,32 @@ namespace ArdisCVDCore
             AddLayoutMenu();
         }
 
+        private void AddThemeMenu()
+        {
+            ToolStripMenuItem item = new ToolStripMenuItem("Theme");
+            Theme.Glyph(item, '\uE790', 20);
+            item.Click += (s, e) => _themeForm = ShowSingleton(_themeForm);
+
+            int exitIndex = fileToolStripMenuItem.DropDownItems.IndexOf(ExitToolMenu);
+            int index = exitIndex > 0 ? exitIndex - 1 : fileToolStripMenuItem.DropDownItems.Count;
+            fileToolStripMenuItem.DropDownItems.Insert(index, item);
+        }
+
         private void AddLayoutMenu()
         {
             _fullScreenMenu = new ToolStripMenuItem("Full Screen")
             {
-                ShortcutKeys = Keys.F11,
-                Image = Res.Glyph('', SystemColors.ControlText, 20)
+                ShortcutKeys = Keys.F11
             };
+            Theme.Glyph(_fullScreenMenu, '', 20);
             _fullScreenMenu.Click += (s, e) =>
             {
                 SetFullScreen(!_fullScreen);
                 IniWriter.INI.Write(LayoutIniSection, "FullScreen", _fullScreen ? "1" : "0");
             };
 
-            _sideBySideMenu = new ToolStripMenuItem("Graphs Side by Side")
-            {
-                Image = Res.Glyph('', SystemColors.ControlText, 20)
-            };
+            _sideBySideMenu = new ToolStripMenuItem("Graphs Side by Side");
+            Theme.Glyph(_sideBySideMenu, '', 20);
             _sideBySideMenu.Click += (s, e) =>
             {
                 _trendDock.SideBySide = !_trendDock.SideBySide;
@@ -397,7 +413,7 @@ namespace ArdisCVDCore
             }
         }
 
-        private sealed class ToolbarRenderer : ToolStripProfessionalRenderer
+        private sealed class ToolbarRenderer : Theme.Renderer
         {
             private readonly ToolStripItem _close;
             private readonly Image _closeHotGlyph;
@@ -443,10 +459,10 @@ namespace ArdisCVDCore
             {
                 Alignment = ToolStripItemAlignment.Right,
                 DisplayStyle = ToolStripItemDisplayStyle.Image,
-                Image = Res.Glyph(glyph, SystemColors.ControlText, WindowGlyphSize),
                 ImageScaling = ToolStripItemImageScaling.None,
                 Visible = _fullScreen
             };
+            Theme.Glyph(item, glyph, WindowGlyphSize);
             item.Click += click;
             menuStrip1.Items.Add(item);
             return item;
@@ -455,7 +471,7 @@ namespace ArdisCVDCore
         private void StyleToolbarItem(ToolStripMenuItem item, char glyph)
         {
             item.Font = ToolbarFont;
-            item.Image = Res.Glyph(glyph, SystemColors.ControlText, ToolbarIconSize);
+            Theme.Glyph(item, glyph, ToolbarIconSize);
             item.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
             item.TextImageRelation = TextImageRelation.ImageAboveText;
             item.ImageScaling = ToolStripItemImageScaling.SizeToFit;
@@ -473,7 +489,7 @@ namespace ArdisCVDCore
         private static void MarkOpen(ToolStripMenuItem item, Form form)
         {
             bool open = form != null && !form.IsDisposed;
-            item.BackColor = open ? SystemColors.GradientActiveCaption : Color.Empty;
+            item.BackColor = open ? Theme.Current.ToolbarChecked : Color.Empty;
         }
 
         private T ToggleTrend<T>(T existing) where T : TrendForm, new()

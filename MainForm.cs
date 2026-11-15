@@ -58,6 +58,7 @@ namespace ArdisCVDCore
         private FaultStatusForm _faultStatusForm;
         private bool _abortHandled;
         private ProcessParametersForm _processParametersForm;
+        private ThemeForm _themeForm;
 
         public MainForm()
         {
@@ -67,6 +68,7 @@ namespace ArdisCVDCore
             BindMenuIcons();
             SetLoggingMenu(Logger.Enabled);
             AddRecipeEditorMenu();
+            AddThemeMenu();
             BuildToolbar();
             ProcessLogger.Init();
         }
@@ -101,23 +103,23 @@ namespace ArdisCVDCore
             const int size = 20;
             fileToolStripMenuItem.DropDown.ImageScalingSize = new Size(size, size);
 
-            ConnectToolMenu.Image = Res.Glyph('\uE839', SystemColors.ControlText, size);
-            DisconnectToolMenu.Image = Res.Glyph('\uEB55', SystemColors.ControlText, size);
+            Theme.Glyph(ConnectToolMenu, '\uE839', size);
+            Theme.Glyph(DisconnectToolMenu, '\uEB55', size);
             StartLoggingToolMenu.Image = Res.Glyph('\uE7C8', Color.Red, size);
-            StopLoggingToolMenu.Image = Res.Glyph('\uE71A', SystemColors.ControlText, size);
-            ExitToolMenu.Image = Res.Glyph('\uF3B1', SystemColors.ControlText, size);
+            Theme.Glyph(StopLoggingToolMenu, '\uE71A', size);
+            Theme.Glyph(ExitToolMenu, '\uF3B1', size);
 
             settingsToolStripMenuItem.DropDown.ImageScalingSize = new Size(size, size);
-            ProcessParametersToolMenu.Image = Res.Glyph('\uE9E9', SystemColors.ControlText, size);
+            Theme.Glyph(ProcessParametersToolMenu, '\uE9E9', size);
 
             viewToolStripMenuItem.DropDown.ImageScalingSize = new Size(size, size);
-            FaultStatusToolMenu.Image = Res.Glyph('\uE7BA', SystemColors.ControlText, size);
-            ConnectionStatusToolMenu.Image = Res.Glyph('\uE968', SystemColors.ControlText, size);
-            GasTrendToolMenu.Image = Res.Glyph('\uE9D2', SystemColors.ControlText, size);
-            PressureTrendToolMenu.Image = Res.Glyph('\uEC4A', SystemColors.ControlText, size);
-            MWPowerToolStripMenuItem.Image = Res.Glyph('\uE945', SystemColors.ControlText, size);
-            temperatureTrendToolStripMenuItem.Image = Res.Glyph('\uE9CA', SystemColors.ControlText, size);
-            PIDToolStripMenuItem.Image = Res.Glyph('\uE9D9', SystemColors.ControlText, size);
+            Theme.Glyph(FaultStatusToolMenu, '\uE7BA', size);
+            Theme.Glyph(ConnectionStatusToolMenu, '\uE968', size);
+            Theme.Glyph(GasTrendToolMenu, '\uE9D2', size);
+            Theme.Glyph(PressureTrendToolMenu, '\uEC4A', size);
+            Theme.Glyph(MWPowerToolStripMenuItem, '\uE945', size);
+            Theme.Glyph(temperatureTrendToolStripMenuItem, '\uE9CA', size);
+            Theme.Glyph(PIDToolStripMenuItem, '\uE9D9', size);
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -622,8 +624,8 @@ namespace ArdisCVDCore
 
             MWReconnect.Visible = !generatorAlive;
 
-            StartMW.BackColor = generatorAlive && state.PreheatOn ? Res.OnGreen : SystemColors.Control;
-            button1.BackColor = generatorAlive && state.MicrowaveOn ? Res.OnGreen : SystemColors.Control;
+            StartMW.BackColor = generatorAlive && state.PreheatOn ? Res.OnGreen : Theme.Current.ButtonBack;
+            button1.BackColor = generatorAlive && state.MicrowaveOn ? Res.OnGreen : Theme.Current.ButtonBack;
 
             StartMW.Enabled = generatorAlive;
             button1.Enabled = generatorAlive && !state.FaultReportable && !state.ChamberPressureLow
@@ -876,9 +878,9 @@ namespace ArdisCVDCore
             TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPadding;
             Font font = _scaler.ScaledFont(PreheatBarFont);
             TextRenderer.DrawText(e.Graphics, "Preheat Status", font, text,
-                SystemColors.ControlText, flags | TextFormatFlags.Left);
+                Theme.Current.Text, flags | TextFormatFlags.Left);
             TextRenderer.DrawText(e.Graphics, _preheatBarShownSeconds.ToString(CultureInfo.InvariantCulture) + "s",
-                font, text, SystemColors.ControlText, flags | TextFormatFlags.Right);
+                font, text, Theme.Current.Text, flags | TextFormatFlags.Right);
         }
 
         private void TurboSpeedBar_Paint(object sender, PaintEventArgs e)

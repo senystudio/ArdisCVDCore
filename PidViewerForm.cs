@@ -61,6 +61,7 @@ namespace ArdisCVDCore
 
             _timer = new Timer { Interval = 1000 };
             _timer.Tick += Timer_Tick;
+            Theme.Apply(this);
         }
 
         private const int LabelX = 12;

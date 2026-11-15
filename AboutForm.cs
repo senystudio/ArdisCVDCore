@@ -6,7 +6,7 @@ namespace ArdisCVDCore
     public class AboutForm : Form
     {
         private const string Version = "21";
-        private const string ReleaseDate = "13.11.2026";
+        private const string ReleaseDate = "15.11.2026";
 
         private const string Authors = "Sizov Y. E., Chernyavskiy S. V., Pavlov A. Y.";
 
@@ -45,6 +45,7 @@ namespace ArdisCVDCore
                 BackColor = Color.Transparent,
                 TabStop = false
             });
+            Theme.Apply(this);
         }
 
         private void AddLine(string text, int y)

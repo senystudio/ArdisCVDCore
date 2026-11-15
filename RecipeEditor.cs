@@ -40,6 +40,7 @@ namespace ArdisCVDCore
             StartPosition = FormStartPosition.Manual;
             Step = new StepItemData();
             AdaptToMachine();
+            Theme.Apply(this);
         }
 
         private void AdaptToMachine()

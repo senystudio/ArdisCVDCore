@@ -112,6 +112,7 @@ namespace ArdisCVDCore
             _timer.Tick += Timer_Tick;
 
             Refresh(PLC210AlarmClient.GetState());
+            Theme.Apply(this);
         }
 
         private static ListView BuildList()

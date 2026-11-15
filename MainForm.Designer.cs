@@ -1610,7 +1610,7 @@
             this.ManualMode_groupBox.Margin = new System.Windows.Forms.Padding(2);
             this.ManualMode_groupBox.Name = "ManualMode_groupBox";
             this.ManualMode_groupBox.Padding = new System.Windows.Forms.Padding(2);
-            this.ManualMode_groupBox.Size = new System.Drawing.Size(205, 52);
+            this.ManualMode_groupBox.Size = new System.Drawing.Size(207, 52);
             this.ManualMode_groupBox.TabIndex = 391;
             this.ManualMode_groupBox.TabStop = false;
             this.ManualMode_groupBox.Text = "Manual Mode";

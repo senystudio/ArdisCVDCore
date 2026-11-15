@@ -48,6 +48,15 @@ namespace ArdisCVDCore.trends
         {
             _animation = new Timer { Interval = AnimationInterval };
             _animation.Tick += Animation_Tick;
+            Theme.Changed += (s, e) => RepaintTheme();
+        }
+
+        private void RepaintTheme()
+        {
+            foreach (TrendForm form in _forms)
+                PaintHeader(form, false);
+            foreach (Panel bar in _bars)
+                bar.BackColor = Theme.Current.Splitter;
         }
 
         public event EventHandler TrendsChanged;
@@ -198,8 +207,8 @@ namespace ArdisCVDCore.trends
             if (!_headers.TryGetValue(form, out header))
                 return;
 
-            header.BackColor = lifted ? SystemColors.Highlight : SystemColors.InactiveCaption;
-            Color text = lifted ? SystemColors.HighlightText : SystemColors.ControlText;
+            header.BackColor = lifted ? Theme.Current.Accent : Theme.Current.Inset;
+            Color text = lifted ? Theme.Current.AccentText : Theme.Current.Text;
             foreach (Control control in header.Controls)
                 control.ForeColor = text;
         }
@@ -449,6 +458,7 @@ namespace ArdisCVDCore.trends
                 ClientSize = size
             };
             host.Controls.Add(form);
+            Theme.Apply(host);
 
             Point cursor = Cursor.Position;
             int grabX = Math.Max(0, Math.Min(host.Width - 1, grab.X));
@@ -522,7 +532,7 @@ namespace ArdisCVDCore.trends
 
             while (_bars.Count < needed)
             {
-                Panel bar = new Panel { BackColor = SystemColors.ControlDark };
+                Panel bar = new Panel { BackColor = Theme.Current.Splitter };
                 bar.MouseDown += Bar_MouseDown;
                 bar.MouseMove += Bar_MouseMove;
                 bar.MouseUp += (s, e) => FinishBarDrag();

@@ -29,6 +29,7 @@ namespace ArdisCVDCore
 
             YMaximum.DecimalPlaces = 6;
             YMinimum.DecimalPlaces = 6;
+            Theme.Apply(this);
         }
 
         private void OK_Click_1(object sender, EventArgs e)

@@ -25,6 +25,8 @@ namespace ArdisCVDCore
                 {
                     Application.EnableVisualStyles();
                     Application.SetCompatibleTextRenderingDefault(false);
+                    Theme.Load();
+                    ToolStripManager.Renderer = new Theme.Renderer();
                     Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
                     Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
                     using (SplashForm splash = new SplashForm())

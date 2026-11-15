@@ -38,6 +38,7 @@ namespace ArdisCVDCore
             _timer.Tick += Timer_Tick;
 
             Refresh(SystemStatus.CollectConnections());
+            Theme.Apply(this);
         }
 
         protected override void OnLoad(EventArgs e)

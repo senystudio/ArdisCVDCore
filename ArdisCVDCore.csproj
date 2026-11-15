@@ -117,6 +117,10 @@
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
     <Compile Include="SchemeScaler.cs" />
+    <Compile Include="Theme.cs" />
+    <Compile Include="ThemeForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="RecipeEditor.cs">
       <SubType>Form</SubType>
     </Compile>

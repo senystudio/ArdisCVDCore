@@ -47,7 +47,7 @@ namespace ArdisCVDCore
             _gcf = new[] { GCFH2, GCFCH4, GCFN2, GCFO2, GCFAR };
 
             fileToolStripMenuItem.DropDown.ImageScalingSize = new Size(20, 20);
-            ResetValuesToolMenu.Image = Res.Glyph('', SystemColors.ControlText, 20);
+            Theme.Glyph(ResetValuesToolMenu, '', 20);
 
             _applyBlinkTimer.Interval = ApplyBlinkIntervalMs;
             _applyBlinkTimer.Tick += ApplyBlinkTimer_Tick;
@@ -57,6 +57,7 @@ namespace ArdisCVDCore
             _pyroStateTimer.Interval = PyroStateIntervalMs;
             _pyroStateTimer.Tick += (s, e) => UpdatePyroReconnect();
             Disposed += (s, e) => _pyroStateTimer.Dispose();
+            Theme.Apply(this);
         }
 
         private void CreatePyroReconnect()
@@ -331,10 +332,10 @@ namespace ArdisCVDCore
             if (_applyBlinkLeft <= 0)
             {
                 _applyBlinkTimer.Stop();
-                OK.BackColor = SystemColors.Window;
+                OK.BackColor = (Theme.Current.Classic ? SystemColors.Window : Theme.Current.ButtonBack);
                 return;
             }
-            OK.BackColor = _applyBlinkLeft % 2 == 0 ? Res.OnGreen : SystemColors.Window;
+            OK.BackColor = _applyBlinkLeft % 2 == 0 ? Res.OnGreen : (Theme.Current.Classic ? SystemColors.Window : Theme.Current.ButtonBack);
         }
 
         private void Reset_Click(object sender, EventArgs e)
