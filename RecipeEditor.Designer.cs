@@ -2507,6 +2507,7 @@ namespace ArdisCVDCore
             // 
             // ChamberPressure_End
             // 
+            this.ChamberPressure_End.DecimalPlaces = 1;
             this.ChamberPressure_End.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.ChamberPressure_End.Location = new System.Drawing.Point(146, 32);
             this.ChamberPressure_End.Maximum = new decimal(new int[] {
@@ -2522,6 +2523,7 @@ namespace ArdisCVDCore
             // 
             // ChamberPressure_Init
             // 
+            this.ChamberPressure_Init.DecimalPlaces = 1;
             this.ChamberPressure_Init.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.ChamberPressure_Init.Location = new System.Drawing.Point(86, 32);
             this.ChamberPressure_Init.Maximum = new decimal(new int[] {

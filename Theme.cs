@@ -42,6 +42,10 @@ namespace ArdisCVDCore
         public Color ChartBack { get; set; }
         public Color ChartGrid { get; set; }
         public Color ChartAxis { get; set; }
+        public Color Body { get; set; }
+        public Color BodyShade { get; set; }
+        public Color BodyLight { get; set; }
+        public Color BodyText { get; set; }
     }
 
     internal static class Theme
@@ -148,7 +152,11 @@ namespace ArdisCVDCore
             Splitter = Color.FromArgb(34, 44, 78),
             ChartBack = Color.FromArgb(12, 16, 32),
             ChartGrid = Color.FromArgb(32, 40, 66),
-            ChartAxis = Color.FromArgb(90, 100, 130)
+            ChartAxis = Color.FromArgb(90, 100, 130),
+            Body = Color.FromArgb(82, 100, 156),
+            BodyShade = Color.FromArgb(58, 74, 126),
+            BodyLight = Color.FromArgb(196, 202, 220),
+            BodyText = Color.FromArgb(230, 233, 244)
         };
 
         public static readonly Palette[] All = { Old, Isa, Dark };
@@ -169,7 +177,8 @@ namespace ArdisCVDCore
             Track,
             Logo,
             List,
-            Chart
+            Chart,
+            Hardware
         }
 
         private sealed class Snapshot
@@ -315,6 +324,13 @@ namespace ArdisCVDCore
                 || color == SystemColors.ControlLight;
         }
 
+        private static bool IsHardwareShade(Color color)
+        {
+            return color == SystemColors.ControlDark
+                || color == SystemColors.ControlDarkDark
+                || color == SystemColors.ControlLight;
+        }
+
         private static bool IsTextColor(Color color)
         {
             return color == SystemColors.ControlText
@@ -382,8 +398,17 @@ namespace ArdisCVDCore
                 s.Role = Role.List;
             }
             else if (control is Label)
+            {
                 s.Border = ((Label)control).BorderStyle;
-            else if (control is RichTextBox || control is ToolStrip || control is ScrollBar)
+                if (s.OwnBack == SystemColors.ControlDark)
+                    s.Role = Role.Hardware;
+            }
+            else if (control is RichTextBox)
+            {
+                s.Border = ((RichTextBox)control).BorderStyle;
+                s.Role = IsHardwareShade(s.OwnBack) ? Role.Hardware : Role.None;
+            }
+            else if (control is ToolStrip || control is ScrollBar)
                 s.Role = Role.None;
 
             return s;
@@ -545,7 +570,35 @@ namespace ArdisCVDCore
                 case Role.Chart:
                     PaintChart((Chart)control, s.Chart, p);
                     return;
+                case Role.Hardware:
+                    PaintHardware(control, s, p);
+                    return;
             }
+        }
+
+        private static void PaintHardware(Control control, Snapshot s, Palette p)
+        {
+            RichTextBox box = control as RichTextBox;
+            if (p.Classic || p.Body.IsEmpty)
+            {
+                RestoreBack(control, s);
+                RestoreFore(control, s);
+                if (box != null)
+                    box.BorderStyle = s.Border;
+                return;
+            }
+
+            if (s.OwnBack == SystemColors.ControlDarkDark)
+                control.BackColor = p.BodyShade;
+            else if (s.OwnBack == SystemColors.ControlLight)
+                control.BackColor = p.BodyLight;
+            else
+                control.BackColor = p.Body;
+
+            if (box != null)
+                box.BorderStyle = BorderStyle.None;
+            else
+                control.ForeColor = p.BodyText;
         }
 
         private static void RestoreBack(Control control, Snapshot s)
