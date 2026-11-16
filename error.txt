@@ -1,0 +1,105 @@
+See the end of this message for details on invoking 
+just-in-time (JIT) debugging instead of this dialog box.
+
+************** Exception Text **************
+System.IndexOutOfRangeException: Index was outside the bounds of the array.
+   at ArdisCVDCore.MainForm.PushStepThresholds(StepItemData step) in \\Mac\ArdisCVDCore\MainForm.Recipe.cs:line 673
+   at ArdisCVDCore.MainForm.BeginRecipeStep() in \\Mac\ArdisCVDCore\MainForm.Recipe.cs:line 308
+   at ArdisCVDCore.MainForm.RecipeTick() in \\Mac\ArdisCVDCore\MainForm.Recipe.cs:line 227
+   at ArdisCVDCore.MainForm.SuperCycle_Tick(Object sender, EventArgs e) in \\Mac\ArdisCVDCore\MainForm.cs:line 266
+   at System.EventHandler.Invoke(Object sender, EventArgs e)
+   at System.Windows.Forms.Timer.OnTick(EventArgs e)
+   at System.Windows.Forms.Timer.TimerNativeWindow.WndProc(Message& m)
+   at System.Windows.Forms.NativeWindow.Callback(IntPtr hWnd, Int32 msg, IntPtr wparam, IntPtr lparam)
+
+
+************** Loaded Assemblies **************
+mscorlib
+    Assembly Version: 4.0.0.0
+    Win32 Version: 4.8.4790.0 built by: NET48REL1LAST_C
+    CodeBase: file:///C:/Windows/Microsoft.NET/Framework/v4.0.30319/mscorlib.dll
+----------------------------------------
+ArdisCVDCore
+    Assembly Version: 21.0.0.0
+    Win32 Version: 21.0.0.0
+    CodeBase: file:///C:/Users/user/Desktop/ArdisCVDCore/Release/ArdisCVDCore.exe
+----------------------------------------
+System.Windows.Forms
+    Assembly Version: 4.0.0.0
+    Win32 Version: 4.8.4734.0 built by: NET48REL1LAST_C
+    CodeBase: file:///C:/Windows/Microsoft.Net/assembly/GAC_MSIL/System.Windows.Forms/v4.0_4.0.0.0__b77a5c561934e089/System.Windows.Forms.dll
+----------------------------------------
+System.Drawing
+    Assembly Version: 4.0.0.0
+    Win32 Version: 4.8.4390.0 built by: NET48REL1LAST_C
+    CodeBase: file:///C:/Windows/Microsoft.Net/assembly/GAC_MSIL/System.Drawing/v4.0_4.0.0.0__b03f5f7f11d50a3a/System.Drawing.dll
+----------------------------------------
+System
+    Assembly Version: 4.0.0.0
+    Win32 Version: 4.8.4790.0 built by: NET48REL1LAST_C
+    CodeBase: file:///C:/Windows/Microsoft.Net/assembly/GAC_MSIL/System/v4.0_4.0.0.0__b77a5c561934e089/System.dll
+----------------------------------------
+System.Configuration
+    Assembly Version: 4.0.0.0
+    Win32 Version: 4.8.4190.0 built by: NET48REL1LAST_B
+    CodeBase: file:///C:/Windows/Microsoft.Net/assembly/GAC_MSIL/System.Configuration/v4.0_4.0.0.0__b03f5f7f11d50a3a/System.Configuration.dll
+----------------------------------------
+System.Core
+    Assembly Version: 4.0.0.0
+    Win32 Version: 4.8.4796.0 built by: NET48REL1LAST_C
+    CodeBase: file:///C:/Windows/Microsoft.Net/assembly/GAC_MSIL/System.Core/v4.0_4.0.0.0__b77a5c561934e089/System.Core.dll
+----------------------------------------
+System.Xml
+    Assembly Version: 4.0.0.0
+    Win32 Version: 4.8.4084.0 built by: NET48REL1
+    CodeBase: file:///C:/Windows/Microsoft.Net/assembly/GAC_MSIL/System.Xml/v4.0_4.0.0.0__b77a5c561934e089/System.Xml.dll
+----------------------------------------
+Accessibility
+    Assembly Version: 4.0.0.0
+    Win32 Version: 4.8.4084.0 built by: NET48REL1
+    CodeBase: file:///C:/Windows/Microsoft.Net/assembly/GAC_MSIL/Accessibility/v4.0_4.0.0.0__b03f5f7f11d50a3a/Accessibility.dll
+----------------------------------------
+NLog
+    Assembly Version: 5.0.0.0
+    Win32 Version: 5.3.2.2526
+    CodeBase: file:///C:/Users/user/Desktop/ArdisCVDCore/Release/NLog.DLL
+----------------------------------------
+System.Windows.Forms.DataVisualization
+    Assembly Version: 4.0.0.0
+    Win32 Version: 4.8.4200.0
+    CodeBase: file:///C:/Windows/Microsoft.Net/assembly/GAC_MSIL/System.Windows.Forms.DataVisualization/v4.0_4.0.0.0__31bf3856ad364e35/System.Windows.Forms.DataVisualization.dll
+----------------------------------------
+NModbus
+    Assembly Version: 3.0.80.0
+    Win32 Version: 3.0.80.0
+    CodeBase: file:///C:/Users/user/Desktop/ArdisCVDCore/Release/NModbus.DLL
+----------------------------------------
+System.Data
+    Assembly Version: 4.0.0.0
+    Win32 Version: 4.8.4690.0 built by: NET48REL1LAST_B
+    CodeBase: file:///C:/Windows/Microsoft.Net/assembly/GAC_32/System.Data/v4.0_4.0.0.0__b77a5c561934e089/System.Data.dll
+----------------------------------------
+Microsoft.GeneratedCode
+    Assembly Version: 1.0.0.0
+    Win32 Version: 4.8.4084.0 built by: NET48REL1
+    CodeBase: file:///C:/Windows/Microsoft.Net/assembly/GAC_MSIL/System.Xml/v4.0_4.0.0.0__b77a5c561934e089/System.Xml.dll
+----------------------------------------
+
+************** JIT Debugging **************
+To enable just-in-time (JIT) debugging, the .config file for this
+application or computer (machine.config) must have the
+jitDebugging value set in the system.windows.forms section.
+The application must also be compiled with debugging
+enabled.
+
+For example:
+
+<configuration>
+    <system.windows.forms jitDebugging="true" />
+</configuration>
+
+When JIT debugging is enabled, any unhandled exception
+will be sent to the JIT debugger registered on the computer
+rather than be handled by this dialog box.
+
+
