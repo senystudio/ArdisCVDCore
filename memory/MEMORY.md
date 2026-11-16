@@ -8,7 +8,7 @@
 - [Pyrometer / MW RS-485 conflict](pyrometer-mw-rs485-conflict.md) — why PYRO_RXT hangs, what was ruled out, and the fix that is still pending
 - [Memory location](memory-location.md) — the files live in the repo; the ~/.claude path is a link to them (junction on Windows, symlink on the Mac)
 - [Microwave water fault](microwave-water-fault-flow.md) — с 11.11.2026 ошибка генератора гасит только МВ (trip до Reset), Reset один в Fault Status, во время Abort кнопки не шлют включения
-- [Alarm/Abort design](alarm-abort-design.md) — решения 22.09.2026: логика в ПЛК, что именно делает Abort, два окна статуса
+- [Alarm/Abort design](alarm-abort-design.md) — решения 22.09.2026: логика в ПЛК, что делает Abort, два окна; 16.11: воздух под галочку Inputs, версия протокола в 292, причина отказа Reset
 - [Gas Correction Factor](gas-correction-factor-open.md) — с 24.09.2026 включён как в референсе: хранится в config.ini, ни на что не влияет; семантика применения всё ещё открыта
 - [Мёртвый датчик и аварии](alarm-dead-sensor-open.md) — не решено: что делать, когда прибор перестал отвечать, а показание замёрзло
 - [Логирование](logging.md) — копия механики ArdisCVDMaster: NLog-журнал ошибок, ProcessLogs/*.dat, configBackup.bin; отличия и колонки

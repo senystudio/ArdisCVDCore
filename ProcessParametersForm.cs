@@ -154,14 +154,14 @@ namespace ArdisCVDCore
             {
                 StageFlow_CheckBox, ChamberFlow_CheckBox, MWHeadFlow_CheckBox,
                 MWPowerFlow_CheckBox, InternalFlow_CheckBox, ExternalFlow_CheckBox,
-                PressureSwitch_CheckBox, InputChamberOpen_CheckBox
+                PressureSwitch_CheckBox, InputChamberOpen_CheckBox, CdaPressure_CheckBox
             };
 
             _inputReaction = new[]
             {
                 StageFlow_comboBox, ChamberFlow_comboBox, MWHeadFlow_comboBox,
                 MWPowerFlow_comboBox, InternalFlow_comboBox, ExternalFlow_comboBox,
-                PressureSwitch_comboBox, ChamberOpen_comboBox
+                PressureSwitch_comboBox, ChamberOpen_comboBox, CdaPressure_comboBox
             };
 
             foreach (ComboBox combo in _inputReaction)
@@ -391,7 +391,7 @@ namespace ArdisCVDCore
 
             for (int i = 0; i < AlarmSettings.InputCount; i++)
             {
-                _inputEnable[i].Checked = AlarmSettings.DefaultInputEnable;
+                _inputEnable[i].Checked = AlarmSettings.DefaultInputEnabled(i);
                 _inputReaction[i].SelectedIndex = 0;
             }
 

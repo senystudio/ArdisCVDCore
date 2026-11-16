@@ -57,3 +57,5 @@ Still free: 148, 149, 158, 159. `PLC210PidClient.OutputRegisterCount` is 40, i.e
 See [[mv210-102-modbus-map]] for the МВ210-102 cooling modules, which are separate Modbus TCP slaves and not part of this array.
 
 **awHolding[271] бит 1 и [292] бит 5, добавлены 11.11.2026:** 271 бит 0x0002 = сброс аварий от HMI (раньше был бит 0x0004 в `awHolding[1]`, который заодно сбрасывал PID камеры и теперь HMI для аварий не используется). 292 бит 0x0020 = trip генератора МВ (`xMwTripActive`). См. [[microwave-water-fault-flow]].
+
+**awHolding[292] старший байт, 16.11.2026:** номер протокола аварий (сейчас 2), ПЛК без него = 0 = «программа устарела». **awHolding[269]/[270] бит 8:** Inputs → Compressed Air Pressure (enable/abort).

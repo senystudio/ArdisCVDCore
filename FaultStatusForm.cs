@@ -169,7 +169,43 @@ namespace ArdisCVDCore
 
         private void Reset_Click(object sender, EventArgs e)
         {
+            PLC210AlarmClient.State state = PLC210AlarmClient.GetState();
             SystemStatus.ResetFaults();
+
+            if (!state.Connected)
+                return;
+
+            if (!state.ProtocolOk)
+            {
+                MessageBox.Show(
+                    this,
+                    "The PLC program is out of date (alarm protocol "
+                        + state.PlcProtocol.ToString(CultureInfo.InvariantCulture)
+                        + ", this program needs "
+                        + PLC210AlarmClient.ExpectedProtocol.ToString(CultureInfo.InvariantCulture)
+                        + ").\r\n\r\nReset cannot reach the PLC. Download the current CODESYS project to the PLC.",
+                    "Reset",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
+            }
+
+            if (!state.AbortActive || state.AbortMask == 0)
+                return;
+
+            List<string> causes = new List<string>();
+            for (int code = 0; code < 64; code++)
+                if (state.IsAbort(code))
+                    causes.Add("  " + AlarmCatalog.Describe(code));
+
+            MessageBox.Show(
+                this,
+                "The abort cannot be reset while its cause is still present:\r\n\r\n"
+                    + string.Join("\r\n", causes)
+                    + "\r\n\r\nRemove the cause or switch this check off in Process Parameters, then press Reset again.",
+                "Reset",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
         }
 
         private void ClearHistory_Click(object sender, EventArgs e)

@@ -64,6 +64,7 @@ VAR CONSTANT
     C_CDA_ABORT_BAR   : REAL := 4.0;
 
     C_CHAMBER_MAX_TORR : REAL := 800.0;
+    C_HMI_PROTOCOL     : WORD := WORD#16#0200;
     C_FLOW_ARM_TIME    : TIME := T#4S;
 
     C_CIRC_STAGE    : INT := 0;
@@ -284,8 +285,9 @@ END_IF;
 
 (* compressed air pressure *)
 rCdaBar := F_ReadFixed(awHolding[236], awHolding[237]);
-IF (wFlowValid AND WORD#16#0100) <> WORD#0 THEN
-    IF rCdaBar <= C_CDA_ABORT_BAR THEN
+IF ((wFlowValid AND WORD#16#0100) <> WORD#0)
+    AND ((wInputEnable AND WORD#16#0100) <> WORD#0) THEN
+    IF ((wInputReaction AND WORD#16#0100) <> WORD#0) AND (rCdaBar <= C_CDA_ABORT_BAR) THEN
         axAbort[23] := TRUE;
     ELSIF rCdaBar <= C_CDA_ALARM_BAR THEN
         axAlarm[23] := TRUE;
@@ -414,7 +416,7 @@ FOR i := 0 TO 3 DO
     awHolding[288 + i] := awAbortLatched[i];
 END_FOR;
 
-wStatusWord := WORD#0;
+wStatusWord := C_HMI_PROTOCOL;
 IF xAbortActive THEN
     wStatusWord := wStatusWord OR WORD#16#0001;
 END_IF;

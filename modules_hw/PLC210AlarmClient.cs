@@ -23,6 +23,12 @@ namespace ArdisCVDCore.modules_hw
             public bool RetainWasBlank;
             public bool WaitingForFreshPress;
             public bool MicrowaveTripped;
+            public int PlcProtocol;
+
+            public bool ProtocolOk
+            {
+                get { return PlcProtocol == ExpectedProtocol; }
+            }
 
             public ushort GasValveInhibit;
             public ushort VacuumValveInhibit;
@@ -53,6 +59,8 @@ namespace ArdisCVDCore.modules_hw
                 return code >= 0 && code < 64 && (AbortLatched & (1UL << code)) != 0;
             }
         }
+
+        public const int ExpectedProtocol = 2;
 
         private const byte UnitId = 1;
         private const ushort ThresholdStart = 248;
@@ -189,9 +197,11 @@ namespace ArdisCVDCore.modules_hw
                     ushort[] block = _master.ReadHoldingRegisters(UnitId, StateStart, StateCount);
                     State plcState = ParseRegisters(block);
                     plcState.Connected = true;
-                    plcState.StatusText = plcState.ThresholdsAccepted
-                        ? "PLC210 alarms connected"
-                        : "PLC210 alarms connected, the PLC has not taken the thresholds yet";
+                    plcState.StatusText = !plcState.ProtocolOk
+                        ? "PLC210 alarms connected, the PLC program is out of date"
+                        : plcState.ThresholdsAccepted
+                            ? "PLC210 alarms connected"
+                            : "PLC210 alarms connected, the PLC has not taken the thresholds yet";
                     plcState.UpdatedAt = DateTime.Now;
 
                     lock (Sync)
@@ -246,6 +256,7 @@ namespace ArdisCVDCore.modules_hw
                 RetainWasBlank = (status & 0x0008) != 0,
                 WaitingForFreshPress = (status & 0x0010) != 0,
                 MicrowaveTripped = (status & 0x0020) != 0,
+                PlcProtocol = status >> 8,
 
                 AbortCount = registers[13],
                 GasValveInhibit = registers[14],

@@ -63,3 +63,8 @@ metadata:
 См. [[plc210-register-contract]], [[alarm-dead-sensor-open]], [[ardis-cvdcore-open-work]], [[ardis-reference-projects]].
 
 **Изменено 11.11.2026:** ошибки генератора МВ (коды 32..39, 41) больше не Abort, а Alarm плюс отключение только МВ до Reset. Сброс аварий переехал на бит 0x0002 в `awHolding[271]`, кнопка Reset в Fault Status теперь одна на всё. Во время Abort HMI не шлёт просьб на включение, поэтому запреты повторного пуска больше не залипают. Подробно в [[microwave-water-fault-flow]].
+
+**16.11.2026: «аборт без галочек и Reset не работает» (не собрано, не прошито).** По фото с машины: в маске Abort горел бит 32 (вода генератора), а в текущем `PRG_Alarms.st` код 32 Abort'ом не бывает — значит, в ПЛК крутится PRG_Alarms до 11.11. Старый ПЛК читает сброс из `awHolding[1]` бит 0x0004, новый HMI пишет его в `awHolding[271]` бит 0x0002 — поэтому Reset не доходил ни для воздуха, ни для МВ, и всё оставалось заблокированным до перезагрузки. Исправления:
+- Код 23 (сжатый воздух) раньше был жёстким Abort без галочки. Решение пользователя: девятая строка Inputs «Compressed Air Pressure» (`AlarmSettings.InputCda = 8`, бит 8 в 269/270), Alarm/Abort как у Water Pressure Sensor; по умолчанию **выключена** (`DefaultInputEnabled`), остальные восемь Inputs по-прежнему включены по умолчанию.
+- Версия протокола аварий: старший байт `awHolding[292]` = 2 (`C_HMI_PROTOCOL` в `PRG_Alarms`, `PLC210AlarmClient.ExpectedProtocol`). При несовпадении — строка Error в Connection Status и окно на Reset. Менять обе константы вместе при каждом несовместимом изменении 248..295.
+- Reset при живой причине Abort больше не молчит: `FaultStatusForm.Reset_Click` показывает список причин из живой маски.

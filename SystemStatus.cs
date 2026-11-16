@@ -106,6 +106,13 @@ namespace ArdisCVDCore
             if (!state.Connected)
                 return;
 
+            if (!state.ProtocolOk)
+            {
+                lines.Add(new StatusLine("Alarm engine", StatusLevel.Error,
+                    "The PLC program is out of date, Reset does not work. Download the current project to the PLC"));
+                return;
+            }
+
             if (!state.ThresholdsAccepted)
             {
                 lines.Add(new StatusLine("Alarm engine", StatusLevel.Warning,

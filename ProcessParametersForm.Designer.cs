@@ -127,6 +127,8 @@
             this.MWPowerFlow_CheckBox = new System.Windows.Forms.CheckBox();
             this.MWHeadFlow_CheckBox = new System.Windows.Forms.CheckBox();
             this.InputChamberOpen_CheckBox = new System.Windows.Forms.CheckBox();
+            this.CdaPressure_CheckBox = new System.Windows.Forms.CheckBox();
+            this.CdaPressure_comboBox = new System.Windows.Forms.ComboBox();
             this.ChamberFlow_CheckBox = new System.Windows.Forms.CheckBox();
             this.StageFlow_CheckBox = new System.Windows.Forms.CheckBox();
             this.TemperatureGroupBox = new System.Windows.Forms.GroupBox();
@@ -2245,9 +2247,11 @@
             this.LogicInputGroupBox.Controls.Add(this.PressureSwitch_comboBox);
             this.LogicInputGroupBox.Controls.Add(this.InputChamberOpen_CheckBox);
             this.LogicInputGroupBox.Controls.Add(this.ChamberOpen_comboBox);
+            this.LogicInputGroupBox.Controls.Add(this.CdaPressure_CheckBox);
+            this.LogicInputGroupBox.Controls.Add(this.CdaPressure_comboBox);
             this.LogicInputGroupBox.Location = new System.Drawing.Point(454, 432);
             this.LogicInputGroupBox.Name = "LogicInputGroupBox";
-            this.LogicInputGroupBox.Size = new System.Drawing.Size(442, 252);
+            this.LogicInputGroupBox.Size = new System.Drawing.Size(442, 280);
             this.LogicInputGroupBox.TabIndex = 5;
             this.LogicInputGroupBox.TabStop = false;
             this.LogicInputGroupBox.Text = "Inputs";
@@ -2436,6 +2440,29 @@
             this.ChamberOpen_comboBox.Name = "ChamberOpen_comboBox";
             this.ChamberOpen_comboBox.Size = new System.Drawing.Size(230, 24);
             this.ChamberOpen_comboBox.TabIndex = 15;
+            // 
+            // CdaPressure_CheckBox
+            // 
+            this.CdaPressure_CheckBox.AutoSize = true;
+            this.CdaPressure_CheckBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.CdaPressure_CheckBox.Location = new System.Drawing.Point(18, 248);
+            this.CdaPressure_CheckBox.Name = "CdaPressure_CheckBox";
+            this.CdaPressure_CheckBox.Size = new System.Drawing.Size(170, 20);
+            this.CdaPressure_CheckBox.TabIndex = 16;
+            this.CdaPressure_CheckBox.Text = "Compressed Air Pressure";
+            this.CdaPressure_CheckBox.UseVisualStyleBackColor = true;
+            // 
+            // CdaPressure_comboBox
+            // 
+            this.CdaPressure_comboBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.CdaPressure_comboBox.FormattingEnabled = true;
+            this.CdaPressure_comboBox.Items.AddRange(new object[] {
+            "Alarm",
+            "Abort"});
+            this.CdaPressure_comboBox.Location = new System.Drawing.Point(196, 246);
+            this.CdaPressure_comboBox.Name = "CdaPressure_comboBox";
+            this.CdaPressure_comboBox.Size = new System.Drawing.Size(230, 24);
+            this.CdaPressure_comboBox.TabIndex = 17;
             // 
             // groupBox1
             // 
@@ -2755,7 +2782,7 @@
             this.OK.BackColor = System.Drawing.SystemColors.Window;
             this.OK.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.OK.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.OK.Location = new System.Drawing.Point(454, 690);
+            this.OK.Location = new System.Drawing.Point(454, 718);
             this.OK.Name = "OK";
             this.OK.Size = new System.Drawing.Size(442, 40);
             this.OK.TabIndex = 7;
@@ -2795,7 +2822,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(902, 736);
+            this.ClientSize = new System.Drawing.Size(902, 764);
             this.Controls.Add(this.menuStrip1);
             this.Controls.Add(this.OK);
             this.Controls.Add(this.groupBox1);
@@ -2978,6 +3005,8 @@
         private System.Windows.Forms.CheckBox MWPowerFlow_CheckBox;
         private System.Windows.Forms.CheckBox MWHeadFlow_CheckBox;
         private System.Windows.Forms.CheckBox InputChamberOpen_CheckBox;
+        private System.Windows.Forms.CheckBox CdaPressure_CheckBox;
+        private System.Windows.Forms.ComboBox CdaPressure_comboBox;
         private System.Windows.Forms.CheckBox ChamberFlow_CheckBox;
         private System.Windows.Forms.CheckBox StageFlow_CheckBox;
         private System.Windows.Forms.GroupBox TemperatureGroupBox;

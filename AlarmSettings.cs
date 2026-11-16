@@ -8,7 +8,8 @@ namespace ArdisCVDCore
         public const int ParamCount = 8;
         public const int ParamPctCount = 7;
         public const int WaterCount = 4;
-        public const int InputCount = 8;
+        public const int InputCount = 9;
+        public const int InputCda = 8;
         public const int BlockWords = 32;
 
         public const int ParamChamber = 0;
@@ -57,6 +58,11 @@ namespace ArdisCVDCore
         public static int LidInput = DefaultLidInput;
         public static bool RunActive;
 
+        public static bool DefaultInputEnabled(int index)
+        {
+            return index != InputCda && DefaultInputEnable;
+        }
+
         public static int DefaultParamAlarmPct(int index)
         {
             return index >= ParamGasFirst ? DefaultGasAlarmPct : 0;
@@ -99,7 +105,7 @@ namespace ArdisCVDCore
 
             for (int i = 0; i < InputCount; i++)
             {
-                InputEnable[i] = DefaultInputEnable;
+                InputEnable[i] = DefaultInputEnabled(i);
                 InputAborts[i] = false;
             }
         }
@@ -204,7 +210,7 @@ namespace ArdisCVDCore
 
             for (int i = 0; i < InputCount; i++)
             {
-                InputEnable[i] = ReadBool("InputEnable" + i, DefaultInputEnable);
+                InputEnable[i] = ReadBool("InputEnable" + i, DefaultInputEnabled(i));
                 InputAborts[i] = ReadBool("InputAborts" + i, false);
             }
 
