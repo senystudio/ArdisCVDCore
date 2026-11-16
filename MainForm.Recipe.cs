@@ -712,7 +712,7 @@ namespace ArdisCVDCore
                 step.Input_1, step.Input_2, step.Input_3, step.Input_4,
                 step.Input_5, step.Input_6, step.Input_9, step.Input_10
             };
-            for (int i = 0; i < AlarmSettings.InputCount; i++)
+            for (int i = 0; i < inputs.Length; i++)
             {
                 AlarmSettings.InputEnable[i] = inputs[i].Enable;
                 AlarmSettings.InputAborts[i] = inputs[i].Reaction == 1;

@@ -39,3 +39,5 @@ metadata:
 - Не обсуждалось: GCF шага только хранится.
 
 **МВ-трип (11.11.2026, по договорённости с сессией ardiscvdcore-29):** неисправность генератора теперь не Abort, а отдельный трип `PLC210AlarmClient.State.MicrowaveTripped` (бит 0x0020 awHolding[292]), сброс — `PLC210AlarmClient.RequestReset()` из Fault Status. Пока трип или Abort активны, HMI **не должен** слать RequestPreheat(true)/RequestMicrowave(true): ПЛК держит `xMwInhibit`, пока бит в awHolding[192] равен 1, и Preheat «залипает» до STOP. Поэтому `DescribeMicrowaveHardBlocker` первым делом проверяет AbortActive и MicrowaveTripped (→ пауза с сообщением), а при снятии паузы сбрасывается `_autoMicrowaveRequested`.
+
+**16.11.2026, Compressed Air в рецепте:** после добавления девятого входа (`InputCda = 8`) `PushStepThresholds` падал с IndexOutOfRange (массив входов шага — 8 штук, цикл шёл до `InputCount`). Решение пользователя: шаг рецепта CDA **не трогает**, действует значение из Process Parameters; цикл идёт по `inputs.Length`. Строки Compressed Air в Recipe Editor нет.
