@@ -12,6 +12,7 @@ namespace ArdisCVDCore
         private static readonly Color AlarmBack = Color.FromArgb(249, 239, 60);
         private static readonly Color AbortBack = Color.FromArgb(255, 32, 104);
         private static readonly Color ClearedFore = Color.FromArgb(110, 110, 110);
+        private static readonly Color ClearedForeDark = Color.FromArgb(150, 158, 180);
 
         private readonly SplitContainer _split;
         private readonly ListView _current;
@@ -113,6 +114,7 @@ namespace ArdisCVDCore
 
             Refresh(PLC210AlarmClient.GetState());
             Theme.Apply(this);
+            Theme.Changed += Theme_Changed;
         }
 
         private static ListView BuildList()
@@ -160,6 +162,24 @@ namespace ArdisCVDCore
         {
             _timer.Stop();
             base.OnFormClosing(e);
+        }
+
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            Theme.Changed -= Theme_Changed;
+            base.OnFormClosed(e);
+        }
+
+        private void Theme_Changed(object sender, EventArgs e)
+        {
+            foreach (ListViewItem item in _history.Items)
+                if (Equals(item.Tag, false))
+                    item.ForeColor = ClearedColor();
+        }
+
+        private static Color ClearedColor()
+        {
+            return Theme.Current.Dark ? ClearedForeDark : ClearedFore;
         }
 
         private void Timer_Tick(object sender, EventArgs e)
@@ -317,9 +337,11 @@ namespace ArdisCVDCore
 
         private static void PaintRow(ListViewItem item, AlarmLevel level, bool raised)
         {
+            item.Tag = raised;
+
             if (!raised)
             {
-                item.ForeColor = ClearedFore;
+                item.ForeColor = ClearedColor();
                 return;
             }
 
@@ -331,6 +353,7 @@ namespace ArdisCVDCore
             else
             {
                 item.BackColor = AlarmBack;
+                item.ForeColor = Color.Black;
             }
         }
 

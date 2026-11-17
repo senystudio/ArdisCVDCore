@@ -20,6 +20,7 @@ VAR
     rRaw        : REAL;
     iRawSetpoint: INT;
     i           : INT;
+    uiReinitSeen: UINT;
 END_VAR
 
 (* gas enabled: hmi protocol ok, gas switched on, no abort *)
@@ -37,6 +38,16 @@ axSlaveError[5] := MFC_H22.xError;
 FOR i := 0 TO 5 DO
     arSetpointSccm[i] := F_ReadFixed(awHolding[66 + i*5], awHolding[67 + i*5]);
 END_FOR;
+
+(* reinit request from the hmi debug window: regulating channels start init again *)
+IF uiDbgGasReinitCount <> uiReinitSeen THEN
+    uiReinitSeen := uiDbgGasReinitCount;
+    FOR i := 0 TO 5 DO
+        IF aChState[i].eInit = INIT_DONE THEN
+            aChState[i].eInit := INIT_START;
+        END_IF;
+    END_FOR;
+END_IF;
 
 (* per channel: init, close, setpoint *)
 FOR i := 0 TO 5 DO

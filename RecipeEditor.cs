@@ -346,7 +346,7 @@ namespace ArdisCVDCore
         {
             if (StepArray == null || StepArray.Count == 0)
             {
-                MessageBox.Show("No data to save. Load recipe or create new one");
+                MessageBox.Show("No data to save. Open recipe or create new one");
                 return;
             }
             UpdateStepSettings(null, null);

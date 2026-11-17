@@ -59,6 +59,8 @@ namespace ArdisCVDCore
         private bool _abortHandled;
         private ProcessParametersForm _processParametersForm;
         private ThemeForm _themeForm;
+        private SystemSettingsForm _systemSettingsForm;
+        private bool _plcLinkStarted = true;
 
         public MainForm()
         {
@@ -68,6 +70,7 @@ namespace ArdisCVDCore
             BindMenuIcons();
             SetLoggingMenu(Logger.Enabled);
             AddRecipeEditorMenu();
+            MoveLinkAndLoggingToSystemSettings();
             AddThemeMenu();
             BuildToolbar();
             ProcessLogger.Init();
@@ -229,6 +232,7 @@ namespace ArdisCVDCore
 
         private void SetPlcLinkMenu(bool connected)
         {
+            _plcLinkStarted = connected;
             ConnectToolMenu.Enabled = !connected;
             DisconnectToolMenu.Enabled = connected;
         }
@@ -1182,6 +1186,87 @@ namespace ArdisCVDCore
         {
             StartLoggingToolMenu.Enabled = !logging;
             StopLoggingToolMenu.Enabled = logging;
+        }
+
+        internal bool PlcLinkStarted
+        {
+            get { return _plcLinkStarted; }
+        }
+
+        internal bool LoggingActive
+        {
+            get { return Logger.Enabled; }
+        }
+
+        internal string PlcHost
+        {
+            get { return ReadIniString("PLC210", "IP", "192.168.1.10"); }
+        }
+
+        internal int PlcPort
+        {
+            get { return ReadIniInt("PLC210", "Port", 502); }
+        }
+
+        internal void ConnectPlc()
+        {
+            if (!_plcLinkStarted)
+                ConnectToolMenu_Click(this, EventArgs.Empty);
+        }
+
+        internal void DisconnectPlc()
+        {
+            if (_plcLinkStarted)
+                DisconnectToolMenu_Click(this, EventArgs.Empty);
+        }
+
+        internal void StartLogging()
+        {
+            if (!Logger.Enabled)
+                StartLoggingToolMenu_Click(this, EventArgs.Empty);
+        }
+
+        internal void StopLogging()
+        {
+            if (Logger.Enabled)
+                StopLoggingToolMenu_Click(this, EventArgs.Empty);
+        }
+
+        private void MoveLinkAndLoggingToSystemSettings()
+        {
+            ToolStripItem[] moved =
+            {
+                ConnectToolMenu, DisconnectToolMenu, ConnectExitSeparator,
+                StartLoggingToolMenu, StopLoggingToolMenu, LoggingExitSeparator
+            };
+            foreach (ToolStripItem item in moved)
+                fileToolStripMenuItem.DropDownItems.Remove(item);
+
+            ToolStripMenuItem settings = new ToolStripMenuItem("System Settings");
+            Theme.Glyph(settings, '\uE713', 20);
+            settings.Click += (s, e) => OpenSystemSettings();
+
+            int exitIndex = fileToolStripMenuItem.DropDownItems.IndexOf(ExitToolMenu);
+            int separatorIndex = exitIndex > 0 ? exitIndex - 1 : fileToolStripMenuItem.DropDownItems.Count;
+            fileToolStripMenuItem.DropDownItems.Insert(separatorIndex, settings);
+        }
+
+        private void OpenSystemSettings()
+        {
+            if (_systemSettingsForm != null && !_systemSettingsForm.IsDisposed)
+            {
+                if (_systemSettingsForm.WindowState == FormWindowState.Minimized)
+                    _systemSettingsForm.WindowState = FormWindowState.Normal;
+                _systemSettingsForm.Activate();
+                return;
+            }
+
+            if (!PasswordForm.Ask(this))
+                return;
+
+            _systemSettingsForm = new SystemSettingsForm(this);
+            CenterOverMainWindow(_systemSettingsForm);
+            _systemSettingsForm.Show(this);
         }
 
         private void ExitToolMenu_Click(object sender, EventArgs e)

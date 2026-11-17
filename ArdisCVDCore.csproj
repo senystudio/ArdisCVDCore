@@ -94,6 +94,7 @@
     <Compile Include="modules_hw\PLC210TurboPumpClient.cs" />
     <Compile Include="modules_hw\PLC210CoolingClient.cs" />
     <Compile Include="modules_hw\PLC210AlarmClient.cs" />
+    <Compile Include="modules_hw\PLC210DebugClient.cs" />
     <Compile Include="AlarmCatalog.cs" />
     <Compile Include="AlarmSettings.cs" />
     <Compile Include="AlarmJournal.cs" />
@@ -146,6 +147,15 @@
       <DependentUpon>ProcessParametersForm.cs</DependentUpon>
     </Compile>
     <Compile Include="StatusForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PasswordForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SystemSettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="RegisterViewerForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="trends\TrendForm.cs">
